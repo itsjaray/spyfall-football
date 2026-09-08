@@ -122,13 +122,13 @@ io.on('connection', socket => {
 
     io.emit('updatePlayers', players);
 
-    .on('setName', (name) => {
-        const player = players.find(p => p.id === .id);
-        if (player) {
-            player.name = name;
-            io.emit('updatePlayers', players);
-        }
-    });
+    socket.on('setname', (name) => {
+    const player = players.find(p => p.id === socket.id);
+    if (player) {
+        player.name = name;
+        io.emit('updatePlayers', players);
+    }
+});
 
     .on('sendChatMessage', (message) => {
         const player = players.find(p => p.id === .id);
