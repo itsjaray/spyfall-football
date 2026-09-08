@@ -4,144 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spyfall - นักเตะปริศนา Online</title>
-    <!-- นำเข้าฟอนต์ Radikal / Prompt -->
+    <!-- นำเข้าฟอนต์ Prompt -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        :root {
+            --pl-purple: #37003c;
+            --pl-purple-dark: #200024;
+            --pl-pink: #ff2882;
+            --pl-green: #00ff87;
+            --pl-cyan: #00e5ff;
+            --pl-yellow: #e7ff00;
+            --card-bg: rgba(55, 0, 60, 0.65);
+            --border-color: rgba(255, 255, 255, 0.12);
+        }
+
         body { 
-            font-family: 'Radikal', 'Prompt', sans-serif; 
-            background: radial-gradient(circle at center, #1b2a4a 0%, #0d1b2a 100%); 
-            color: #f1f5f9; 
+            font-family: 'Prompt', sans-serif; 
+            background: linear-gradient(135deg, var(--pl-purple-dark) 0%, var(--pl-purple) 100%); 
+            color: #ffffff; 
             text-align: center; 
-            padding: 20px; 
+            padding: 15px; 
             margin: 0; 
             min-height: 100vh;
         }
+
         .container { 
             max-width: 480px; 
-            margin: 20px auto; 
-            background: rgba(16, 37, 66, 0.85); 
-            backdrop-filter: blur(12px);
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(0, 255, 128, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 10px auto; 
+            background: var(--card-bg); 
+            backdrop-filter: blur(16px);
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
         }
+
+        /* หัวข้อสไตล์ Premier League Hub */
         h1 { 
-            color: #00ff88; 
+            background: linear-gradient(90deg, var(--pl-pink), var(--pl-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-top: 0; 
-            font-size: 26px; 
+            font-size: 24px; 
             font-weight: 700;
-            text-shadow: 0 0 10px rgba(0,255,136,0.4);
+            letter-spacing: -0.5px;
         }
         h1 b {
-            color: #ffffff;
-            font-size: 13px;
+            -webkit-text-fill-color: #ffffff;
+            font-size: 11px;
             display: block;
-            margin-top: 5px;
+            margin-top: 3px;
             font-weight: 400;
-            letter-spacing: 2px;
-            opacity: 0.8;
+            letter-spacing: 3px;
+            opacity: 0.7;
         }
+
         .timer-box { 
-            font-size: 36px; 
+            font-size: 32px; 
             font-weight: 700; 
-            color: #ffaa00; 
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
-            padding: 12px; 
+            color: var(--pl-yellow); 
+            background: rgba(0, 0, 0, 0.3); 
+            padding: 10px; 
             border-radius: 12px; 
             margin: 15px 0; 
-            border: 2px solid rgba(255, 170, 0, 0.3);
+            border: 1px solid rgba(231, 255, 0, 0.3);
             letter-spacing: 2px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
         }
+
         .role-box { 
-            background: rgba(10, 25, 47, 0.9); 
-            padding: 20px; 
-            border-radius: 14px; 
-            font-size: 18px; 
+            background: rgba(20, 0, 25, 0.7); 
+            padding: 18px; 
+            border-radius: 12px; 
+            font-size: 16px; 
             font-weight: 600; 
-            margin: 20px 0; 
-            min-height: 80px; 
+            margin: 15px 0; 
+            min-height: 70px; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-left: 4px solid var(--pl-pink);
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .spy { color: #ff3366; text-shadow: 0 0 8px rgba(255,51,102,0.4); }
-        .player { color: #00d2ff; text-shadow: 0 0 8px rgba(0,210,255,0.4); }
-        .input-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
+        .spy { color: var(--pl-pink); text-shadow: 0 0 10px rgba(255,40,130,0.4); }
+        .player { color: var(--pl-cyan); text-shadow: 0 0 10px rgba(0,229,255,0.4); }
+
+        .input-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+        
         input[type="text"] { 
             flex: 1; 
-            padding: 12px; 
-            border-radius: 10px; 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            background: rgba(5, 15, 30, 0.8);
+            padding: 11px 14px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            background: rgba(10, 0, 15, 0.6);
             color: #fff;
-            font-size: 15px; 
-            font-family: 'Radikal', 'Prompt', sans-serif;
-            text-align: center; 
+            font-size: 14px; 
+            font-family: 'Prompt', sans-serif;
             outline: none;
-            transition: 0.3s;
+            transition: 0.2s;
         }
-        input[type="text"]:focus { border-color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+        input[type="text"]:focus { border-color: var(--pl-green); box-shadow: 0 0 8px rgba(0, 255, 135, 0.3); }
+
         button { 
-            background: linear-gradient(135deg, #ff3366, #ff0055); 
+            background: var(--pl-pink); 
             color: white; 
             border: none; 
-            padding: 10px 18px; 
-            font-size: 15px; 
+            padding: 10px 16px; 
+            font-size: 14px; 
             font-weight: 600; 
-            font-family: 'Radikal', 'Prompt', sans-serif;
-            border-radius: 10px; 
+            font-family: 'Prompt', sans-serif;
+            border-radius: 8px; 
             cursor: pointer; 
             transition: 0.2s; 
-            box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+            box-shadow: 0 4px 10px rgba(255, 40, 130, 0.3);
         }
-        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
         .btn-start { 
             width: 100%; 
-            font-size: 18px; 
-            padding: 14px; 
+            font-size: 16px; 
+            padding: 13px; 
             margin-top: 10px; 
-            background: linear-gradient(135deg, #00ff88, #00b359); 
-            color: #051923;
+            background: var(--pl-green); 
+            color: var(--pl-purple-dark);
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 255, 135, 0.3);
         }
-        .btn-start:hover { background: linear-gradient(135deg, #1aff94, #00cc66); }
+        .btn-start:hover { background: #1aff94; }
         
-        .order-section { margin-top: 15px; background: rgba(10, 25, 47, 0.9); padding: 15px; border-radius: 12px; border: 1px solid #00ff88; display: none; text-align: left; }
-        .order-list { text-align: left; margin-top: 8px; padding-left: 20px; margin-bottom: 0; }
-        .order-list li { margin: 4px 0; color: #cbd5e1; font-size: 14px; }
-        .order-first { color: #00ff88 !important; font-weight: bold; }
+        .order-section { margin-top: 15px; background: rgba(20, 0, 25, 0.6); padding: 14px; border-radius: 12px; border-left: 4px solid var(--pl-green); display: none; text-align: left; }
+        .order-list { text-align: left; margin-top: 6px; padding-left: 20px; margin-bottom: 0; }
+        .order-list li { margin: 3px 0; color: #cbd5e1; font-size: 13px; }
+        .order-first { color: var(--pl-green) !important; font-weight: bold; }
 
-        .vote-section, .guess-section { margin-top: 20px; background: rgba(0,0,0,0.25); padding: 15px; border-radius: 12px; display: none; border: 1px solid rgba(255,255,255,0.08); }
-        .vote-btn { width: 100%; margin: 5px 0; background: rgba(15, 35, 65, 0.9); border: 1px solid #00d2ff; color: #fff; }
-        .vote-btn:hover { background: #00d2ff; color: #051923; font-weight: bold; }
+        .vote-section, .guess-section { margin-top: 15px; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; display: none; border: 1px solid var(--border-color); }
+        .vote-btn { width: 100%; margin: 4px 0; background: rgba(40, 0, 50, 0.8); border: 1px solid var(--border-color); color: #fff; text-align: left; padding: 10px 14px; border-radius: 8px; }
+        .vote-btn:hover { background: var(--pl-cyan); color: var(--pl-purple-dark); font-weight: bold; border-color: var(--pl-cyan); }
         
-        .btn-toggle-guess { background: linear-gradient(135deg, #ffaa00, #ff8800); color: #051923; font-weight: bold; font-size: 14px; padding: 8px 14px; margin-top: 12px; }
-        .btn-toggle-guess:hover { background: linear-gradient(135deg, #ffbb11, #ff9900); }
+        .btn-toggle-guess { background: var(--pl-yellow); color: var(--pl-purple-dark); font-weight: bold; font-size: 13px; padding: 8px 12px; margin-top: 10px; border-radius: 8px; }
+        .btn-toggle-guess:hover { filter: brightness(1.05); }
 
-        .chat-section { text-align: left; background: rgba(0,0,0,0.25); padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.08); }
-        .chat-box { height: 140px; overflow-y: auto; background: rgba(5, 15, 30, 0.9); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .chat-section { text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; margin-top: 15px; border: 1px solid var(--border-color); }
+        .chat-box { height: 130px; overflow-y: auto; background: rgba(10, 0, 15, 0.7); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
         .chat-msg { word-break: break-word; }
-        .chat-msg b { color: #ffaa00; }
+        .chat-msg b { color: var(--pl-yellow); }
 
-        .player-list { text-align: left; background: rgba(0,0,0,0.25); padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.08); }
-        .player-list table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+        .player-list { text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; margin-top: 15px; border: 1px solid var(--border-color); }
+        .player-list table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 13px; }
         .player-list th:last-child, .player-list td:last-child { text-align: right; }
-        .score-badge { background: linear-gradient(135deg, #ffaa00, #ff8800); color: #051923; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 12px; }
+        .score-badge { background: var(--pl-yellow); color: var(--pl-purple-dark); padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px; }
         
-        .btn-kick { background: rgba(255, 51, 102, 0.2); color: #ff3366; border: 1px solid #ff3366; padding: 3px 8px; font-size: 11px; border-radius: 6px; cursor: pointer; margin-left: 8px; transition: 0.2s; }
-        .btn-kick:hover { background: #ff3366; color: white; }
+        .btn-kick { background: rgba(255, 40, 130, 0.15); color: var(--pl-pink); border: 1px solid rgba(255, 40, 130, 0.4); padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer; margin-left: 6px; transition: 0.2s; }
+        .btn-kick:hover { background: var(--pl-pink); color: white; }
 
-        .btn-reset-score { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.2); padding: 6px 8px; font-size: 12px; margin-top: 10px; width: 100%; border-radius: 8px; }
-        .btn-reset-score:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-reset-score { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 6px; font-size: 11px; margin-top: 10px; width: 100%; border-radius: 8px; }
+        .btn-reset-score:hover { background: rgba(255,255,255,0.08); color: white; }
 
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     </style>
@@ -149,12 +174,12 @@
 <body>
 
 <div class="container">
-    <h1>⚽ SPYFALL นักเตะปริศนา <br><b>MADE BY JARAY</b></h1>
+    <h1>PREMIER LEAGUE <br><b>SPYFALL FPL EDITION</b></h1>
     
     <form id="name-form" onsubmit="handleNameSubmit(event)">
         <div class="input-group">
-            <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" required />
-            <button type="submit">บันทึกชื่อ</button>
+            <input type="text" id="username" placeholder="พิมพ์ชื่อผู้เล่นของคุณ..." required />
+            <button type="submit">บันทึก</button>
         </div>
     </form>
 
@@ -165,13 +190,13 @@
     </div>
 
     <div class="order-section" id="order-section">
-        <strong style="color: #00ff88;">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
+        <strong style="color: var(--pl-green);">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
         <ol class="order-list" id="order-ol"></ol>
     </div>
 
     <div class="guess-section" id="guess-section">
-        <h3 style="color:#ffaa00; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
-        <p style="font-size:14px; color:#cbd5e1;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ (พิมพ์ไม่เป๊ะก็ผ่านได้):</p>
+        <h3 style="color:var(--pl-yellow); margin-top:0; font-size:15px;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
+        <p style="font-size:13px; color:#cbd5e1;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ:</p>
         <form onsubmit="handleGuessSubmit(event)">
             <div class="input-group">
                 <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
@@ -181,21 +206,21 @@
     </div>
 
     <div class="vote-section" id="vote-section">
-        <h3>🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
+        <h3 style="font-size:15px;">🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
         <div id="vote-buttons"></div>
     </div>
 
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
     <!-- กล่องแสดงสรุปผลนักเตะตาที่แล้ว -->
-    <div id="lastGameResultBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 14px; border: 1px solid rgba(255,255,255,0.08);">
+    <div id="lastGameResultBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 13px; border: 1px solid var(--border-color);">
         <b>📊 ผลการเล่นตาที่แล้ว:</b>
-        <div id="lastSecretText" style="color: #00d2ff; margin-top: 4px;">- ยังไม่มีประวัติการเล่น -</div>
-        <div id="lastDecoyText" style="color: #ff3366; margin-top: 2px;"></div>
+        <div id="lastSecretText" style="color: var(--pl-cyan); margin-top: 4px;">- ยังไม่มีประวัติการเล่น -</div>
+        <div id="lastDecoyText" style="color: var(--pl-pink); margin-top: 2px;"></div>
     </div>
 
     <div class="chat-section">
-        <strong>💬 ช่องแชตสดพูดคุย:</strong>
+        <strong>💬 ช่องแชตสด:</strong>
         <div id="typingIndicator" style="font-size: 11px; color: #94a3b8; font-style: italic; height: 16px; margin-bottom: 2px;"></div>
         <div class="chat-box" id="chat-box"></div>
         <form onsubmit="handleChatSubmit(event)">
@@ -207,11 +232,11 @@
     </div>
     
     <div class="player-list">
-        <strong>🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
+        <strong>🏆 ตารางคะแนน (<span id="count">0</span> คน):</strong>
         <table>
             <thead>
                 <tr>
-                    <th>ชื่อผู้เล่น</th>
+                    <th>ผู้เล่น</th>
                     <th>คะแนน</th>
                 </tr>
             </thead>
@@ -270,7 +295,7 @@
         if (hasVoted) return;
         hasVoted = true;
         socket.emit('castVote', targetId);
-        document.getElementById('vote-buttons').innerHTML = "<p style='color:#00ff88;'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
+        document.getElementById('vote-buttons').innerHTML = "<p style='color:var(--pl-green);'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
     }
 
     function toggleGuessBox() {
@@ -319,8 +344,8 @@
             display.innerHTML = `
                 <span class='spy'>🕵️ คุณคือ SPY!<br>
                 ชื่อหลอกของคุณ: <u style="color:#fff;">${data.decoyName}</u><br>
-                <small style='font-size:13px; color:#ffb8b8;'>(ตำแหน่ง: ${data.position} | ถนัดเท้า: ${data.foot})</small><br>
-                <small style='font-size:12px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                <small style='font-size:12px; color:#ffb8b8;'>(ตำแหน่ง: ${data.position} | ถนัดเท้า: ${data.foot})</small><br>
+                <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
                 </span>
                 <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
             `;
@@ -374,7 +399,7 @@
     });
 
     socket.on('timeUp', () => {
-        document.getElementById('role-display').innerHTML = "<span style='color: #ffaa00;'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+        document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
     });
 
     socket.on('spyMustGuess', () => {
@@ -385,7 +410,7 @@
 
     socket.on('waitingForSpyGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('role-display').innerHTML = `<span style='color:#00ff88;'>🎯 ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br><br><span style='color:#ffaa00;'>⏳ กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>`;
+        document.getElementById('role-display').innerHTML = `<span style='color:var(--pl-green);'>🎯 ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br><br><span style='color:var(--pl-yellow);'>⏳ กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>`;
     });
 
     socket.on('finalResult', (result) => {
@@ -394,20 +419,20 @@
         const display = document.getElementById('role-display');
 
         if (result.winner === 'PLAYERS') {
-            display.innerHTML = `<span style='color:#00ff88;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
+            display.innerHTML = `<span style='color:var(--pl-green);'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
             <small style='color:#ff6b81;'>(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
-            <small style='color:#00d2ff;'>นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
+            <small style='color:var(--pl-cyan);'>นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
             <small style='color:#aaa;'>(นักเตะหลอกของ SPY: ${result.decoyFootballer})</small>`;
         } else {
             let reasonText = result.reason === 'voteWrong' 
                 ? `คนธรรมดาโหวตผิดตัว! (ไปโหวต ${result.suspectedName})` 
                 : `SPY ใช้โอกาสสุดท้ายพิมพ์ทายถูกต้อง! ("${result.spyGuess}")`;
 
-            display.innerHTML = `<span style='color:#ff3366;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br>
+            display.innerHTML = `<span style='color:var(--pl-pink);'>🏆 SPY ชนะ (+2 คะแนน)!</span><br>
             <small style='color:#ffb8b8;'>(${reasonText})</small><br><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
-            <small style='color:#00d2ff;'>นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
+            <small style='color:var(--pl-cyan);'>นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
             <small style='color:#aaa;'>(นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer})</small>`;
         }
     });
