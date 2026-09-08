@@ -112,7 +112,7 @@ function startTimer() {
     }, 1000);
 }
 
-io.on('connection', socket => {
+io.on('connection', () => {
     players.push({
         id: socket.id,
         name: `ผู้เล่น ${players.length + 1}`,
@@ -123,7 +123,7 @@ io.on('connection', socket => {
     io.emit('updatePlayers', players);
 
     socket.on('setname', (name) => {
-    const player = players.find(p => p.id === socket.id);
+    const player = players.find(p => p.id === .id);
     if (player) {
         player.name = name;
         io.emit('updatePlayers', players);
@@ -227,9 +227,7 @@ io.on('connection', socket => {
         p.role = 'PLAYER';
         io.to(p.id).emit('assignRole', {
             role: 'PLAYER',
-            name: selectedTarget.name,
-            position: selectedTarget.position,
-            foot: selectedTarget.foot
+            name: selectedTarget.name
         });
     }
 });
