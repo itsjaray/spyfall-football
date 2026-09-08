@@ -22,6 +22,13 @@
         .vote-section, .guess-section { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; display: none; }
         .vote-btn { width: 100%; margin: 5px 0; background: #0f3460; border: 1px solid #4da6ff; }
         .vote-btn:hover { background: #4da6ff; }
+        
+        /* สไตล์ระบบแชต */
+        .chat-section { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .chat-box { height: 140px; overflow-y: auto; background: #0f3460; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+        .chat-msg { word-break: break-word; }
+        .chat-msg b { color: #fa8231; }
+
         .player-list { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
         .player-list table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -65,6 +72,16 @@
 
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
+    <!-- ช่องแชต -->
+    <div class="chat-section">
+        <strong>💬 ช่องแชตสดพูดคุย:</strong>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="input-group" style="margin-bottom:0;">
+            <input type="text" id="chat-input" placeholder="พิมพ์ข้อความ..." onkeypress="handleKeyPress(event)" />
+            <button onclick="sendChat()">ส่ง</button>
+        </div>
+    </div>
+
     <!-- ตารางคะแนน -->
     <div class="player-list">
         <strong>🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
@@ -94,6 +111,20 @@
         }
     }
 
+    function sendChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value.trim()) {
+            socket.emit('sendChatMessage', input.value);
+            input.value = '';
+        }
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            sendChat();
+        }
+    }
+
     function startGame() {
         socket.emit('startGame');
     }
@@ -119,11 +150,19 @@
         }
     }
 
+    socket.on('newChatMessage', (data) => {
+        const chatBox = document.getElementById('chat-box');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg';
+        msgDiv.innerHTML = `<b>${data.sender}:</b> ${data.message}`;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
     socket.on('updatePlayers', (players) => {
         currentPlayers = players;
         document.getElementById('count').innerText = players.length;
         
-        // เรียงลำดับคนคะแนนสูงสุดขึ้นก่อน
         const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
         const tbody = document.getElementById('players-tbody');
         tbody.innerHTML = sortedPlayers.map(p => 
