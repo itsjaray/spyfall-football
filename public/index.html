@@ -10,7 +10,7 @@
         .container { max-width: 450px; margin: 20px auto; background: #16213e; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         h1 { color: #e94560; margin-top: 0; font-size: 26px; }
         .timer-box { font-size: 36px; font-weight: bold; color: #fa8231; background: #0f3460; padding: 10px; border-radius: 10px; margin: 15px 0; }
-        .role-box { background: #0f3460; padding: 20px; border-radius: 12px; font-size: 20px; font-weight: bold; margin: 20px 0; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        .role-box { background: #0f3460; padding: 20px; border-radius: 12px; font-size: 20px; font-weight: bold; margin: 20px 0; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .spy { color: #ff4d4d; }
         .player { color: #4da6ff; }
         .input-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
@@ -20,7 +20,6 @@
         .btn-start { width: 100%; font-size: 18px; padding: 14px; margin-top: 10px; background: #2ed573; }
         .btn-start:hover { background: #26af5f; }
         
-        /* สไตล์ตารางลำดับการเล่น */
         .order-section { margin-top: 15px; background: #0f3460; padding: 15px; border-radius: 10px; border: 1px solid #2ed573; display: none; }
         .order-list { text-align: left; margin-top: 8px; padding-left: 20px; margin-bottom: 0; }
         .order-list li { margin: 4px 0; }
@@ -30,6 +29,9 @@
         .vote-btn { width: 100%; margin: 5px 0; background: #0f3460; border: 1px solid #4da6ff; }
         .vote-btn:hover { background: #4da6ff; }
         
+        .btn-toggle-guess { background: #fa8231; font-size: 14px; padding: 8px 14px; margin-top: 12px; }
+        .btn-toggle-guess:hover { background: #e06d1a; }
+
         .chat-section { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
         .chat-box { height: 140px; overflow-y: auto; background: #0f3460; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
         .chat-msg { word-break: break-word; }
@@ -60,31 +62,28 @@
         กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)
     </div>
 
-    <!-- ส่วนแสดงลำดับการเล่น -->
     <div class="order-section" id="order-section">
         <strong style="color: #2ed573;">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
         <ol class="order-list" id="order-ol"></ol>
     </div>
 
-    <!-- ส่วนระบบโหวต -->
-    <div class="vote-section" id="vote-section">
-        <h3>🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
-        <div id="vote-buttons"></div>
-    </div>
-
-    <!-- ส่วนระบบให้ Spy พิมพ์ตอบ -->
+    <!-- ส่วนทายคำตอบสำหรับ SPY -->
     <div class="guess-section" id="guess-section">
-        <h3>🕵️ เสียงส่วนใหญ่โหวตผิดคน!</h3>
-        <p>คุณมีโอกาสชิงพื้นที่ชนะ! พิมพ์ชื่อนักเตะปริศนา:</p>
+        <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนา</h3>
+        <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะเพื่อชนะเกมทันที:</p>
         <div class="input-group">
             <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะ..." />
             <button onclick="submitSpyGuess()">ส่งคำตอบ</button>
         </div>
     </div>
 
+    <div class="vote-section" id="vote-section">
+        <h3>🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
+        <div id="vote-buttons"></div>
+    </div>
+
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
-    <!-- ช่องแชต -->
     <div class="chat-section">
         <strong>💬 ช่องแชตสดพูดคุย:</strong>
         <div class="chat-box" id="chat-box"></div>
@@ -94,7 +93,6 @@
         </div>
     </div>
 
-    <!-- ตารางคะแนน -->
     <div class="player-list">
         <strong>🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
         <table>
@@ -154,11 +152,16 @@
         document.getElementById('vote-buttons').innerHTML = "<p style='color:#2ed573;'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
     }
 
+    function toggleGuessBox() {
+        const guessSection = document.getElementById('guess-section');
+        guessSection.style.display = guessSection.style.display === 'none' || guessSection.style.display === '' ? 'block' : 'none';
+    }
+
     function submitSpyGuess() {
         const guess = document.getElementById('spy-guess-input').value;
         if (guess.trim()) {
             socket.emit('spyGuess', guess);
-            document.getElementById('guess-section').style.display = 'none';
+            document.getElementById('spy-guess-input').value = '';
         }
     }
 
@@ -188,8 +191,12 @@
     socket.on('assignRole', (data) => {
         const display = document.getElementById('role-display');
         document.getElementById('guess-section').style.display = 'none';
+        
         if (data.role === 'SPY') {
-            display.innerHTML = "<span class='spy'>🕵️ คุณคือ SPY!<br><small style='font-size:14px; color:#ccc;'>(ไม่ได้รับชื่อนักเตะ เนียนตามน้ำไว้!)</small></span>";
+            display.innerHTML = `
+                <span class='spy'>🕵️ คุณคือ SPY!<br><small style='font-size:14px; color:#ccc;'>(เนียนถามตอบตามน้ำไปก่อน!)</small></span>
+                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้แล้ว! (พิมพ์ทายคำตอบเลย)</button>
+            `;
         } else {
             display.innerHTML = `<span class='player'>⚽ นักเตะของคุณคือ:<br>${data.name}</span>`;
         }
@@ -202,7 +209,6 @@
         document.getElementById('vote-count').innerText = '0';
         document.getElementById('total-voters').innerText = currentPlayers.length;
         
-        // แสดงลำดับการตั้งคำถาม
         const orderSection = document.getElementById('order-section');
         const orderOl = document.getElementById('order-ol');
         orderSection.style.display = 'block';
@@ -237,7 +243,7 @@
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'block';
-        document.getElementById('role-display').innerHTML = "<span class='spy'>🕵️ เพื่อนโหวตผิดคน!<br>โอกาสสุดท้ายของคุณ พิมพ์ทายชื่อนักเตะด้านล่าง</span>";
+        document.getElementById('role-display').innerHTML = "<span class='spy'>🕵️ เพื่อนโหวตผิดคน!<br>โอกาสสุดท้ายของคุณ พิมพ์ทายชื่อนักเตะปริศนาด้านล่าง</span>";
     });
 
     socket.on('waitingForSpyGuess', (data) => {
@@ -251,13 +257,14 @@
         const display = document.getElementById('role-display');
 
         if (result.winner === 'PLAYERS') {
-            if (result.reason === 'voteCorrect') {
-                display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!<br>โหวตถูกตัว SPY คือ <b>${result.spyName}</b></span><br><br><small style='color:#ccc;'>นักเตะปริศนาคือ: ${result.secretFootballer}</small>`;
-            } else {
-                display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!<br>SPY ตอบว่า "<b>${result.spyGuess}</b>" ซึ่งเป็นคำตอบที่ผิด!</span><br><br><small style='color:#ccc;'>นักเตะปริศนาที่ถูกต้องคือ: ${result.secretFootballer}</small>`;
-            }
+            let reasonText = result.reason === 'voteCorrect' ? 'โหวตจับ SPY ถูกตัว!' : `SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งเป็นคำตอบที่ผิด!`;
+            display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
+            <small style='color:#ff6b81;'>(${reasonText})</small><br><br>
+            <b>SPY คือ:</b> ${result.spyName}<br>
+            <small style='color:#ccc;'>นักเตะปริศนาคือ: <b>${result.secretFootballer}</b></small>`;
         } else {
-            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!<br>SPY (<b>${result.spyName}</b>) ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"</span>`;
+            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br><br>
+            <b>SPY (${result.spyName})</b> ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"`;
         }
     });
 
