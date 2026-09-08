@@ -216,8 +216,15 @@ io.on('connection', (socket) => {
         });
 
         const playOrder = shuffleArray(players);
-        io.emit('gameStarted', { playOrder: playOrder });
-        startTimer();
+
+// เพิ่มส่ง lastGame พ่วงไปกับ event นี้ด้วย
+io.emit('gameStarted', { 
+    playOrder: playOrder,
+    lastGame: lastGameSummary 
+});
+
+startTimer();
+        
     });
 
     socket.on('castVote', (targetId) => {
