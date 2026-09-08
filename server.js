@@ -235,7 +235,9 @@ io.on('connection', (socket) => {
         p.role = 'PLAYER';
         io.to(p.id).emit('assignRole', {
             role: 'PLAYER',
-            name: selectedTarget.name
+            name: selectedTarget.name,
+            position: selectedTarget.position, // 👈 เพิ่มบรรทัดนี้
+            foot: selectedTarget.foot          // 👈 และเพิ่มบรรทัดนี้
         });
     }
 });
