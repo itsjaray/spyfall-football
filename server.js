@@ -100,6 +100,10 @@ function startTimer() {
     }, 1000);
 }
 
+// ตัวแปรจำประวัติรอบที่แล้วกันสุ่มซ้ำ
+let lastSecretName = null;
+let lastDecoyName = null;
+
 io.on('connection', (socket) => {
     players.push({
         id: socket.id,
@@ -134,46 +138,49 @@ io.on('connection', (socket) => {
         gameState.votes = {};
         gameState.votedPlayers.clear();
 
-        const selectedTarget = footballers[Math.floor(Math.random() * footballers.length)];
+        // 1. สุ่มตัวเลือกหลัก (พยายามไม่ให้ซ้ำกับตาที่แล้ว)
+        let availableTargets = footballers;
+        if (footballers.length > 1) {
+            availableTargets = footballers.filter(f => f.name !== lastSecretName);
+        }
+        const selectedTarget = availableTargets[Math.floor(Math.random() * availableTargets.length)];
         gameState.secretFootballer = selectedTarget;
+        lastSecretName = selectedTarget.name;
 
-        const spyIndex = Math.floor(Math.random() * players.length);
-        gameState.spyId = players[spyIndex].id;
+        // 2. ดึงตำแหน่งหลักและเท้า
+        const getPrimaryPos = (posStr) => {
+            if (!posStr) return "";
+            return posStr.split(/[\/\s-,]+/)[0].toUpperCase();
+        };
 
-       // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "CM / RM", "MF", "CB" ตัดเอาคำแรก)
-    const getPrimaryPos = (posStr) => {
-        if (!posStr) return "";
-        return posStr.split(/[\/\s-,]+/)[0].toUpperCase();
-    };
+        const targetPrimaryPos = getPrimaryPos(selectedTarget.position);
+        const targetFoot = selectedTarget.foot ? selectedTarget.foot.trim().toLowerCase() : "";
 
-    const targetPrimaryPos = getPrimaryPos(selectedTarget.position);
-    const targetFoot = selectedTarget.foot ? selectedTarget.foot.trim().toLowerCase() : "";
-
-    // 1. ค้นหาคนที่ "ตำแหน่งหลักตรงกันเป๊ะๆ" ก่อนเป็นอันดับแรก
-    let validDecoys = footballers.filter(f => {
-        if (f.name === selectedTarget.name) return false;
-        const fPrimaryPos = getPrimaryPos(f.position);
-        return targetPrimaryPos && fPrimaryPos && (targetPrimaryPos === fPrimaryPos);
-    });
-
-    // 2. ถ้าไม่มีตำแหน่งเดียวกันจริงๆ ค่อยผ่อนปรนให้หาคนที่มี "เท้าที่ถนัดข้างเดียวกัน"
-    if (validDecoys.length === 0) {
-        validDecoys = footballers.filter(f => {
+        // 3. กรองหาคนตำแหน่งเดียวกันเป๊ะๆ (และเลี่ยงไม่ให้ซ้ำกับ Decoy ตาที่แล้ว)
+        let validDecoys = footballers.filter(f => {
             if (f.name === selectedTarget.name) return false;
-            const fFoot = f.foot ? f.foot.trim().toLowerCase() : "";
-            return targetFoot && fFoot && (targetFoot === fFoot);
+            if (f.name === lastDecoyName && footballers.length > 2) return false; 
+            const fPrimaryPos = getPrimaryPos(f.position);
+            return targetPrimaryPos && fPrimaryPos && (targetPrimaryPos === fPrimaryPos);
         });
-    }
 
-    // 3. ถ้ายังหาไม่ได้อีก เอาใครก็ได้ที่ไม่ใช่คนเดิม
-    if (validDecoys.length === 0) {
-        validDecoys = footballers.filter(f => f.name !== selectedTarget.name);
-    }
+        // 4. ถ้าไม่มีตำแหน่งเดียวกัน หาคนเท้าข้างเดียวกัน
+        if (validDecoys.length === 0) {
+            validDecoys = footballers.filter(f => {
+                if (f.name === selectedTarget.name) return false;
+                const fFoot = f.foot ? f.foot.trim().toLowerCase() : "";
+                return targetFoot && fFoot && (targetFoot === fFoot);
+            });
+        }
 
-    const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
-    gameState.decoyFootballer = selectedDecoy;
+        // 5. ถ้ายังหาไม่ได้ เอาใครก็ได้ที่ไม่ใช่ตัวจริง
+        if (validDecoys.length === 0) {
+            validDecoys = footballers.filter(f => f.name !== selectedTarget.name);
+        }
 
+        const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
         gameState.decoyFootballer = selectedDecoy;
+        lastDecoyName = selectedDecoy.name;
 
         players.forEach(p => {
             if (p.id === gameState.spyId) {
