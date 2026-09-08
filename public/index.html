@@ -42,6 +42,11 @@
         .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .player-list th:last-child, .player-list td:last-child { text-align: right; }
         .score-badge { background: #fa8231; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        
+        /* ปุ่มเตะผู้เล่น */
+        .btn-kick { background: #ff4d4d; color: white; border: none; padding: 3px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; margin-left: 8px; }
+        .btn-kick:hover { background: #ff1a1a; }
+
         .btn-reset-score { background: transparent; color: #aaa; border: 1px solid #555; padding: 4px 8px; font-size: 12px; margin-top: 10px; width: 100%; }
         .btn-reset-score:hover { background: rgba(255,255,255,0.1); color: white; }
     </style>
@@ -67,7 +72,6 @@
         <ol class="order-list" id="order-ol"></ol>
     </div>
 
-    <!-- ส่วนทายคำตอบสำหรับ SPY -->
     <div class="guess-section" id="guess-section">
         <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนา</h3>
         <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะเพื่อชนะเกมทันที:</p>
@@ -165,6 +169,13 @@
         }
     }
 
+    // ฟังก์ชันเตะผู้เล่น
+    function kickPlayer(targetId, playerName) {
+        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการเตะ "${playerName}" ออกจากห้อง?`)) {
+            socket.emit('kickPlayer', targetId);
+        }
+    }
+
     socket.on('newChatMessage', (data) => {
         const chatBox = document.getElementById('chat-box');
         const msgDiv = document.createElement('div');
@@ -180,12 +191,17 @@
         
         const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
         const tbody = document.getElementById('players-tbody');
-        tbody.innerHTML = sortedPlayers.map(p => 
-            `<tr>
-                <td>${p.name}</td>
+        
+        tbody.innerHTML = sortedPlayers.map(p => {
+            // ไม่แสดงปุ่มเตะถ้าเป็นชื่อของตัวเอง
+            const isSelf = p.id === socket.id;
+            const kickBtn = isSelf ? '' : `<button class="btn-kick" onclick="kickPlayer('${p.id}', '${p.name}')">❌ เตะ</button>`;
+            
+            return `<tr>
+                <td>${p.name} ${kickBtn}</td>
                 <td><span class="score-badge">${p.score} pt</span></td>
-            </tr>`
-        ).join('');
+            </tr>`;
+        }).join('');
     });
 
     socket.on('assignRole', (data) => {
@@ -266,6 +282,12 @@
             display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br><br>
             <b>SPY (${result.spyName})</b> ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"`;
         }
+    });
+
+    // รับการแจ้งเตือนเมื่อตนเองโดนเตะ
+    socket.on('kicked', () => {
+        alert('🚫 คุณถูกเตะออกจากห้องแล้ว!');
+        location.reload();
     });
 
     socket.on('errorMsg', (msg) => {
