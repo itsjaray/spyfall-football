@@ -109,7 +109,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ระบบให้ SPY พิมพ์ส่งคำตอบ
     socket.on('spyGuess', (guessedName) => {
         if (socket.id !== spySocketId) return;
 
@@ -134,6 +133,34 @@ io.on('connection', (socket) => {
             isCorrect: isCorrect,
             reason: 'spyGuessed'
         });
+    });
+
+    // ระบบเตะผู้เล่นออก
+    socket.on('kickPlayer', (targetId) => {
+        const targetPlayer = roomPlayers.find(p => p.id === targetId);
+        if (targetPlayer) {
+            // แจ้งเตือนผู้เล่นคนนั้นว่าถูกเตะ
+            io.to(targetId).emit('kicked');
+            
+            // ตัดการเชื่อมต่อ socket
+            const targetSocket = io.sockets.sockets.get(targetId);
+            if (targetSocket) {
+                targetSocket.disconnect();
+            }
+
+            // ลบออกจากรายชื่อห้อง
+            roomPlayers = roomPlayers.filter(p => p.id !== targetId);
+            delete votes[targetId];
+
+            // แจ้งเตือนผู้เล่นคนอื่นในแชต
+            io.emit('newChatMessage', {
+                sender: 'ระบบ',
+                message: `🚫 ${targetPlayer.name} ถูกเตะออกจากห้องแล้ว`
+            });
+
+            // อัปเดตรายชื่อผู้เล่นใหม่
+            io.emit('updatePlayers', roomPlayers);
+        }
     });
 
     socket.on('resetScores', () => {
