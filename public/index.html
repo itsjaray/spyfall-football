@@ -371,7 +371,7 @@ if (messageInput) {
         clearTimeout(typingTimeout);
         typingTimeout = setTimeout(() => {
             socket.emit('stopTyping');
-        }, 1000); // ตั้งเวลา 1 วินาทีให้ซ่อนข้อความเมื่อหยุดพิมพ์
+        }, 10000); // ตั้งเวลา 10 วินาทีให้ซ่อนข้อความเมื่อหยุดพิมพ์
     });
 }
 
