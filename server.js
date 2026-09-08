@@ -112,9 +112,9 @@ function startTimer() {
     }, 1000);
 }
 
-io.on('connection', (socket) => {
+io.on('connection', () => {
     players.push({
-        id: socket.id,
+        id: .id,
         name: `ผู้เล่น ${players.length + 1}`,
         role: null,
         score: 0
@@ -122,22 +122,22 @@ io.on('connection', (socket) => {
 
     io.emit('updatePlayers', players);
 
-    socket.on('setName', (name) => {
-        const player = players.find(p => p.id === socket.id);
+    .on('setName', (name) => {
+        const player = players.find(p => p.id === .id);
         if (player) {
             player.name = name;
             io.emit('updatePlayers', players);
         }
     });
 
-    socket.on('sendChatMessage', (message) => {
-        const player = players.find(p => p.id === socket.id);
+    .on('sendChatMessage', (message) => {
+        const player = players.find(p => p.id === .id);
         const senderName = player ? player.name : 'Unknown';
         io.emit('newChatMessage', { sender: senderName, message: message });
     });
 
     // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
-    socket.on('typing', (data) => {
+    .on('typing', (data) => {
     // ส่งชื่อคนที่กำลังพิมพ์ไปบอกทุกคน ยกเว้นคนที่พิมพ์อยู่เอง
     socket.broadcast.emit('displayTyping', { senderName: data.senderName });
     });
@@ -228,6 +228,8 @@ io.on('connection', (socket) => {
                 io.to(p.id).emit('assignRole', {
                     role: 'PLAYER',
                     name: selectedTarget.name
+                    position: selectedTarget.position, // 👈 เพิ่มบรรทัดนี้
+                    foot: selectedTarget.foot          // 👈 เพิ่มบรรทัดนี้
                 });
             }
         });
