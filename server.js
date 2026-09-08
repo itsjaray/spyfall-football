@@ -23,7 +23,7 @@ let currentSecretPlayer = "";
 let votes = {};
 
 io.on('connection', (socket) => {
-    roomPlayers.push({ id: socket.id, name: `ผู้เล่น #${roomPlayers.length + 1}` });
+    roomPlayers.push({ id: socket.id, name: `ผู้เล่น #${roomPlayers.length + 1}`, score: 0 });
     io.emit('updatePlayers', roomPlayers);
 
     socket.on('setName', (name) => {
@@ -78,13 +78,23 @@ io.on('connection', (socket) => {
         }
     });
 
-    // รับคำตอบทายชื่อนักเตะจาก Spy
     socket.on('spyGuess', (guessedName) => {
         if (socket.id !== spySocketId) return;
 
         const isCorrect = guessedName.trim().toLowerCase() === currentSecretPlayer.toLowerCase();
         const spyPlayer = roomPlayers.find(p => p.id === spySocketId);
 
+        if (isCorrect) {
+            // Spy ชนะ +2 คะแนน
+            if (spyPlayer) spyPlayer.score += 2;
+        } else {
+            // ฝั่งคนชนะ +1 คะแนนทุกคน
+            roomPlayers.forEach(p => {
+                if (p.id !== spySocketId) p.score += 1;
+            });
+        }
+
+        io.emit('updatePlayers', roomPlayers);
         io.emit('finalResult', {
             winner: isCorrect ? 'SPY' : 'PLAYERS',
             spyName: spyPlayer ? spyPlayer.name : 'SPY',
@@ -92,6 +102,11 @@ io.on('connection', (socket) => {
             spyGuess: guessedName,
             isCorrect: isCorrect
         });
+    });
+
+    socket.on('resetScores', () => {
+        roomPlayers.forEach(p => p.score = 0);
+        io.emit('updatePlayers', roomPlayers);
     });
 
     socket.on('disconnect', () => {
@@ -121,7 +136,12 @@ function calculateVoteResult() {
     const isVoteCorrect = mostVotedId === spySocketId;
 
     if (isVoteCorrect) {
-        // โหวตถูก -> ฝั่งคนชนะทันที
+        // โหวตถูก -> ฝั่งคนชนะทุกคนได้ +1 คะแนน
+        roomPlayers.forEach(p => {
+            if (p.id !== spySocketId) p.score += 1;
+        });
+        io.emit('updatePlayers', roomPlayers);
+
         io.emit('finalResult', {
             winner: 'PLAYERS',
             suspectedName: suspectedPlayer ? suspectedPlayer.name : '',
@@ -130,10 +150,8 @@ function calculateVoteResult() {
             reason: 'voteCorrect'
         });
     } else {
-        // โหวตผิด -> ส่งสัญญาณให้ Spy พิมพ์ตอบคำถาม
         io.to(spySocketId).emit('spyMustGuess');
         
-        // แจ้งฝั่งคนว่าจับผิดคน และกำลังรอ Spy พิมพ์ตอบ
         roomPlayers.forEach(p => {
             if (p.id !== spySocketId) {
                 io.to(p.id).emit('waitingForSpyGuess', {
