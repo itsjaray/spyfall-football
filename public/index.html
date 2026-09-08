@@ -43,7 +43,6 @@
         .player-list th:last-child, .player-list td:last-child { text-align: right; }
         .score-badge { background: #fa8231; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
         
-        /* ปุ่มเตะผู้เล่น */
         .btn-kick { background: #ff4d4d; color: white; border: none; padding: 3px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; margin-left: 8px; }
         .btn-kick:hover { background: #ff1a1a; }
 
@@ -57,7 +56,7 @@
     <h1>⚽ Spyfall นักเตะปริศนา</h1>
     
     <div class="input-group">
-        <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" />
+        <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" onkeypress="handleNameKeyPress(event)" />
         <button onclick="setName()">บันทึกชื่อ</button>
     </div>
 
@@ -73,10 +72,10 @@
     </div>
 
     <div class="guess-section" id="guess-section">
-        <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนา</h3>
-        <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะเพื่อชนะเกมทันที:</p>
+        <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
+        <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อชนะเกมทันที:</p>
         <div class="input-group">
-            <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะ..." />
+            <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." onkeypress="handleGuessKeyPress(event)" />
             <button onclick="submitSpyGuess()">ส่งคำตอบ</button>
         </div>
     </div>
@@ -125,6 +124,12 @@
         }
     }
 
+    function handleNameKeyPress(e) {
+        if (e.key === 'Enter') {
+            setName();
+        }
+    }
+
     function sendChat() {
         const input = document.getElementById('chat-input');
         if (input.value.trim()) {
@@ -136,6 +141,12 @@
     function handleKeyPress(e) {
         if (e.key === 'Enter') {
             sendChat();
+        }
+    }
+
+    function handleGuessKeyPress(e) {
+        if (e.key === 'Enter') {
+            submitSpyGuess();
         }
     }
 
@@ -169,7 +180,6 @@
         }
     }
 
-    // ฟังก์ชันเตะผู้เล่น
     function kickPlayer(targetId, playerName) {
         if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการเตะ "${playerName}" ออกจากห้อง?`)) {
             socket.emit('kickPlayer', targetId);
@@ -193,7 +203,6 @@
         const tbody = document.getElementById('players-tbody');
         
         tbody.innerHTML = sortedPlayers.map(p => {
-            // ไม่แสดงปุ่มเตะถ้าเป็นชื่อของตัวเอง
             const isSelf = p.id === socket.id;
             const kickBtn = isSelf ? '' : `<button class="btn-kick" onclick="kickPlayer('${p.id}', '${p.name}')">❌ เตะ</button>`;
             
@@ -210,8 +219,12 @@
         
         if (data.role === 'SPY') {
             display.innerHTML = `
-                <span class='spy'>🕵️ คุณคือ SPY!<br><small style='font-size:14px; color:#ccc;'>(เนียนถามตอบตามน้ำไปก่อน!)</small></span>
-                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้แล้ว! (พิมพ์ทายคำตอบเลย)</button>
+                <span class='spy'>🕵️ คุณคือ SPY!<br>
+                ชื่อหลอกของคุณ: <u style="color:#fff;">${data.decoyName}</u><br>
+                <small style='font-size:13px; color:#ffb8b8;'>(ตำแหน่ง: ${data.position} | ถนัดเท้า: ${data.foot})</small><br>
+                <small style='font-size:12px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                </span>
+                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
             `;
         } else {
             display.innerHTML = `<span class='player'>⚽ นักเตะของคุณคือ:<br>${data.name}</span>`;
@@ -259,7 +272,7 @@
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'block';
-        document.getElementById('role-display').innerHTML = "<span class='spy'>🕵️ เพื่อนโหวตผิดคน!<br>โอกาสสุดท้ายของคุณ พิมพ์ทายชื่อนักเตะปริศนาด้านล่าง</span>";
+        document.getElementById('role-display').innerHTML = "<span class='spy'>🕵️ เพื่อนโหวตผิดคน!<br>โอกาสสุดท้ายของ SPY พิมพ์ทายชื่อนักเตะจริงด้านล่าง</span>";
     });
 
     socket.on('waitingForSpyGuess', (data) => {
@@ -273,18 +286,19 @@
         const display = document.getElementById('role-display');
 
         if (result.winner === 'PLAYERS') {
-            let reasonText = result.reason === 'voteCorrect' ? 'โหวตจับ SPY ถูกตัว!' : `SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งเป็นคำตอบที่ผิด!`;
+            let reasonText = result.reason === 'voteCorrect' ? 'โหวตจับ SPY ถูกตัว!' : `SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งผิด!`;
             display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
             <small style='color:#ff6b81;'>(${reasonText})</small><br><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
-            <small style='color:#ccc;'>นักเตะปริศนาคือ: <b>${result.secretFootballer}</b></small>`;
+            <small style='color:#ccc;'>นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
+            <small style='color:#aaa;'>(นักเตะหลอกของ SPY: ${result.decoyFootballer})</small>`;
         } else {
             display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br><br>
-            <b>SPY (${result.spyName})</b> ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"`;
+            <b>SPY (${result.spyName})</b> ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"<br>
+            <small style='color:#aaa;'>(นักเตะหลอกที่ SPY ได้รับตอนแรกคือ: ${result.decoyFootballer})</small>`;
         }
     });
 
-    // รับการแจ้งเตือนเมื่อตนเองโดนเตะ
     socket.on('kicked', () => {
         alert('🚫 คุณถูกเตะออกจากห้องแล้ว!');
         location.reload();
