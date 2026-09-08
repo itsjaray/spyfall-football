@@ -8,17 +8,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// ตัวแปรสำหรับจำประวัติรอบที่แล้วและสรุปผลเกม
-let lastSecretName = null;
-let lastDecoyName = null;
-
-let lastGameSummary = {
-    secret: null,
-    secretPos: null,
-    decoy: null,
-    decoyPos: null
-};
-
 app.use(express.static('public'));
 
 // โหลดฐานข้อมูลนักเตะจากไฟล์ players.json อัตโนมัติ
@@ -191,12 +180,6 @@ io.on('connection', (socket) => {
         gameState.spyId = randomSpy.id;
     }
 
-        // บันทึกข้อมูลสรุปเกมรอบนี้เก็บไว้
-    lastGameSummary.secret = selectedTarget.name;
-    lastGameSummary.secretPos = selectedTarget.position;
-    lastGameSummary.decoy = selectedDecoy.name;
-    lastGameSummary.decoyPos = selectedDecoy.position;
-        
         players.forEach(p => {
             if (p.id === gameState.spyId) {
                 p.role = 'SPY';
@@ -322,21 +305,6 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
         io.emit('updatePlayers', players);
-    });
-
-    // รับคำสั่งเมื่อผู้เล่นกดขอผลสรุปเกมรอบที่แล้ว
-    socket.on('getLastGameResult', () => {
-        if (!lastGameSummary.secret) {
-            socket.emit('errorMsg', 'ยังไม่มีประวัติการเล่นในรอบนี้');
-            return;
-        }
-        
-        socket.emit('lastGameResultResponse', {
-            secret: lastGameSummary.secret,
-            secretPos: lastGameSummary.secretPos,
-            decoy: lastGameSummary.decoy,
-            decoyPos: lastGameSummary.decoyPos
-        });
     });
 });
 
