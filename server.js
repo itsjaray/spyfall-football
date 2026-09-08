@@ -259,7 +259,9 @@ io.on('connection', (socket) => {
         roundCount: roundCount
     });
 
-startTimer();
+    setTimeout(() => {
+        startTimer();
+    }, 3000);
         
     });
 
