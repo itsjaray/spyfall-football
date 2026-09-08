@@ -122,6 +122,14 @@ io.on('connection', (socket) => {
 
     io.emit('updatePlayers', players);
 
+    socket.on('disconnect', () => {
+        const index = players.findIndex(p => p.id === socket.id);
+        if (index !== -1) {
+            players.splice(index, 1);
+            io.emit('updatePlayers', players);
+        }
+    });
+    
     socket.on('setName', (name) => {
     const player = players.find(p => p.id === socket.id);
     if (player) {
