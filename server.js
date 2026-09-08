@@ -227,7 +227,7 @@ io.on('connection', () => {
                 p.role = 'PLAYER';
                 io.to(p.id).emit('assignRole', {
                     role: 'PLAYER',
-                    name: selectedTarget.name,
+                    name: selectedTarget.name
                     position: selectedTarget.position,
                     foot: selectedTarget.foot          
                 });
