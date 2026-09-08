@@ -130,14 +130,14 @@ io.on('connection', () => {
     }
 });
 
-    .on('sendChatMessage', (message) => {
+    socket.on('sendChatMessage', (message) => {
         const player = players.find(p => p.id === socket.id);
         const senderName = player ? player.name : 'Unknown';
         io.emit('newChatMessage', { sender: senderName, message: message });
     });
 
     // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
-    .on('typing', (data) => {
+    socket.on('typing', (data) => {
     // ส่งชื่อคนที่กำลังพิมพ์ไปบอกทุกคน ยกเว้นคนที่พิมพ์อยู่เอง
     socket.broadcast.emit('displayTyping', { senderName: data.senderName });
     });
