@@ -214,25 +214,25 @@ io.on('connection', () => {
 
        
         
-        players.forEach(p => {
-            if (p.id === gameState.spyId) {
-                p.role = 'SPY';
-                io.to(p.id).emit('assignRole', {
-                    role: 'SPY',
-                    decoyName: selectedDecoy.name,
-                    position: selectedDecoy.position,
-                    foot: selectedDecoy.foot
-                });
-            } else {
-                p.role = 'PLAYER';
-                io.to(p.id).emit('assignRole', {
-                    role: 'PLAYER',
-                    name: selectedTarget.name,
-                    position: selectedTarget.position,
-                    foot: selectedTarget.foot          
-                });
-            }
+       players.forEach(p => {
+    if (p.id === gameState.spyId) {
+        p.role = 'SPY';
+        io.to(p.id).emit('assignRole', {
+            role: 'SPY',
+            decoyName: selectedDecoy.name,
+            position: selectedDecoy.position,
+            foot: selectedDecoy.foot
         });
+    } else {
+        p.role = 'PLAYER';
+        io.to(p.id).emit('assignRole', {
+            role: 'PLAYER',
+            name: selectedTarget.name,
+            position: selectedTarget.position,
+            foot: selectedTarget.foot
+        });
+    }
+});
 
         const playOrder = shuffleArray(players);
 
