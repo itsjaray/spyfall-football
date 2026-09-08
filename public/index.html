@@ -92,7 +92,7 @@
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
     <!-- กล่องแสดงสรุปผลนักเตะตาที่แล้ว -->
-<div id="lastGameResultBox" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 14px;">
+<div id="lastGameResultBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 14px;">
     <b>📊 ผลการเล่นตาที่แล้ว:</b>
     <div id="lastSecretText" style="color: #4ecca3; margin-top: 4px;">- ยังไม่มีประวัติการเล่น -</div>
     <div id="lastDecoyText" style="color: #ff6b6b; margin-top: 2px;"></div>
@@ -242,13 +242,15 @@
 
     socket.on('gameStarted', (data) => {
 
-// แสดงผลสรุปเกมตาที่แล้ว
+// แสดงหรือซ่อนผลสรุปเกมตาที่แล้ว
+        const lastGameBox = document.getElementById('lastGameResultBox');
+        
         if (data.lastGame && data.lastGame.secret) {
+            lastGameBox.style.display = 'block'; // แสดงกล่องเฉพาะเมื่อมีข้อมูลรอบที่แล้ว
             document.getElementById('lastSecretText').innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos})`;
             document.getElementById('lastDecoyText').innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy} (${data.lastGame.decoyPos})`;
         } else {
-            document.getElementById('lastSecretText').innerHTML = `- ยังไม่มีประวัติการเล่น -`;
-            document.getElementById('lastDecoyText').innerHTML = ``;
+            if (lastGameBox) lastGameBox.style.display = 'none'; // ซ่อนกล่องในรอบแรกสุด
         }
 
         
