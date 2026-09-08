@@ -19,6 +19,8 @@ let lastGameSummary = {
     decoyPos: null
 };
 
+let roundCount = 0; // ตัวแปรนับรอบเกม
+
 app.use(express.static('public'));
 
 // โหลดฐานข้อมูลนักเตะจากไฟล์ players.json อัตโนมัติ
@@ -141,6 +143,17 @@ io.on('connection', (socket) => {
             return;
         }
 
+        roundCount++; // 1. เพิ่มตัวนับรอบทุกครั้งที่กดเริ่มเกม
+
+    // 2. ถ้าไม่ใช่รอบแรก ให้เซฟข้อมูลของตาที่เพิ่งจบไปเก็บไว้ก่อน
+    if (gameState.secretFootballer && gameState.decoyFootballer) {
+        lastGameSummary.secret = gameState.secretFootballer.name;
+        lastGameSummary.secretPos = gameState.secretFootballer.position;
+        lastGameSummary.decoy = gameState.decoyFootballer.name;
+        lastGameSummary.decoyPos = gameState.decoyFootballer.position;
+    }
+
+
         gameState.isStarted = true;
         gameState.votes = {};
         gameState.votedPlayers.clear();
@@ -191,11 +204,7 @@ io.on('connection', (socket) => {
         gameState.spyId = randomSpy.id;
     }
 
-        // บันทึกข้อมูลสรุปเกมรอบนี้เก็บไว้
-    lastGameSummary.secret = selectedTarget.name;
-    lastGameSummary.secretPos = selectedTarget.position;
-    lastGameSummary.decoy = selectedDecoy.name;
-    lastGameSummary.decoyPos = selectedDecoy.position;
+       
         
         players.forEach(p => {
             if (p.id === gameState.spyId) {
@@ -221,6 +230,7 @@ io.on('connection', (socket) => {
 io.emit('gameStarted', { 
     playOrder: playOrder,
     lastGame: lastGameSummary 
+    roundCount: roundCount // เพิ่มบรรทัดนี้เข้าไปครับ
 });
 
 startTimer();
