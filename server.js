@@ -136,6 +136,16 @@ io.on('connection', (socket) => {
         io.emit('newChatMessage', { sender: senderName, message: message });
     });
 
+    // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
+    socket.on('typing', (data) => {
+    // ส่งชื่อคนที่กำลังพิมพ์ไปบอกทุกคน ยกเว้นคนที่พิมพ์อยู่เอง
+    socket.broadcast.emit('displayTyping', { senderName: data.senderName });
+    });
+
+    socket.on('stopTyping', () => {
+    socket.broadcast.emit('hideTyping');
+    });
+
     socket.on('startGame', () => {
         if (players.length < 3) {
             socket.emit('errorMsg', 'ต้องมีผู้เล่นอย่างน้อย 3 คนขึ้นไปถึงจะเริ่มเกมได้');
