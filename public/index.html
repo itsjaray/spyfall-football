@@ -101,7 +101,7 @@
             </div>
         </form>
     </div>
-
+    
     <div class="player-list">
         <strong>🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
         <table>
@@ -115,6 +115,16 @@
         </table>
         <button class="btn-reset-score" onclick="resetScores()">🔄 รีเซ็ตคะแนนทั้งหมด</button>
     </div>
+</div>
+
+    <!-- ปุ่มสำหรับกดดูผลเกมตาที่แล้ว -->
+<button id="btnLastGame" onclick="requestLastGameResult()" style="display:none;">ดูผลการเล่นตาที่แล้ว</button>
+
+<!-- กล่องสำหรับแสดงชื่อนักเตะตาที่แล้ว -->
+<div id="lastGameResultBox" style="display:none; margin-top: 10px; padding: 10px; background: #222; color: #fff; border-radius: 5px;">
+    <h3>📊 สรุปผลเกมตาที่แล้ว</h3>
+    <p id="lastSecretText"></p>
+    <p id="lastDecoyText"></p>
 </div>
 
 <script>
