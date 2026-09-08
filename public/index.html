@@ -55,10 +55,13 @@
 <div class="container">
     <h1>⚽ Spyfall นักเตะปริศนา</h1>
     
-    <div class="input-group">
-        <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" onkeypress="handleNameKeyPress(event)" />
-        <button onclick="setName()">บันทึกชื่อ</button>
-    </div>
+    <!-- ครอบด้วย FORM เพื่อให้รองรับการกด Enter ทั้งคอมและมือถือ -->
+    <form id="name-form" onsubmit="handleNameSubmit(event)">
+        <div class="input-group">
+            <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" required />
+            <button type="submit">บันทึกชื่อ</button>
+        </div>
+    </form>
 
     <div class="timer-box" id="timer-display">⏱️ 03:00</div>
 
@@ -74,10 +77,12 @@
     <div class="guess-section" id="guess-section">
         <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
         <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อชนะเกมทันที:</p>
-        <div class="input-group">
-            <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." onkeypress="handleGuessKeyPress(event)" />
-            <button onclick="submitSpyGuess()">ส่งคำตอบ</button>
-        </div>
+        <form onsubmit="handleGuessSubmit(event)">
+            <div class="input-group">
+                <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
+                <button type="submit">ส่งคำตอบ</button>
+            </div>
+        </form>
     </div>
 
     <div class="vote-section" id="vote-section">
@@ -90,10 +95,12 @@
     <div class="chat-section">
         <strong>💬 ช่องแชตสดพูดคุย:</strong>
         <div class="chat-box" id="chat-box"></div>
-        <div class="input-group" style="margin-bottom:0;">
-            <input type="text" id="chat-input" placeholder="พิมพ์ข้อความ..." onkeypress="handleKeyPress(event)" />
-            <button onclick="sendChat()">ส่ง</button>
-        </div>
+        <form onsubmit="handleChatSubmit(event)">
+            <div class="input-group" style="margin-bottom:0;">
+                <input type="text" id="chat-input" placeholder="พิมพ์ข้อความ..." required />
+                <button type="submit">ส่ง</button>
+            </div>
+        </form>
     </div>
 
     <div class="player-list">
@@ -116,37 +123,33 @@
     let currentPlayers = [];
     let hasVoted = false;
 
-    function setName() {
-        const name = document.getElementById('username').value;
-        if (name) {
-            socket.emit('setName', name);
+    // จัดการเมื่อกด Enter หรือคลิกปุ่มบันทึกชื่อ
+    function handleNameSubmit(e) {
+        e.preventDefault(); // ป้องกันไม่ให้เว็บรีเฟรชหน้า
+        const nameInput = document.getElementById('username');
+        if (nameInput.value.trim() !== '') {
+            socket.emit('setName', nameInput.value.trim());
             alert('ตั้งชื่อเรียบร้อยแล้ว!');
         }
     }
 
-    function handleNameKeyPress(e) {
-        if (e.key === 'Enter') {
-            setName();
-        }
-    }
-
-    function sendChat() {
+    // จัดการส่งข้อความแชต
+    function handleChatSubmit(e) {
+        e.preventDefault();
         const input = document.getElementById('chat-input');
-        if (input.value.trim()) {
-            socket.emit('sendChatMessage', input.value);
+        if (input.value.trim() !== '') {
+            socket.emit('sendChatMessage', input.value.trim());
             input.value = '';
         }
     }
 
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') {
-            sendChat();
-        }
-    }
-
-    function handleGuessKeyPress(e) {
-        if (e.key === 'Enter') {
-            submitSpyGuess();
+    // จัดการทายชื่อนักเตะของ SPY
+    function handleGuessSubmit(e) {
+        e.preventDefault();
+        const guessInput = document.getElementById('spy-guess-input');
+        if (guessInput.value.trim() !== '') {
+            socket.emit('spyGuess', guessInput.value.trim());
+            guessInput.value = '';
         }
     }
 
@@ -170,14 +173,6 @@
     function toggleGuessBox() {
         const guessSection = document.getElementById('guess-section');
         guessSection.style.display = guessSection.style.display === 'none' || guessSection.style.display === '' ? 'block' : 'none';
-    }
-
-    function submitSpyGuess() {
-        const guess = document.getElementById('spy-guess-input').value;
-        if (guess.trim()) {
-            socket.emit('spyGuess', guess);
-            document.getElementById('spy-guess-input').value = '';
-        }
     }
 
     function kickPlayer(targetId, playerName) {
