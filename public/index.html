@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spyfall - นักเตะปริศนา Online</title>
+    <!-- โหลดฟอนต์ Prompt (โครงสร้าง Geometric ใกล้เคียง Radikal และรองรับภาษาไทย) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
@@ -22,7 +27,8 @@
         }
 
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            /* เปลี่ยนมาใช้ฟอนต์สไตล์ Geometric Sans (Prompt) เป็นหลัก */
+            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--bg-dark);
             background-image: linear-gradient(135deg, var(--pl-purple) 0%, var(--bg-dark) 100%);
             color: var(--text-main); 
@@ -94,6 +100,7 @@
             font-size: 15px; 
             text-align: center; 
             transition: all 0.2s;
+            font-family: 'Prompt', sans-serif;
         }
         input[type="text"]:focus {
             border-color: var(--pl-green);
@@ -112,6 +119,7 @@
             cursor: pointer; 
             transition: all 0.2s; 
             box-shadow: 0 4px 12px rgba(0, 255, 135, 0.2);
+            font-family: 'Prompt', sans-serif;
         }
         button:hover { 
             opacity: 0.9; 
@@ -174,10 +182,10 @@
         .player-list th:last-child, .player-list td:last-child { text-align: right; }
         .score-badge { background: var(--pl-green); color: var(--pl-purple); padding: 3px 10px; border-radius: 12px; font-weight: 800; font-size: 12px; }
         
-        .btn-kick { background: var(--pl-pink); color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 6px; cursor: pointer; margin-left: 8px; font-weight: bold; box-shadow: none; }
+        .btn-kick { background: var(--pl-pink); color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 6px; cursor: pointer; margin-left: 8px; font-weight: bold; box-shadow: none; font-family: 'Prompt', sans-serif; }
         .btn-kick:hover { background: #e01b70; color: white; }
 
-        .btn-reset-score { background: transparent; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.2); padding: 8px; font-size: 12px; margin-top: 12px; width: 100%; border-radius: 8px; box-shadow: none; }
+        .btn-reset-score { background: transparent; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.2); padding: 8px; font-size: 12px; margin-top: 12px; width: 100%; border-radius: 8px; box-shadow: none; font-family: 'Prompt', sans-serif; }
         .btn-reset-score:hover { background: rgba(255,255,255,0.05); color: white; }
 
         /* แถบเมนูด้านล่างสไตล์แอปพรีเมียร์ลีก */
@@ -535,7 +543,7 @@
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => {
                 socket.emit('stopTyping');
-            }, 1000); // 1 วินาทีตามที่ตกลงกัน
+            }, 1000);
         });
     }
 
