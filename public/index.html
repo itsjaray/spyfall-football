@@ -165,7 +165,6 @@
         .btn-reset-score { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 6px; font-size: 11px; margin-top: 10px; width: 100%; border-radius: 8px; }
         .btn-reset-score:hover { background: rgba(255,255,255,0.08); color: white; }
 
-        /* สไตล์สำหรับกล่องนับถอยหลัง */
         .countdown-overlay {
             font-size: 48px;
             font-weight: 700;
@@ -264,7 +263,7 @@
     const socket = io();
     let currentPlayers = [];
     let hasVoted = false;
-    let cachedGameData = null; // เก็บข้อมูลเกมชั่วคราวระหว่างนับถอยหลัง
+    let cachedGameData = null; 
 
     function handleNameSubmit(e) {
         e.preventDefault();
@@ -349,7 +348,6 @@
     });
 
     socket.on('assignRole', (data) => {
-        // เก็บข้อมูลบทบาทไว้แสดงผลหลังนับถอยหลังเสร็จ
         window.cachedRoleData = data;
     });
 
@@ -357,12 +355,10 @@
         cachedGameData = data;
         const display = document.getElementById('role-display');
         
-        // ซ่อนส่วนอื่นๆ ระหว่างนับถอยหลัง
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'none';
         document.getElementById('order-section').style.display = 'none';
 
-        // เริ่มนับถอยหลัง 3 2 1
         let count = 3;
         display.innerHTML = `<div class="countdown-overlay">⚽ เตรียมตัวสุ่ม... ${count}</div>`;
 
@@ -374,7 +370,6 @@
                 display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
             } else {
                 clearInterval(countdownInterval);
-                // เมื่อนับครบ แสดงผลเกมจริงตามปกติ
                 applyGameStartedState(cachedGameData);
             }
         }, 1000);
@@ -412,7 +407,6 @@
             `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
         ).join('');
 
-        // แสดงบทบาทของผู้เล่นจริงหลังจากนับถอยหลังจบ
         const display = document.getElementById('role-display');
         const dataRole = window.cachedRoleData;
         if (dataRole) {
@@ -426,7 +420,12 @@
                     <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
                 `;
             } else {
-                display.innerHTML = `<span class='player'>⚽ นักเตะของคุณคือ:<br>${dataRole.name}</span>`;
+                // อัปเดตฝั่งคนธรรมดาให้แสดง ตำแหน่ง และ ถนัดเท้า ด้วย
+                display.innerHTML = `
+                    <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
+                    <small style='font-size:12px; color:#b8f2ff;'>(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot})</small>
+                    </span>
+                `;
             }
         }
     }
