@@ -98,7 +98,7 @@
   {"id": 97, "name": "Kobbie Mainoo", "aliases": ["Mainoo"], "position": "CM / DM", "foot": "Right"},
   {"id": 98, "name": "Rasmus Hojlund", "aliases": ["Hojlund"], "position": "ST", "foot": "Left"},
   {"id": 99, "name": "Marcus Rashford", "aliases": ["Rashford"], "position": "LW / ST", "foot": "Right"},
-  {"id": 100, "name": "Andre Onana", "aliases": ["Onana"], "position": "GK", "foot": "Right"}
+  {"id": 100, "name": "Andre Onana", "aliases": ["Onana"], "position": "GK", "foot": "Right"},
   {"id": 101, "name": "Cole Palmer", "aliases": ["Palmer"], "position": "AM / RW", "foot": "Left"},
   {"id": 102, "name": "Bukayo Saka", "aliases": [], "position": "RW", "foot": "Left"},
   {"id": 103, "name": "Ollie Watkins", "aliases": ["Watkins"], "position": "ST", "foot": "Right"},
