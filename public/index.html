@@ -241,6 +241,17 @@
     });
 
     socket.on('gameStarted', (data) => {
+
+// แสดงผลสรุปเกมตาที่แล้ว
+        if (data.lastGame && data.lastGame.secret) {
+            document.getElementById('lastSecretText').innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos})`;
+            document.getElementById('lastDecoyText').innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy} (${data.lastGame.decoyPos})`;
+        } else {
+            document.getElementById('lastSecretText').innerHTML = `- ยังไม่มีประวัติการเล่น -`;
+            document.getElementById('lastDecoyText').innerHTML = ``;
+        }
+
+        
         hasVoted = false;
         document.getElementById('vote-section').style.display = 'block';
         document.getElementById('guess-section').style.display = 'none';
