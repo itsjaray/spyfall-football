@@ -34,6 +34,17 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ระบบรับ-ส่งข้อความแชต
+    socket.on('sendChatMessage', (msg) => {
+        const player = roomPlayers.find(p => p.id === socket.id);
+        if (player && msg.trim() !== '') {
+            io.emit('newChatMessage', {
+                sender: player.name,
+                message: msg.trim()
+            });
+        }
+    });
+
     socket.on('startGame', () => {
         if (roomPlayers.length < 3) {
             socket.emit('errorMsg', 'ต้องมีผู้เล่นอย่างน้อย 3 คนขึ้นไปถึงจะเริ่มได้!');
@@ -85,10 +96,8 @@ io.on('connection', (socket) => {
         const spyPlayer = roomPlayers.find(p => p.id === spySocketId);
 
         if (isCorrect) {
-            // Spy ชนะ +2 คะแนน
             if (spyPlayer) spyPlayer.score += 2;
         } else {
-            // ฝั่งคนชนะ +1 คะแนนทุกคน
             roomPlayers.forEach(p => {
                 if (p.id !== spySocketId) p.score += 1;
             });
@@ -136,7 +145,6 @@ function calculateVoteResult() {
     const isVoteCorrect = mostVotedId === spySocketId;
 
     if (isVoteCorrect) {
-        // โหวตถูก -> ฝั่งคนชนะทุกคนได้ +1 คะแนน
         roomPlayers.forEach(p => {
             if (p.id !== spySocketId) p.score += 1;
         });
