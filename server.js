@@ -122,7 +122,7 @@ io.on('connection', (socket) => {
 
     io.emit('updatePlayers', players);
 
-    socket.on('setname', (name) => {
+    socket.on('setName', (name) => {
     const player = players.find(p => p.id === socket.id);
     if (player) {
         player.name = name;
