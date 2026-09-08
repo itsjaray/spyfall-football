@@ -91,6 +91,13 @@
 
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
+    <!-- กล่องแสดงสรุปผลนักเตะตาที่แล้ว -->
+<div id="lastGameResultBox" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 14px;">
+    <b>📊 ผลการเล่นตาที่แล้ว:</b>
+    <div id="lastSecretText" style="color: #4ecca3; margin-top: 4px;">- ยังไม่มีประวัติการเล่น -</div>
+    <div id="lastDecoyText" style="color: #ff6b6b; margin-top: 2px;"></div>
+</div>
+
     <div class="chat-section">
         <strong>💬 ช่องแชตสดพูดคุย:</strong>
         <div class="chat-box" id="chat-box"></div>
@@ -342,6 +349,22 @@ socket.on('gameOver', () => {
 socket.on('gameStarted', () => {
     document.getElementById('btnLastGame').style.display = 'none';
     document.getElementById('lastGameResultBox').style.display = 'none'; // ซ่อนกล่องผลลัพธ์เก่าตอนเริ่มเกมใหม่
+});
+
+    // ทุกครั้งที่กดปุ่มเริ่มเกม/สุ่มรอบใหม่ ให้ส่งคำสั่งไปขอผลตาที่แล้วมาโชว์ด้วย
+// (หรือจะผูกไว้กับฟังก์ชันคลิกปุ่มเริ่มเกมของคุณก็ได้ครับ)
+function onStartGameClick() {
+    socket.emit('startGame'); // คำสั่งเริ่มเกมเดิมของคุณ
+    socket.emit('getLastGameResult'); // ขอข้อมูลตาที่แล้วมาแสดง
+}
+
+// รับข้อมูลผลสรุปแล้วเอามาใส่ในกล่องข้อความทันที
+socket.on('lastGameResultResponse', (data) => {
+    const secretText = document.getElementById('lastSecretText');
+    const decoyText = document.getElementById('lastDecoyText');
+
+    secretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.secret} (${data.secretPos})`;
+    decoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.decoy} (${data.decoyPos})`;
 });
 </script>
 
