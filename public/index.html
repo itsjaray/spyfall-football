@@ -40,7 +40,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* หัวข้อสไตล์ Premier League Hub */
         h1 { 
             background: linear-gradient(90deg, var(--pl-pink), var(--pl-green));
             -webkit-background-clip: text;
@@ -166,6 +165,18 @@
         .btn-reset-score { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 6px; font-size: 11px; margin-top: 10px; width: 100%; border-radius: 8px; }
         .btn-reset-score:hover { background: rgba(255,255,255,0.08); color: white; }
 
+        /* สไตล์สำหรับกล่องนับถอยหลัง */
+        .countdown-overlay {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--pl-yellow);
+            animation: pulseCount 0.8s infinite alternate;
+        }
+        @keyframes pulseCount {
+            from { transform: scale(1); text-shadow: 0 0 10px rgba(231,255,0,0.4); }
+            to { transform: scale(1.1); text-shadow: 0 0 20px rgba(231,255,0,0.8); }
+        }
+
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -174,7 +185,7 @@
 <body>
 
 <div class="container">
-    <h1>SPYFALL FOOTBALL <br><b>MADE BY JARAY</b></h1>
+    <h1>PREMIER LEAGUE <br><b>SPYFALL FPL EDITION</b></h1>
     
     <form id="name-form" onsubmit="handleNameSubmit(event)">
         <div class="input-group">
@@ -253,6 +264,7 @@
     const socket = io();
     let currentPlayers = [];
     let hasVoted = false;
+    let cachedGameData = null; // เก็บข้อมูลเกมชั่วคราวระหว่างนับถอยหลัง
 
     function handleNameSubmit(e) {
         e.preventDefault();
@@ -337,24 +349,38 @@
     });
 
     socket.on('assignRole', (data) => {
-        const display = document.getElementById('role-display');
-        document.getElementById('guess-section').style.display = 'none';
-        
-        if (data.role === 'SPY') {
-            display.innerHTML = `
-                <span class='spy'>🕵️ คุณคือ SPY!<br>
-                ชื่อหลอกของคุณ: <u style="color:#fff;">${data.decoyName}</u><br>
-                <small style='font-size:12px; color:#ffb8b8;'>(ตำแหน่ง: ${data.position} | ถนัดเท้า: ${data.foot})</small><br>
-                <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                </span>
-                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-            `;
-        } else {
-            display.innerHTML = `<span class='player'>⚽ นักเตะของคุณคือ:<br>${data.name}</span>`;
-        }
+        // เก็บข้อมูลบทบาทไว้แสดงผลหลังนับถอยหลังเสร็จ
+        window.cachedRoleData = data;
     });
 
     socket.on('gameStarted', (data) => {
+        cachedGameData = data;
+        const display = document.getElementById('role-display');
+        
+        // ซ่อนส่วนอื่นๆ ระหว่างนับถอยหลัง
+        document.getElementById('vote-section').style.display = 'none';
+        document.getElementById('guess-section').style.display = 'none';
+        document.getElementById('order-section').style.display = 'none';
+
+        // เริ่มนับถอยหลัง 3 2 1
+        let count = 3;
+        display.innerHTML = `<div class="countdown-overlay">⚽ เตรียมตัวสุ่ม... ${count}</div>`;
+
+        const countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                display.innerHTML = `<div class="countdown-overlay">⚽ เป่านกหวีดใน... ${count}</div>`;
+            } else if (count === 0) {
+                display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
+            } else {
+                clearInterval(countdownInterval);
+                // เมื่อนับครบ แสดงผลเกมจริงตามปกติ
+                applyGameStartedState(cachedGameData);
+            }
+        }, 1000);
+    });
+
+    function applyGameStartedState(data) {
         const lastGameBox = document.getElementById('lastGameResultBox');
         
         if (data.lastGame && data.lastGame.secret) {
@@ -385,7 +411,25 @@
         voteBtnsContainer.innerHTML = currentPlayers.map(p => 
             `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
         ).join('');
-    });
+
+        // แสดงบทบาทของผู้เล่นจริงหลังจากนับถอยหลังจบ
+        const display = document.getElementById('role-display');
+        const dataRole = window.cachedRoleData;
+        if (dataRole) {
+            if (dataRole.role === 'SPY') {
+                display.innerHTML = `
+                    <span class='spy'>🕵️ คุณคือ SPY!<br>
+                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
+                    <small style='font-size:12px; color:#ffb8b8;'>(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot})</small><br>
+                    <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                    </span>
+                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
+                `;
+            } else {
+                display.innerHTML = `<span class='player'>⚽ นักเตะของคุณคือ:<br>${dataRole.name}</span>`;
+            }
+        }
+    }
 
     socket.on('voteUpdated', (votedCount, total) => {
         document.getElementById('vote-count').innerText = votedCount;
@@ -444,21 +488,6 @@
 
     socket.on('errorMsg', (msg) => {
         alert(msg);
-    });
-
-    function onStartGameClick() {
-        socket.emit('startGame');
-        socket.emit('getLastGameResult');
-    }
-
-    socket.on('lastGameResultResponse', (data) => {
-        const secretText = document.getElementById('lastSecretText');
-        const decoyText = document.getElementById('lastDecoyText');
-
-        if(secretText && decoyText) {
-            secretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.secret} (${data.secretPos})`;
-            decoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.decoy} (${data.decoyPos})`;
-        }
     });
 
     const messageInput = document.getElementById('chat-input');
