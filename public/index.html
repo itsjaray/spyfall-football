@@ -362,12 +362,16 @@ let typingTimeout = null;
 
 if (messageInput) {
     messageInput.addEventListener('input', () => {
-        socket.emit('typing', { senderName: myName || 'ผู้เล่น' });
+        // ดึงชื่อจากช่อง input ที่มี id="username" มาใช้ ถ้ายังไม่กรอกให้ใช้คำว่า 'ผู้เล่น'
+        const nameInput = document.getElementById('username');
+        const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
+
+        socket.emit('typing', { senderName: currentName });
 
         clearTimeout(typingTimeout);
         typingTimeout = setTimeout(() => {
             socket.emit('stopTyping');
-        }, 1000); // ถ้าหยุดพิมพ์ 1 วินาที จะซ่อนข้อความ
+        }, 1000); // ตั้งเวลา 1 วินาทีให้ซ่อนข้อความเมื่อหยุดพิมพ์
     });
 }
 
