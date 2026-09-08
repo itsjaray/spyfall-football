@@ -20,7 +20,7 @@ let timerInterval = null;
 let timeLeft = 180;
 let spySocketId = null;
 let currentSecretPlayer = "";
-let votes = {}; // เก็บข้อมูลการโหวต { voterId: targetId }
+let votes = {};
 
 io.on('connection', (socket) => {
     roomPlayers.push({ id: socket.id, name: `ผู้เล่น #${roomPlayers.length + 1}` });
@@ -42,7 +42,7 @@ io.on('connection', (socket) => {
 
         clearInterval(timerInterval);
         timeLeft = 180;
-        votes = {}; // รีเซ็ตผลโหวต
+        votes = {};
 
         currentSecretPlayer = playersList[Math.floor(Math.random() * playersList.length)];
         const spyIndex = Math.floor(Math.random() * roomPlayers.length);
@@ -69,17 +69,29 @@ io.on('connection', (socket) => {
         }, 1000);
     });
 
-    // ระบบรับผลโหวต
     socket.on('castVote', (targetId) => {
         votes[socket.id] = targetId;
-        
-        // ส่งสถานะบอกทุกคนว่ามีคนโหวตเพิ่มแล้ว
         io.emit('voteUpdated', Object.keys(votes).length, roomPlayers.length);
 
-        // ถ้าทุกคนโหวตครบแล้ว ให้คำนวณผลลัพธ์
         if (Object.keys(votes).length === roomPlayers.length) {
             calculateVoteResult();
         }
+    });
+
+    // รับคำตอบทายชื่อนักเตะจาก Spy
+    socket.on('spyGuess', (guessedName) => {
+        if (socket.id !== spySocketId) return;
+
+        const isCorrect = guessedName.trim().toLowerCase() === currentSecretPlayer.toLowerCase();
+        const spyPlayer = roomPlayers.find(p => p.id === spySocketId);
+
+        io.emit('finalResult', {
+            winner: isCorrect ? 'SPY' : 'PLAYERS',
+            spyName: spyPlayer ? spyPlayer.name : 'SPY',
+            secretFootballer: currentSecretPlayer,
+            spyGuess: guessedName,
+            isCorrect: isCorrect
+        });
     });
 
     socket.on('disconnect', () => {
@@ -95,7 +107,6 @@ function calculateVoteResult() {
         voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
     });
 
-    // หาคนที่ได้คะแนนโหวตมากที่สุด
     let maxVotes = 0;
     let mostVotedId = null;
     for (const [targetId, count] of Object.entries(voteCounts)) {
@@ -107,15 +118,30 @@ function calculateVoteResult() {
 
     const suspectedPlayer = roomPlayers.find(p => p.id === mostVotedId);
     const spyPlayer = roomPlayers.find(p => p.id === spySocketId);
+    const isVoteCorrect = mostVotedId === spySocketId;
 
-    const isCorrect = mostVotedId === spySocketId;
-
-    io.emit('gameResult', {
-        suspectedName: suspectedPlayer ? suspectedPlayer.name : "ไม่มีใคร",
-        spyName: spyPlayer ? spyPlayer.name : "ไม่ทราบ",
-        secretFootballer: currentSecretPlayer,
-        isCorrect: isCorrect
-    });
+    if (isVoteCorrect) {
+        // โหวตถูก -> ฝั่งคนชนะทันที
+        io.emit('finalResult', {
+            winner: 'PLAYERS',
+            suspectedName: suspectedPlayer ? suspectedPlayer.name : '',
+            spyName: spyPlayer ? spyPlayer.name : '',
+            secretFootballer: currentSecretPlayer,
+            reason: 'voteCorrect'
+        });
+    } else {
+        // โหวตผิด -> ส่งสัญญาณให้ Spy พิมพ์ตอบคำถาม
+        io.to(spySocketId).emit('spyMustGuess');
+        
+        // แจ้งฝั่งคนว่าจับผิดคน และกำลังรอ Spy พิมพ์ตอบ
+        roomPlayers.forEach(p => {
+            if (p.id !== spySocketId) {
+                io.to(p.id).emit('waitingForSpyGuess', {
+                    suspectedName: suspectedPlayer ? suspectedPlayer.name : ''
+                });
+            }
+        });
+    }
 }
 
 const PORT = process.env.PORT || 3000;
