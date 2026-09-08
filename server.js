@@ -8,9 +8,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// ตัวแปรสำหรับจำประวัติรอบที่แล้วและสรุปผลเกม
-let lastSecretName = null;
-let lastDecoyName = null;
+// ตัวแปรสำหรับเก็บประวัติรอบที่แล้วและสรุปเกม
+let previousRoundSecret = null;
+let previousRoundDecoy = null;
+let roundCount = 0; // ตัวแปรนับรอบเกม
 
 let lastGameSummary = {
     secret: null,
@@ -18,8 +19,6 @@ let lastGameSummary = {
     decoy: null,
     decoyPos: null
 };
-
-let roundCount = 0; // ตัวแปรนับรอบเกม
 
 app.use(express.static('public'));
 
@@ -143,20 +142,19 @@ io.on('connection', (socket) => {
             return;
         }
 
-        roundCount++; // 1. เพิ่มตัวนับรอบทุกครั้งที่กดเริ่มเกม
-
-    // 2. ถ้าไม่ใช่รอบแรก ให้เซฟข้อมูลของตาที่เพิ่งจบไปเก็บไว้ก่อน
-    if (gameState.secretFootballer && gameState.decoyFootballer) {
-        lastGameSummary.secret = gameState.secretFootballer.name;
-        lastGameSummary.secretPos = gameState.secretFootballer.position;
-        lastGameSummary.decoy = gameState.decoyFootballer.name;
-        lastGameSummary.decoyPos = gameState.decoyFootballer.position;
+        // 1. นำข้อมูลของรอบปัจจุบัน (ก่อนจะสุ่มใหม่) ไปเก็บไว้เป็น "รอบที่แล้ว"
+    if (gameState.secretFootballer && gameState.secretFootballer.name) {
+        previousRoundSecret = gameState.secretFootballer;
+        previousRoundDecoy = gameState.decoyFootballer;
     }
 
+    roundCount++; // นับเพิ่ม 1 รอบ
 
-        gameState.isStarted = true;
-        gameState.votes = {};
-        gameState.votedPlayers.clear();
+    gameState.isStarted = true;
+    gameState.votes = {};
+    gameState.votedPlayers.clear();
+
+        
 
         const selectedTarget = footballers[Math.floor(Math.random() * footballers.length)];
     gameState.secretFootballer = selectedTarget;
@@ -226,12 +224,20 @@ io.on('connection', (socket) => {
 
         const playOrder = shuffleArray(players);
 
-// เพิ่มส่ง lastGame พ่วงไปกับ event นี้ด้วย
-io.emit('gameStarted', { 
-    playOrder: playOrder,
-    lastGame: lastGameSummary 
-    roundCount: roundCount // เพิ่มบรรทัดนี้เข้าไปครับ
-});
+// จัดเตรียมข้อมูลสรุปของรอบที่แล้วจากตัวแปรสำรอง
+    let summaryToSend = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
+    if (previousRoundSecret) {
+        summaryToSend.secret = previousRoundSecret.name;
+        summaryToSend.secretPos = previousRoundSecret.position || "";
+        summaryToSend.decoy = previousRoundDecoy ? previousRoundDecoy.name : "";
+        summaryToSend.decoyPos = previousRoundDecoy ? previousRoundDecoy.position : "";
+    }
+    
+    io.emit('gameStarted', { 
+        playOrder: playOrder,
+        lastGame: summaryToSend,
+        roundCount: roundCount
+    });
 
 startTimer();
         
