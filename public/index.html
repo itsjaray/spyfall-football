@@ -499,18 +499,13 @@
         const nameInput = document.getElementById('username');
         const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
 
-        // เช็คว่าถ้าช่องพิมพ์ว่างเปล่า (ลบข้อความจนหมด) ให้ส่งสัญญาณหยุดพิมพ์ทันที
         if (messageInput.value.trim() === '') {
+            // ถ้าลบข้อความจนเกลี้ยง ให้ส่งสัญญาณหยุดพิมพ์ทันที
             socket.emit('stopTyping');
         } else {
-            // ถ้ายังมีตัวอักษรอยู่ ให้ส่งสัญญาณว่ากำลังพิมพ์
-            socket.emit('typing', { senderName: currentName });
-            
-            // ล้าง timeout เดิมกันไว้ก่อน แล้วตั้งเวลาเผื่อกรณีผู้เล่นหยุดพิมพ์ไปเฉยๆ (เช่น 5 วินาที)
+            // ถ้ายังมีตัวอักษรอยู่ ให้ส่งสัญญาณว่ากำลังพิมพ์ (ค้างไว้ตลอดไม่ตัดเวลา)
             clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                socket.emit('stopTyping');
-            }, 5000); 
+            socket.emit('typing', { senderName: currentName });
         }
     });
 }
