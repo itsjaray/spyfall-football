@@ -179,6 +179,13 @@ io.on('connection', (socket) => {
     const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
     gameState.decoyFootballer = selectedDecoy;
 
+// สุ่มหรือตรวจสอบไอดี SPY ให้แน่ใจว่ามีอยู่จริงก่อนแจกบทบาท
+    let spyPlayer = players.find(p => p.id === gameState.spyId);
+    if (!spyPlayer && players.length > 0) {
+        const randomSpy = players[Math.floor(Math.random() * players.length)];
+        gameState.spyId = randomSpy.id;
+    }
+        
         players.forEach(p => {
             if (p.id === gameState.spyId) {
                 p.role = 'SPY';
