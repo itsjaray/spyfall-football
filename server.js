@@ -8,9 +8,8 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// รายชื่อนักเตะ 50 คน (รวมดาวดัง ยุคปัจจุบัน และตำนาน)
+// รายชื่อนักเตะ 50 คน
 const playersList = [
-    // ยุคปัจจุบัน & ซูเปอร์สตาร์
     "ลิโอเนล เมสซี่", "คริสเตียโน โรนัลโด", "คีเลียน เอ็มบัปเป้", 
     "เออร์ลิง ฮาแลนด์", "เนย์มาร์", "โมฮาเหม็ด ซาลาห์", 
     "จู๊ด เบลลิงแฮม", "เควิน เดอ บรอยน์", "ซน ฮึง-มิน", "โรเบิร์ต เลวานดอฟสกี้",
@@ -18,14 +17,12 @@ const playersList = [
     "โรดรี้", "ลามีน ยามาล", "ฟิล โฟเด้น", "บูกาโย ซากา", "เฟเดริโก วัลเวร์เด",
     "โฟลเรียน เวียร์ตซ์", "โคล พาลเมอร์", "เพดรี", "จามัล มูเซียล่า", "อลิสซอน เบ็คเกอร์",
     "โอนาน่า", "แวร์จิล ฟาน ไดจ์ค", "วิกเตอร์ โอซิมเฮน", "เลาตาโร มาร์ติเนซ",
-    "อองตวน กรีซมันน์", "เฟรงกี้ เดอ ยอง",
-
-    // ตำนานนักเตะระดับโลก
-    "ซีเนดีน ซีดาน", "โรนัลดินโญ่", "โรนัลโด้ (R9)", "ดิเอโก้ มาราโดน่า",
-    "เปเล่", "เดวิด เบ็คแฮม", "สตีเวน เจอร์ราร์ด", "แฟรงค์ แลมพาร์ด",
-    "เธียร์รี่ อองรี", "กาก้า", "อันเดรียส อิเนียสต้า", "ชาบี เอร์นานเดซ",
-    "อันเดรีย ปีร์โล่", "จิอันลุยจิ บุฟฟอน", "อิเกร์ กาซียาส", "เวย์น รูนีย์",
-    "เซร์คิโอ รามอส", "มิชาเอล บัลลัค", "ปาทริค วิเอร่า", "หลุยส์ ฟิโก้"
+    "อองตวน กรีซมันน์", "เฟรงกี้ เดอ ยอง", "ซีเนดีน ซีดาน", "โรนัลดินโญ่", 
+    "โรนัลโด้ (R9)", "ดิเอโก้ มาราโดน่า", "เปเล่", "เดวิด เบ็คแฮม", 
+    "สตีเวน เจอร์ราร์ด", "แฟรงค์ แลมพาร์ด", "เธียร์รี่ อองรี", "กาก้า", 
+    "อันเดรียส อิเนียสต้า", "ชาบี เอร์นานเดซ", "อันเดรีย ปีร์โล่", "จิอันลุยจิ บุฟฟอน", 
+    "อิเกร์ กาซียาส", "เวย์น รูนีย์", "เซร์คิโอ รามอส", "มิชาเอล บัลลัค", 
+    "ปาทริค วิเอร่า", "หลุยส์ ฟิโก้"
 ];
 
 let roomPlayers = [];
@@ -34,6 +31,16 @@ let timeLeft = 180;
 let spySocketId = null;
 let currentSecretPlayer = "";
 let votes = {};
+
+// ฟังก์ชันสุ่มเรียงลำดับผู้เล่น (Fisher-Yates Shuffle)
+function shuffleArray(array) {
+    let shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
 
 io.on('connection', (socket) => {
     roomPlayers.push({ id: socket.id, name: `ผู้เล่น #${roomPlayers.length + 1}`, score: 0 });
@@ -71,6 +78,9 @@ io.on('connection', (socket) => {
         const spyIndex = Math.floor(Math.random() * roomPlayers.length);
         spySocketId = roomPlayers[spyIndex].id;
 
+        // สุ่มลำดับการเล่น
+        const playOrder = shuffleArray(roomPlayers);
+
         roomPlayers.forEach((p, index) => {
             if (index === spyIndex) {
                 io.to(p.id).emit('assignRole', { role: 'SPY', name: '' });
@@ -79,7 +89,7 @@ io.on('connection', (socket) => {
             }
         });
 
-        io.emit('gameStarted');
+        io.emit('gameStarted', { playOrder: playOrder });
         io.emit('timerUpdate', timeLeft);
         timerInterval = setInterval(() => {
             timeLeft--;
