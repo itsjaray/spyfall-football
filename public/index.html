@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spyfall - นักเตะปริศนา Online</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: white; text-align: center; padding: 20px; margin: 0; }
+        .container { max-width: 450px; margin: 20px auto; background: #16213e; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { color: #e94560; margin-top: 0; font-size: 26px; }
+        .timer-box { font-size: 36px; font-weight: bold; color: #fa8231; background: #0f3460; padding: 10px; border-radius: 10px; margin: 15px 0; }
+        .role-box { background: #0f3460; padding: 20px; border-radius: 12px; font-size: 20px; font-weight: bold; margin: 20px 0; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        .spy { color: #ff4d4d; }
+        .player { color: #4da6ff; }
+        .input-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
+        input[type="text"] { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #0f3460; font-size: 16px; text-align: center; }
+        button { background: #e94560; color: white; border: none; padding: 10px 18px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #ff6b81; }
+        .btn-start { width: 100%; font-size: 18px; padding: 14px; margin-top: 10px; background: #2ed573; }
+        .btn-start:hover { background: #26af5f; }
+        .vote-section { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; display: none; }
+        .vote-btn { width: 100%; margin: 5px 0; background: #0f3460; border: 1px solid #4da6ff; }
+        .vote-btn:hover { background: #4da6ff; }
+        .player-list { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .player-list ul { padding-left: 20px; margin-bottom: 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚽ Spyfall นักเตะปริศนา</h1>
+    
+    <div class="input-group">
+        <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" />
+        <button onclick="setName()">บันทึกชื่อ</button>
+    </div>
+
+    <div class="timer-box" id="timer-display">⏱️ 03:00</div>
+
+    <div class="role-box" id="role-display">
+        กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)
+    </div>
+
+    <!-- ส่วนระบบโหวต -->
+    <div class="vote-section" id="vote-section">
+        <h3>🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
+        <div id="vote-buttons"></div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
+
+    <div class="player-list">
+        <strong>👥 ผู้เล่นในห้องตอนนี้ (<span id="count">0</span> คน):</strong>
+        <ul id="players-ul"></ul>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    let currentPlayers = [];
+    let hasVoted = false;
+
+    function setName() {
+        const name = document.getElementById('username').value;
+        if (name) {
+            socket.emit('setName', name);
+            alert('ตั้งชื่อเรียบร้อยแล้ว!');
+        }
+    }
+
+    function startGame() {
+        socket.emit('startGame');
+    }
+
+    function sendVote(targetId) {
+        if (hasVoted) return;
+        hasVoted = true;
+        socket.emit('castVote', targetId);
+        document.getElementById('vote-buttons').innerHTML = "<p style='color:#2ed573;'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
+    }
+
+    socket.on('updatePlayers', (players) => {
+        currentPlayers = players;
+        document.getElementById('count').innerText = players.length;
+        const ul = document.getElementById('players-ul');
+        ul.innerHTML = players.map(p => `<li>${p.name}</li>`).join('');
+    });
+
+    socket.on('assignRole', (data) => {
+        const display = document.getElementById('role-display');
+        if (data.role === 'SPY') {
+            display.innerHTML = "<span class='spy'>🕵️ คุณคือ SPY!<br><small style='font-size:14px; color:#ccc;'>(ไม่ได้รับชื่อนักเตะ เนียนตามน้ำไว้!)</small></span>";
+        } else {
+            display.innerHTML = `<span class='player'>⚽ นักเตะของคุณคือ:<br>${data.name}</span>`;
+        }
+    });
+
+    socket.on('gameStarted', () => {
+        hasVoted = false;
+        document.getElementById('vote-section').style.display = 'block';
+        document.getElementById('vote-count').innerText = '0';
+        document.getElementById('total-voters').innerText = currentPlayers.length;
+        
+        // สร้างปุ่มโหวตรายชื่อเพื่อนทุกคน
+        const voteBtnsContainer = document.getElementById('vote-buttons');
+        voteBtnsContainer.innerHTML = currentPlayers.map(p => 
+            `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
+        ).join('');
+    });
+
+    socket.on('voteUpdated', (votedCount, total) => {
+        document.getElementById('vote-count').innerText = votedCount;
+        document.getElementById('total-voters').innerText = total;
+    });
+
+    socket.on('timerUpdate', (seconds) => {
+        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+        document.getElementById('timer-display').innerText = `⏱️ ${mins}:${secs}`;
+    });
+
+    socket.on('timeUp', () => {
+        document.getElementById('role-display').innerHTML = "<span style='color: #fa8231;'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+    });
+
+    // แสดงผลลัพธ์เมื่อทุกคนโหวตครบ
+    socket.on('gameResult', (result) => {
+        document.getElementById('vote-section').style.display = 'none';
+        const display = document.getElementById('role-display');
+        
+        if (result.isCorrect) {
+            display.innerHTML = `<span style='color:#2ed573;'>🎉 ชนะแล้ว!<br>เสียงส่วนใหญ่โหวต <b>${result.suspectedName}</b><br>ซึ่งเป็น SPY ตัวจริง!</span><br><br><small style='color:#aaa;'>นักเตะปริศนาคือ: ${result.secretFootballer}</small>`;
+        } else {
+            display.innerHTML = `<span style='color:#ff4d4d;'>💥 แพ้แล้ว!<br>เสียงส่วนใหญ่โหวต <b>${result.suspectedName}</b><br>แต่ SPY ตัวจริงคือ <b>${result.spyName}</b>!</span><br><br><small style='color:#aaa;'>นักเตะปริศนาคือ: ${result.secretFootballer}</small>`;
+        }
+    });
+
+    socket.on('errorMsg', (msg) => {
+        alert(msg);
+    });
+</script>
+
+</body>
+</html>
