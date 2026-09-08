@@ -140,27 +140,32 @@ io.on('connection', (socket) => {
         const spyIndex = Math.floor(Math.random() * players.length);
         gameState.spyId = players[spyIndex].id;
 
-        // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "RW / AM" จะดึงแค่ "RW")
+       // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "CM / RM", "MF", "CB" ตัดเอาคำแรก)
     const getPrimaryPos = (posStr) => {
         if (!posStr) return "";
-        return posStr.split(/[\/\s]+/)[0].toUpperCase();
+        return posStr.split(/[\/\s-,]+/)[0].toUpperCase();
     };
 
     const targetPrimaryPos = getPrimaryPos(selectedTarget.position);
     const targetFoot = selectedTarget.foot ? selectedTarget.foot.trim().toLowerCase() : "";
 
-    // กรองหานักเตะที่มีตำแหน่งหลักใกล้เคียงกัน หรือ เท้าข้างเดียวกัน
+    // 1. ค้นหาคนที่ "ตำแหน่งหลักตรงกันเป๊ะๆ" ก่อนเป็นอันดับแรก
     let validDecoys = footballers.filter(f => {
         if (f.name === selectedTarget.name) return false;
         const fPrimaryPos = getPrimaryPos(f.position);
-        const fFoot = f.foot ? f.foot.trim().toLowerCase() : "";
-
-        const isPosMatch = targetPrimaryPos && fPrimaryPos && (targetPrimaryPos === fPrimaryPos);
-        const isFootMatch = targetFoot && fFoot && (targetFoot === fFoot);
-
-        return isPosMatch || isFootMatch;
+        return targetPrimaryPos && fPrimaryPos && (targetPrimaryPos === fPrimaryPos);
     });
 
+    // 2. ถ้าไม่มีตำแหน่งเดียวกันจริงๆ ค่อยผ่อนปรนให้หาคนที่มี "เท้าที่ถนัดข้างเดียวกัน"
+    if (validDecoys.length === 0) {
+        validDecoys = footballers.filter(f => {
+            if (f.name === selectedTarget.name) return false;
+            const fFoot = f.foot ? f.foot.trim().toLowerCase() : "";
+            return targetFoot && fFoot && (targetFoot === fFoot);
+        });
+    }
+
+    // 3. ถ้ายังหาไม่ได้อีก เอาใครก็ได้ที่ไม่ใช่คนเดิม
     if (validDecoys.length === 0) {
         validDecoys = footballers.filter(f => f.name !== selectedTarget.name);
     }
