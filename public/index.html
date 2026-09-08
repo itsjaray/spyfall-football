@@ -6,59 +6,225 @@
     <title>Spyfall - นักเตะปริศนา Online</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: white; text-align: center; padding: 20px; margin: 0; }
-        .container { max-width: 450px; margin: 20px auto; background: #16213e; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        h1 { color: #e94560; margin-top: 0; font-size: 26px; }
-        .timer-box { font-size: 36px; font-weight: bold; color: #fa8231; background: #0f3460; padding: 10px; border-radius: 10px; margin: 15px 0; }
-        .role-box { background: #0f3460; padding: 20px; border-radius: 12px; font-size: 20px; font-weight: bold; margin: 20px 0; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spy { color: #ff4d4d; }
+        :root {
+            --pl-purple: #37003c;
+            --pl-purple-light: #52055b;
+            --pl-purple-card: #28002d;
+            --pl-green: #00ff87;
+            --pl-pink: #ff2882;
+            --bg-dark: #120415;
+            --text-main: #ffffff;
+            --text-muted: #a0aec0;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(135deg, var(--pl-purple) 0%, var(--bg-dark) 100%);
+            color: var(--text-main); 
+            text-align: center; 
+            padding: 15px; 
+            padding-bottom: 85px; 
+            margin: 0; 
+        }
+
+        .container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            background: var(--pl-purple-card); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        h1 { 
+            color: var(--text-main); 
+            margin-top: 0; 
+            font-size: 22px; 
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--pl-green);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        h1 b { color: var(--pl-green); }
+
+        .timer-box { 
+            font-size: 32px; 
+            font-weight: 800; 
+            color: var(--pl-green); 
+            background: rgba(0, 0, 0, 0.3); 
+            padding: 12px; 
+            border-radius: 12px; 
+            margin: 15px 0; 
+            border: 1px solid rgba(0, 255, 135, 0.3);
+            letter-spacing: 1px;
+        }
+
+        .role-box { 
+            background: rgba(0, 0, 0, 0.3); 
+            padding: 20px; 
+            border-radius: 12px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            margin: 20px 0; 
+            min-height: 80px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .spy { color: var(--pl-pink); text-shadow: 0 0 10px rgba(255, 40, 130, 0.3); }
         .player { color: #4da6ff; }
+
         .input-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
-        input[type="text"] { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #0f3460; font-size: 16px; text-align: center; }
-        button { background: #e94560; color: white; border: none; padding: 10px 18px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #ff6b81; }
-        .btn-start { width: 100%; font-size: 18px; padding: 14px; margin-top: 10px; background: #2ed573; }
-        .btn-start:hover { background: #26af5f; }
         
-        .order-section { margin-top: 15px; background: #0f3460; padding: 15px; border-radius: 10px; border: 1px solid #2ed573; display: none; }
-        .order-list { text-align: left; margin-top: 8px; padding-left: 20px; margin-bottom: 0; }
+        input[type="text"] { 
+            flex: 1; 
+            padding: 12px 14px; 
+            border-radius: 8px; 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.07);
+            color: white;
+            font-size: 15px; 
+            text-align: center; 
+            transition: all 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--pl-green);
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        button { 
+            background: var(--pl-green); 
+            color: var(--pl-purple); 
+            border: none; 
+            padding: 12px 18px; 
+            font-size: 15px; 
+            font-weight: 800; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            box-shadow: 0 4px 12px rgba(0, 255, 135, 0.2);
+        }
+        button:hover { 
+            opacity: 0.9; 
+            transform: translateY(-1px);
+        }
+
+        .btn-start { 
+            width: 100%; 
+            font-size: 17px; 
+            padding: 14px; 
+            margin-top: 10px; 
+            background: var(--pl-green); 
+            color: var(--pl-purple);
+        }
+        .btn-start:hover { background: #00e676; }
+        
+        .order-section { 
+            margin-top: 15px; 
+            background: rgba(0, 0, 0, 0.3); 
+            padding: 15px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(0, 255, 135, 0.2); 
+            display: none; 
+            text-align: left;
+        }
+        .order-list { margin-top: 8px; padding-left: 20px; margin-bottom: 0; color: var(--text-muted); }
         .order-list li { margin: 4px 0; }
-        .order-first { color: #2ed573; font-weight: bold; }
+        .order-first { color: var(--pl-green); font-weight: bold; }
 
-        .vote-section, .guess-section { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; display: none; }
-        .vote-btn { width: 100%; margin: 5px 0; background: #0f3460; border: 1px solid #4da6ff; }
-        .vote-btn:hover { background: #4da6ff; }
+        .vote-section, .guess-section { 
+            margin-top: 20px; 
+            background: rgba(0, 0, 0, 0.25); 
+            padding: 15px; 
+            border-radius: 12px; 
+            display: none; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .vote-btn { 
+            width: 100%; 
+            margin: 6px 0; 
+            background: rgba(255, 255, 255, 0.07); 
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            font-weight: 600;
+            box-shadow: none;
+        }
+        .vote-btn:hover { background: var(--pl-green); color: var(--pl-purple); border-color: var(--pl-green); }
         
-        .btn-toggle-guess { background: #fa8231; font-size: 14px; padding: 8px 14px; margin-top: 12px; }
-        .btn-toggle-guess:hover { background: #e06d1a; }
+        .btn-toggle-guess { background: #fa8231; color: white; font-size: 14px; padding: 10px 14px; margin-top: 12px; box-shadow: none; }
+        .btn-toggle-guess:hover { background: #e06d1a; color: white; }
 
-        .chat-section { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
-        .chat-box { height: 140px; overflow-y: auto; background: #0f3460; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+        .chat-section { text-align: left; background: rgba(0, 0, 0, 0.25); padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .chat-box { height: 140px; overflow-y: auto; background: rgba(0, 0, 0, 0.4); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; border: 1px solid rgba(255, 255, 255, 0.05); }
         .chat-msg { word-break: break-word; }
-        .chat-msg b { color: #fa8231; }
+        .chat-msg b { color: var(--pl-green); }
 
-        .player-list { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .player-list { text-align: left; background: rgba(0, 0, 0, 0.25); padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255, 255, 255, 0.05); }
         .player-list table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .player-list th, .player-list td { padding: 10px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
         .player-list th:last-child, .player-list td:last-child { text-align: right; }
-        .score-badge { background: #fa8231; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        .score-badge { background: var(--pl-green); color: var(--pl-purple); padding: 3px 10px; border-radius: 12px; font-weight: 800; font-size: 12px; }
         
-        .btn-kick { background: #ff4d4d; color: white; border: none; padding: 3px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; margin-left: 8px; }
-        .btn-kick:hover { background: #ff1a1a; }
+        .btn-kick { background: var(--pl-pink); color: white; border: none; padding: 4px 10px; font-size: 11px; border-radius: 6px; cursor: pointer; margin-left: 8px; font-weight: bold; box-shadow: none; }
+        .btn-kick:hover { background: #e01b70; color: white; }
 
-        .btn-reset-score { background: transparent; color: #aaa; border: 1px solid #555; padding: 4px 8px; font-size: 12px; margin-top: 10px; width: 100%; }
-        .btn-reset-score:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-reset-score { background: transparent; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.2); padding: 8px; font-size: 12px; margin-top: 12px; width: 100%; border-radius: 8px; box-shadow: none; }
+        .btn-reset-score:hover { background: rgba(255,255,255,0.05); color: white; }
+
+        /* แถบเมนูด้านล่างสไตล์แอปพรีเมียร์ลีก */
+        .pl-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--pl-purple);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+        }
+
+        .pl-nav-item {
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 11px;
+            text-decoration: none;
+            flex: 1;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .pl-nav-item.active {
+            color: var(--pl-green);
+            font-weight: bold;
+        }
+
+        .pl-nav-item div {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>⚽ Spyfall นักเตะปริศนา <br><b> Made By JARAY </b></h1>
+    <h1>⚽ Spyfall นักเตะปริศนา <br><b style="font-size: 14px; letter-spacing: 1px;">MADE BY JARAY</b></h1>
     
     <form id="name-form" onsubmit="handleNameSubmit(event)">
         <div class="input-group">
             <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" required />
-            <button type="submit">บันทึกชื่อ</button>
+            <button type="submit">บันทึก</button>
         </div>
     </form>
 
@@ -69,39 +235,38 @@
     </div>
 
     <div class="order-section" id="order-section">
-        <strong style="color: #2ed573;">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
+        <strong style="color: var(--pl-green);">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
         <ol class="order-list" id="order-ol"></ol>
     </div>
 
     <div class="guess-section" id="guess-section">
         <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
-        <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ (พิมพ์ไม่เป๊ะก็ผ่านได้):</p>
+        <p style="font-size:13px; color:var(--text-muted);">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ:</p>
         <form onsubmit="handleGuessSubmit(event)">
             <div class="input-group">
                 <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
-                <button type="submit">ส่งคำตอบ</button>
+                <button type="submit" style="background:#fa8231; color:white;">ส่งคำตอบ</button>
             </div>
         </form>
     </div>
 
     <div class="vote-section" id="vote-section">
-        <h3>🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
+        <h3 style="margin-top:0; font-size:16px;">🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
         <div id="vote-buttons"></div>
     </div>
 
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
     <!-- กล่องแสดงสรุปผลนักเตะตาที่แล้ว -->
-<div id="lastGameResultBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 14px;">
-    <b>📊 ผลการเล่นตาที่แล้ว:</b>
-    <div id="lastSecretText" style="color: #4ecca3; margin-top: 4px;">- ยังไม่มีประวัติการเล่น -</div>
-    <div id="lastDecoyText" style="color: #ff6b6b; margin-top: 2px;"></div>
-</div>
+    <div id="lastGameResultBox" style="display: none; margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); color: #fff; border-radius: 10px; text-align: left; font-size: 13px; border: 1px solid rgba(255,255,255,0.08);">
+        <b>📊 ผลการเล่นตาที่แล้ว:</b>
+        <div id="lastSecretText" style="color: var(--pl-green); margin-top: 6px;">- ยังไม่มีประวัติการเล่น -</div>
+        <div id="lastDecoyText" style="color: var(--pl-pink); margin-top: 4px;"></div>
+    </div>
 
     <div class="chat-section">
-        
-        <strong>💬 ช่องแชตสดพูดคุย:</strong>
-        <div id="typingIndicator" style="font-size: 11px; color: #a0aec0; font-style: italic; height: 16px; margin-bottom: 2px;"></div>
+        <strong style="font-size: 14px;">💬 ช่องแชตสดพูดคุย:</strong>
+        <div id="typingIndicator" style="font-size: 11px; color: var(--pl-green); font-style: italic; height: 16px; margin: 4px 0;"></div>
         <div class="chat-box" id="chat-box"></div>
         <form onsubmit="handleChatSubmit(event)">
             <div class="input-group" style="margin-bottom:0;">
@@ -112,29 +277,37 @@
     </div>
     
     <div class="player-list">
-        <strong>🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
+        <strong style="font-size: 14px;">🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
         <table>
             <thead>
                 <tr>
-                    <th>ชื่อผู้เล่น</th>
-                    <th>คะแนน</th>
+                    <th style="color: var(--text-muted); font-weight: 600;">ชื่อผู้เล่น</th>
+                    <th style="color: var(--text-muted); font-weight: 600; text-align: right;">คะแนน</th>
                 </tr>
             </thead>
             <tbody id="players-tbody"></tbody>
         </table>
         <button class="btn-reset-score" onclick="resetScores()">🔄 รีเซ็ตคะแนนทั้งหมด</button>
     </div>
-
-    <!-- ปุ่มสำหรับกดดูผลเกมตาที่แล้ว -->
-<button id="btnLastGame" onclick="requestLastGameResult()" style="display:none;">ดูผลการเล่นตาที่แล้ว</button>
-
-<!-- กล่องสำหรับแสดงชื่อนักเตะตาที่แล้ว -->
-<div id="lastGameResultBox" style="display:none; margin-top: 10px; padding: 10px; background: #222; color: #fff; border-radius: 5px;">
-    <h3>📊 สรุปผลเกมตาที่แล้ว</h3>
-    <p id="lastSecretText"></p>
-    <p id="lastDecoyText"></p>
 </div>
-    
+
+<!-- แถบเมนูด้านล่างสไตล์แอปพรีเมียร์ลีก -->
+<div class="pl-bottom-nav">
+    <a class="pl-nav-item active">
+        <div>🏠</div>Home
+    </a>
+    <a class="pl-nav-item" onclick="alert('ฟีเจอร์แมตช์การแข่งขันเร็วๆ นี้')">
+        <div>⚽</div>Matches
+    </a>
+    <a class="pl-nav-item" onclick="alert('ฟีเจอร์จัดทีมแฟนตาซีเร็วๆ นี้')">
+        <div>🏆</div>Fantasy
+    </a>
+    <a class="pl-nav-item" onclick="alert('ฟีเจอร์สถิติสปายเร็วๆ นี้')">
+        <div>📊</div>Stats
+    </a>
+    <a class="pl-nav-item" onclick="alert('Spyfall Football App v2.0')">
+        <div>⚙️</div>More
+    </a>
 </div>
 
 <script>
@@ -171,6 +344,7 @@
 
     function startGame() {
         socket.emit('startGame');
+        socket.emit('getLastGameResult');
     }
 
     function resetScores() {
@@ -183,7 +357,7 @@
         if (hasVoted) return;
         hasVoted = true;
         socket.emit('castVote', targetId);
-        document.getElementById('vote-buttons').innerHTML = "<p style='color:#2ed573;'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
+        document.getElementById('vote-buttons').innerHTML = "<p style='color:var(--pl-green); font-weight:bold;'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
     }
 
     function toggleGuessBox() {
@@ -219,7 +393,7 @@
             
             return `<tr>
                 <td>${p.name} ${kickBtn}</td>
-                <td><span class="score-badge">${p.score} pt</span></td>
+                <td style="text-align: right;"><span class="score-badge">${p.score} pt</span></td>
             </tr>`;
         }).join('');
     });
@@ -243,18 +417,15 @@
     });
 
     socket.on('gameStarted', (data) => {
-
-// แสดงหรือซ่อนผลสรุปเกมตาที่แล้ว
         const lastGameBox = document.getElementById('lastGameResultBox');
         
         if (data.lastGame && data.lastGame.secret) {
-            lastGameBox.style.display = 'block'; // แสดงกล่องเฉพาะเมื่อมีข้อมูลรอบที่แล้ว
+            lastGameBox.style.display = 'block';
             document.getElementById('lastSecretText').innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos})`;
             document.getElementById('lastDecoyText').innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy} (${data.lastGame.decoyPos})`;
         } else {
-            if (lastGameBox) lastGameBox.style.display = 'none'; // ซ่อนกล่องในรอบแรกสุด
+            if (lastGameBox) lastGameBox.style.display = 'none';
         }
-
         
         hasVoted = false;
         document.getElementById('vote-section').style.display = 'block';
@@ -293,17 +464,15 @@
         document.getElementById('role-display').innerHTML = "<span style='color: #fa8231;'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
     });
 
-    // เมื่อโหวตจับ SPY ถูกตัว -> ให้หน้าจอ SPY แสดงกล่องทายคำตอบ
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'block';
         document.getElementById('role-display').innerHTML = `<span class='spy'>🕵️ คุณถูกจับได้แล้ว!<br>แต่ยังมีโอกาสสุดท้าย พิมพ์ทายชื่อนักเตะจริงด้านล่างเพื่อพลิกกลับมาชนะ!</span>`;
     });
 
-    // หน้าจอคนธรรมดารอ SPY พิมพ์ทาย
     socket.on('waitingForSpyGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('role-display').innerHTML = `<span style='color:#2ed573;'>🎯 ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br><br><span style='color:#fa8231;'>⏳ กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>`;
+        document.getElementById('role-display').innerHTML = `<span style='color:var(--pl-green);'>🎯 ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br><br><span style='color:#fa8231;'>⏳ กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>`;
     });
 
     socket.on('finalResult', (result) => {
@@ -312,7 +481,7 @@
         const display = document.getElementById('role-display');
 
         if (result.winner === 'PLAYERS') {
-            display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
+            display.innerHTML = `<span style='color:var(--pl-green);'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
             <small style='color:#ff6b81;'>(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
             <small style='color:#ccc;'>นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
@@ -322,7 +491,7 @@
                 ? `คนธรรมดาโหวตผิดตัว! (ไปโหวต ${result.suspectedName})` 
                 : `SPY ใช้โอกาสสุดท้ายพิมพ์ทายถูกต้อง! ("${result.spyGuess}")`;
 
-            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br>
+            display.innerHTML = `<span style='color:var(--pl-pink);'>🏆 SPY ชนะ (+2 คะแนน)!</span><br>
             <small style='color:#ffb8b8;'>(${reasonText})</small><br><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
             <small style='color:#ccc;'>นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
@@ -339,53 +508,48 @@
         alert(msg);
     });
 
-    // ทุกครั้งที่กดปุ่มเริ่มเกม/สุ่มรอบใหม่ ให้ส่งคำสั่งไปขอผลตาที่แล้วมาโชว์ด้วย
-// (หรือจะผูกไว้กับฟังก์ชันคลิกปุ่มเริ่มเกมของคุณก็ได้ครับ)
-function onStartGameClick() {
-    socket.emit('startGame'); // คำสั่งเริ่มเกมเดิมของคุณ
-    socket.emit('getLastGameResult'); // ขอข้อมูลตาที่แล้วมาแสดง
-}
+    socket.on('lastGameResultResponse', (data) => {
+        const secretText = document.getElementById('lastSecretText');
+        const decoyText = document.getElementById('lastDecoyText');
+        const lastGameBox = document.getElementById('lastGameResultBox');
+        if (lastGameBox) lastGameBox.style.display = 'block';
 
-// รับข้อมูลผลสรุปแล้วเอามาใส่ในกล่องข้อความทันที
-socket.on('lastGameResultResponse', (data) => {
-    const secretText = document.getElementById('lastSecretText');
-    const decoyText = document.getElementById('lastDecoyText');
-
-    secretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.secret} (${data.secretPos})`;
-    decoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.decoy} (${data.decoyPos})`;
-});
+        if (data && data.secret) {
+            secretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.secret} (${data.secretPos})`;
+            decoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.decoy} (${data.decoyPos})`;
+        }
+    });
 
     // --- ระบบแสดงสถานะกำลังพิมพ์ (Typing Indicator) ---
-const messageInput = document.getElementById('chat-input'); // ใช้ไอดี chat-input ตามโค้ดเดิมของคุณ
-const typingIndicator = document.getElementById('typingIndicator');
-let typingTimeout = null;
+    const messageInput = document.getElementById('chat-input');
+    const typingIndicator = document.getElementById('typingIndicator');
+    let typingTimeout = null;
 
-if (messageInput) {
-    messageInput.addEventListener('input', () => {
-        // ดึงชื่อจากช่อง input ที่มี id="username" มาใช้ ถ้ายังไม่กรอกให้ใช้คำว่า 'ผู้เล่น'
-        const nameInput = document.getElementById('username');
-        const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
+    if (messageInput) {
+        messageInput.addEventListener('input', () => {
+            const nameInput = document.getElementById('username');
+            const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
 
-        socket.emit('typing', { senderName: currentName });
+            socket.emit('typing', { senderName: currentName });
 
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            socket.emit('stopTyping');
-        }, 10000); // ตั้งเวลา 10 วินาทีให้ซ่อนข้อความเมื่อหยุดพิมพ์
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('stopTyping');
+            }, 1000); // 1 วินาทีตามที่ตกลงกัน
+        });
+    }
+
+    socket.on('displayTyping', (data) => {
+        if (typingIndicator) {
+            typingIndicator.innerText = `✍️ ${data.senderName} กำลังพิมพ์...`;
+        }
     });
-}
 
-socket.on('displayTyping', (data) => {
-    if (typingIndicator) {
-        typingIndicator.innerText = `✍️ ${data.senderName} กำลังพิมพ์...`;
-    }
-});
-
-socket.on('hideTyping', () => {
-    if (typingIndicator) {
-        typingIndicator.innerText = '';
-    }
-});
+    socket.on('hideTyping', () => {
+        if (typingIndicator) {
+            typingIndicator.innerText = '';
+        }
+    });
 </script>
 </body>
 </html>
