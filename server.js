@@ -140,12 +140,6 @@ io.on('connection', (socket) => {
     const spyIndex = Math.floor(Math.random() * players.length);
     gameState.spyId = players[spyIndex].id;
 
-    // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "CM / RM", "MF", "CB" ตัดเอาคำแรก)
-    const getPrimaryPos = (posStr) => {
-        if (!posStr) return "";
-        return posStr.split(/[\/\s-,]+/)[0].toUpperCase();
-    };
-
         // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "CM / RM", "MF", "CB" ตัดเอาคำแรก)
     const getPrimaryPos = (posStr) => {
         if (!posStr) return "";
