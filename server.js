@@ -8,7 +8,7 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// รายชื่อนักเตะ 50 คน
+// รายชื่อนักเตะ 50 คนแบบระบบเดิม
 const playersList = [
     "ลิโอเนล เมสซี่", "คริสเตียโน โรนัลโด", "คีเลียน เอ็มบัปเป้", 
     "เออร์ลิง ฮาแลนด์", "เนย์มาร์", "โมฮาเหม็ด ซาลาห์", 
@@ -32,7 +32,6 @@ let spySocketId = null;
 let currentSecretPlayer = "";
 let votes = {};
 
-// ฟังก์ชันสุ่มเรียงลำดับผู้เล่น (Fisher-Yates Shuffle)
 function shuffleArray(array) {
     let shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -78,7 +77,6 @@ io.on('connection', (socket) => {
         const spyIndex = Math.floor(Math.random() * roomPlayers.length);
         spySocketId = roomPlayers[spyIndex].id;
 
-        // สุ่มลำดับการเล่น
         const playOrder = shuffleArray(roomPlayers);
 
         roomPlayers.forEach((p, index) => {
@@ -111,9 +109,11 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ระบบให้ SPY พิมพ์ส่งคำตอบ
     socket.on('spyGuess', (guessedName) => {
         if (socket.id !== spySocketId) return;
 
+        clearInterval(timerInterval);
         const isCorrect = guessedName.trim().toLowerCase() === currentSecretPlayer.toLowerCase();
         const spyPlayer = roomPlayers.find(p => p.id === spySocketId);
 
@@ -131,7 +131,8 @@ io.on('connection', (socket) => {
             spyName: spyPlayer ? spyPlayer.name : 'SPY',
             secretFootballer: currentSecretPlayer,
             spyGuess: guessedName,
-            isCorrect: isCorrect
+            isCorrect: isCorrect,
+            reason: 'spyGuessed'
         });
     });
 
@@ -148,6 +149,7 @@ io.on('connection', (socket) => {
 });
 
 function calculateVoteResult() {
+    clearInterval(timerInterval);
     const voteCounts = {};
     Object.values(votes).forEach(targetId => {
         voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
