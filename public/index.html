@@ -99,7 +99,9 @@
 </div>
 
     <div class="chat-section">
+        
         <strong>💬 ช่องแชตสดพูดคุย:</strong>
+        <div id="typingIndicator" style="font-size: 11px; color: #a0aec0; font-style: italic; height: 16px; margin-bottom: 2px;"></div>
         <div class="chat-box" id="chat-box"></div>
         <form onsubmit="handleChatSubmit(event)">
             <div class="input-group" style="margin-bottom:0;">
@@ -351,6 +353,34 @@ socket.on('lastGameResultResponse', (data) => {
 
     secretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.secret} (${data.secretPos})`;
     decoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.decoy} (${data.decoyPos})`;
+});
+
+    // --- ระบบแสดงสถานะกำลังพิมพ์ (Typing Indicator) ---
+const messageInput = document.getElementById('chat-input'); // ใช้ไอดี chat-input ตามโค้ดเดิมของคุณ
+const typingIndicator = document.getElementById('typingIndicator');
+let typingTimeout = null;
+
+if (messageInput) {
+    messageInput.addEventListener('input', () => {
+        socket.emit('typing', { senderName: myName || 'ผู้เล่น' });
+
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            socket.emit('stopTyping');
+        }, 10000); // ถ้าหยุดพิมพ์ 1 วินาที จะซ่อนข้อความ
+    });
+}
+
+socket.on('displayTyping', (data) => {
+    if (typingIndicator) {
+        typingIndicator.innerText = `✍️ ${data.senderName} กำลังพิมพ์...`;
+    }
+});
+
+socket.on('hideTyping', () => {
+    if (typingIndicator) {
+        typingIndicator.innerText = '';
+    }
 });
 </script>
 
