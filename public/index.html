@@ -23,7 +23,12 @@
         .vote-btn { width: 100%; margin: 5px 0; background: #0f3460; border: 1px solid #4da6ff; }
         .vote-btn:hover { background: #4da6ff; }
         .player-list { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
-        .player-list ul { padding-left: 20px; margin-bottom: 0; }
+        .player-list table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .player-list th:last-child, .player-list td:last-child { text-align: right; }
+        .score-badge { background: #fa8231; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        .btn-reset-score { background: transparent; color: #aaa; border: 1px solid #555; padding: 4px 8px; font-size: 12px; margin-top: 10px; width: 100%; }
+        .btn-reset-score:hover { background: rgba(255,255,255,0.1); color: white; }
     </style>
 </head>
 <body>
@@ -60,9 +65,19 @@
 
     <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
 
+    <!-- ตารางคะแนน -->
     <div class="player-list">
-        <strong>👥 ผู้เล่นในห้องตอนนี้ (<span id="count">0</span> คน):</strong>
-        <ul id="players-ul"></ul>
+        <strong>🏆 ตารางคะแนนผู้เล่น (<span id="count">0</span> คน):</strong>
+        <table>
+            <thead>
+                <tr>
+                    <th>ชื่อผู้เล่น</th>
+                    <th>คะแนน</th>
+                </tr>
+            </thead>
+            <tbody id="players-tbody"></tbody>
+        </table>
+        <button class="btn-reset-score" onclick="resetScores()">🔄 รีเซ็ตคะแนนทั้งหมด</button>
     </div>
 </div>
 
@@ -83,6 +98,12 @@
         socket.emit('startGame');
     }
 
+    function resetScores() {
+        if (confirm('คุณต้องการรีเซ็ตคะแนนผู้เล่นทุกคนเป็น 0 ใช่หรือไม่?')) {
+            socket.emit('resetScores');
+        }
+    }
+
     function sendVote(targetId) {
         if (hasVoted) return;
         hasVoted = true;
@@ -101,8 +122,16 @@
     socket.on('updatePlayers', (players) => {
         currentPlayers = players;
         document.getElementById('count').innerText = players.length;
-        const ul = document.getElementById('players-ul');
-        ul.innerHTML = players.map(p => `<li>${p.name}</li>`).join('');
+        
+        // เรียงลำดับคนคะแนนสูงสุดขึ้นก่อน
+        const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+        const tbody = document.getElementById('players-tbody');
+        tbody.innerHTML = sortedPlayers.map(p => 
+            `<tr>
+                <td>${p.name}</td>
+                <td><span class="score-badge">${p.score} pt</span></td>
+            </tr>`
+        ).join('');
     });
 
     socket.on('assignRole', (data) => {
@@ -143,20 +172,17 @@
         document.getElementById('role-display').innerHTML = "<span style='color: #fa8231;'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
     });
 
-    // เฉพาะหน้าจอ Spy: เปิดช่องพิมพ์ทายชื่อ
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'block';
         document.getElementById('role-display').innerHTML = "<span class='spy'>🕵️ เพื่อนโหวตผิดคน!<br>โอกาสสุดท้ายของคุณ พิมพ์ทายชื่อนักเตะด้านล่าง</span>";
     });
 
-    // หน้าจอฝั่งคน: ระหว่างรอ Spy ทาย
     socket.on('waitingForSpyGuess', (data) => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('role-display').innerHTML = `<span style='color:#ff4d4d;'>❌ โหวตผิด! เสียงส่วนใหญ่โหวต ${data.suspectedName}<br>กำลังรอ SPY พิมพ์ตอบชื่อนักเตะ...</span>`;
     });
 
-    // ผลลัพธ์สุดท้าย
     socket.on('finalResult', (result) => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'none';
@@ -164,12 +190,12 @@
 
         if (result.winner === 'PLAYERS') {
             if (result.reason === 'voteCorrect') {
-                display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ!<br>โหวตถูกตัว SPY คือ <b>${result.spyName}</b></span><br><br><small style='color:#ccc;'>นักเตะปริศนาคือ: ${result.secretFootballer}</small>`;
+                display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!<br>โหวตถูกตัว SPY คือ <b>${result.spyName}</b></span><br><br><small style='color:#ccc;'>นักเตะปริศนาคือ: ${result.secretFootballer}</small>`;
             } else {
-                display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ!<br>SPY ตอบว่า "<b>${result.spyGuess}</b>" ซึ่งเป็นคำตอบที่ผิด!</span><br><br><small style='color:#ccc;'>นักเตะปริศนาที่ถูกต้องคือ: ${result.secretFootballer}</small>`;
+                display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!<br>SPY ตอบว่า "<b>${result.spyGuess}</b>" ซึ่งเป็นคำตอบที่ผิด!</span><br><br><small style='color:#ccc;'>นักเตะปริศนาที่ถูกต้องคือ: ${result.secretFootballer}</small>`;
             }
         } else {
-            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ!<br>SPY (<b>${result.spyName}</b>) ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"</span>`;
+            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!<br>SPY (<b>${result.spyName}</b>) ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"</span>`;
         }
     });
 
