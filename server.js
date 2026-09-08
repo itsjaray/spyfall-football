@@ -112,9 +112,9 @@ function startTimer() {
     }, 1000);
 }
 
-io.on('connection', () => {
+io.on('connection', socket => {
     players.push({
-        id: .id,
+        id: socket.id,
         name: `ผู้เล่น ${players.length + 1}`,
         role: null,
         score: 0
