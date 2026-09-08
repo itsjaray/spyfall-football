@@ -123,7 +123,7 @@ io.on('connection', () => {
     io.emit('updatePlayers', players);
 
     socket.on('setname', (name) => {
-    const player = players.find(p => p.id === .id);
+    const player = players.find(p => p.id === socket.id);
     if (player) {
         player.name = name;
         io.emit('updatePlayers', players);
@@ -131,7 +131,7 @@ io.on('connection', () => {
 });
 
     .on('sendChatMessage', (message) => {
-        const player = players.find(p => p.id === .id);
+        const player = players.find(p => p.id === socket.id);
         const senderName = player ? player.name : 'Unknown';
         io.emit('newChatMessage', { sender: senderName, message: message });
     });
