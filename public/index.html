@@ -55,7 +55,6 @@
 <div class="container">
     <h1>⚽ Spyfall นักเตะปริศนา</h1>
     
-    <!-- ครอบด้วย FORM เพื่อให้รองรับการกด Enter ทั้งคอมและมือถือ -->
     <form id="name-form" onsubmit="handleNameSubmit(event)">
         <div class="input-group">
             <input type="text" id="username" placeholder="พิมพ์ชื่อของคุณ" required />
@@ -76,7 +75,7 @@
 
     <div class="guess-section" id="guess-section">
         <h3 style="color:#fa8231; margin-top:0;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
-        <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อชนะเกมทันที:</p>
+        <p style="font-size:14px; color:#ccc;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ (พิมพ์ไม่เป๊ะก็ผ่านได้):</p>
         <form onsubmit="handleGuessSubmit(event)">
             <div class="input-group">
                 <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
@@ -123,9 +122,8 @@
     let currentPlayers = [];
     let hasVoted = false;
 
-    // จัดการเมื่อกด Enter หรือคลิกปุ่มบันทึกชื่อ
     function handleNameSubmit(e) {
-        e.preventDefault(); // ป้องกันไม่ให้เว็บรีเฟรชหน้า
+        e.preventDefault();
         const nameInput = document.getElementById('username');
         if (nameInput.value.trim() !== '') {
             socket.emit('setName', nameInput.value.trim());
@@ -133,7 +131,6 @@
         }
     }
 
-    // จัดการส่งข้อความแชต
     function handleChatSubmit(e) {
         e.preventDefault();
         const input = document.getElementById('chat-input');
@@ -143,7 +140,6 @@
         }
     }
 
-    // จัดการทายชื่อนักเตะของ SPY
     function handleGuessSubmit(e) {
         e.preventDefault();
         const guessInput = document.getElementById('spy-guess-input');
@@ -264,15 +260,17 @@
         document.getElementById('role-display').innerHTML = "<span style='color: #fa8231;'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
     });
 
+    // เมื่อโหวตจับ SPY ถูกตัว -> ให้หน้าจอ SPY แสดงกล่องทายคำตอบ
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'block';
-        document.getElementById('role-display').innerHTML = "<span class='spy'>🕵️ เพื่อนโหวตผิดคน!<br>โอกาสสุดท้ายของ SPY พิมพ์ทายชื่อนักเตะจริงด้านล่าง</span>";
+        document.getElementById('role-display').innerHTML = `<span class='spy'>🕵️ คุณถูกจับได้แล้ว!<br>แต่ยังมีโอกาสสุดท้าย พิมพ์ทายชื่อนักเตะจริงด้านล่างเพื่อพลิกกลับมาชนะ!</span>`;
     });
 
-    socket.on('waitingForSpyGuess', (data) => {
+    // หน้าจอคนธรรมดารอ SPY พิมพ์ทาย
+    socket.on('waitingForSpyGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('role-display').innerHTML = `<span style='color:#ff4d4d;'>❌ โหวตผิด! เสียงส่วนใหญ่โหวต ${data.suspectedName}<br>กำลังรอ SPY พิมพ์ตอบชื่อนักเตะ...</span>`;
+        document.getElementById('role-display').innerHTML = `<span style='color:#2ed573;'>🎯 ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br><br><span style='color:#fa8231;'>⏳ กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>`;
     });
 
     socket.on('finalResult', (result) => {
@@ -281,16 +279,21 @@
         const display = document.getElementById('role-display');
 
         if (result.winner === 'PLAYERS') {
-            let reasonText = result.reason === 'voteCorrect' ? 'โหวตจับ SPY ถูกตัว!' : `SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งผิด!`;
             display.innerHTML = `<span style='color:#2ed573;'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
-            <small style='color:#ff6b81;'>(${reasonText})</small><br><br>
+            <small style='color:#ff6b81;'>(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
             <small style='color:#ccc;'>นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
             <small style='color:#aaa;'>(นักเตะหลอกของ SPY: ${result.decoyFootballer})</small>`;
         } else {
-            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br><br>
-            <b>SPY (${result.spyName})</b> ทายถูกว่าคือ "<b>${result.secretFootballer}</b>"<br>
-            <small style='color:#aaa;'>(นักเตะหลอกที่ SPY ได้รับตอนแรกคือ: ${result.decoyFootballer})</small>`;
+            let reasonText = result.reason === 'voteWrong' 
+                ? `คนธรรมดาโหวตผิดตัว! (ไปโหวต ${result.suspectedName})` 
+                : `SPY ใช้โอกาสสุดท้ายพิมพ์ทายถูกต้อง! ("${result.spyGuess}")`;
+
+            display.innerHTML = `<span style='color:#ff4d4d;'>🏆 SPY ชนะ (+2 คะแนน)!</span><br>
+            <small style='color:#ffb8b8;'>(${reasonText})</small><br><br>
+            <b>SPY คือ:</b> ${result.spyName}<br>
+            <small style='color:#ccc;'>นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
+            <small style='color:#aaa;'>(นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer})</small>`;
         }
     });
 
