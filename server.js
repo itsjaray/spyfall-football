@@ -228,8 +228,8 @@ io.on('connection', () => {
                 io.to(p.id).emit('assignRole', {
                     role: 'PLAYER',
                     name: selectedTarget.name
-                    position: selectedTarget.position, // 👈 เพิ่มบรรทัดนี้
-                    foot: selectedTarget.foot          // 👈 เพิ่มบรรทัดนี้
+                    position: selectedTarget.position,
+                    foot: selectedTarget.foot          
                 });
             }
         });
