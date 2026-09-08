@@ -499,12 +499,13 @@
         const nameInput = document.getElementById('username');
         const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
 
+        clearTimeout(typingTimeout);
+
         if (messageInput.value.trim() === '') {
             // ถ้าลบข้อความจนเกลี้ยง ให้ส่งสัญญาณหยุดพิมพ์ทันที
             socket.emit('stopTyping');
         } else {
-            // ถ้ายังมีตัวอักษรอยู่ ให้ส่งสัญญาณว่ากำลังพิมพ์ (ค้างไว้ตลอดไม่ตัดเวลา)
-            clearTimeout(typingTimeout);
+            // ถ้ายังมีตัวอักษรอยู่ ให้ส่งสัญญาณว่ากำลังพิมพ์ (และจะค้างไว้ตลอดไม่ตัดเวลา)
             socket.emit('typing', { senderName: currentName });
         }
     });
