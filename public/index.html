@@ -19,11 +19,17 @@
         button:hover { background: #ff6b81; }
         .btn-start { width: 100%; font-size: 18px; padding: 14px; margin-top: 10px; background: #2ed573; }
         .btn-start:hover { background: #26af5f; }
+        
+        /* สไตล์ตารางลำดับการเล่น */
+        .order-section { margin-top: 15px; background: #0f3460; padding: 15px; border-radius: 10px; border: 1px solid #2ed573; display: none; }
+        .order-list { text-align: left; margin-top: 8px; padding-left: 20px; margin-bottom: 0; }
+        .order-list li { margin: 4px 0; }
+        .order-first { color: #2ed573; font-weight: bold; }
+
         .vote-section, .guess-section { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; display: none; }
         .vote-btn { width: 100%; margin: 5px 0; background: #0f3460; border: 1px solid #4da6ff; }
         .vote-btn:hover { background: #4da6ff; }
         
-        /* สไตล์ระบบแชต */
         .chat-section { text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; }
         .chat-box { height: 140px; overflow-y: auto; background: #0f3460; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
         .chat-msg { word-break: break-word; }
@@ -52,6 +58,12 @@
 
     <div class="role-box" id="role-display">
         กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)
+    </div>
+
+    <!-- ส่วนแสดงลำดับการเล่น -->
+    <div class="order-section" id="order-section">
+        <strong style="color: #2ed573;">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
+        <ol class="order-list" id="order-ol"></ol>
     </div>
 
     <!-- ส่วนระบบโหวต -->
@@ -183,13 +195,24 @@
         }
     });
 
-    socket.on('gameStarted', () => {
+    socket.on('gameStarted', (data) => {
         hasVoted = false;
         document.getElementById('vote-section').style.display = 'block';
         document.getElementById('guess-section').style.display = 'none';
         document.getElementById('vote-count').innerText = '0';
         document.getElementById('total-voters').innerText = currentPlayers.length;
         
+        // แสดงลำดับการตั้งคำถาม
+        const orderSection = document.getElementById('order-section');
+        const orderOl = document.getElementById('order-ol');
+        orderSection.style.display = 'block';
+        orderOl.innerHTML = data.playOrder.map((p, index) => {
+            if (index === 0) {
+                return `<li class="order-first">${p.name} 👈 (เริ่มถามคนแรก)</li>`;
+            }
+            return `<li>${p.name}</li>`;
+        }).join('');
+
         const voteBtnsContainer = document.getElementById('vote-buttons');
         voteBtnsContainer.innerHTML = currentPlayers.map(p => 
             `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
