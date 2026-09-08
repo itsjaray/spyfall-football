@@ -279,6 +279,7 @@
         const input = document.getElementById('chat-input');
         if (input.value.trim() !== '') {
             socket.emit('sendChatMessage', input.value.trim());
+            socket.emit('stopTyping'); // 👈 สั่งเคลียร์สถานะกำลังพิมพ์ทันทีที่กดส่ง
             input.value = '';
         }
     }
@@ -494,18 +495,25 @@
     let typingTimeout = null;
 
     if (messageInput) {
-        messageInput.addEventListener('input', () => {
-            const nameInput = document.getElementById('username');
-            const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
+    messageInput.addEventListener('input', () => {
+        const nameInput = document.getElementById('username');
+        const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
 
+        // เช็คว่าถ้าช่องพิมพ์ว่างเปล่า (ลบข้อความจนหมด) ให้ส่งสัญญาณหยุดพิมพ์ทันที
+        if (messageInput.value.trim() === '') {
+            socket.emit('stopTyping');
+        } else {
+            // ถ้ายังมีตัวอักษรอยู่ ให้ส่งสัญญาณว่ากำลังพิมพ์
             socket.emit('typing', { senderName: currentName });
-
+            
+            // ล้าง timeout เดิมกันไว้ก่อน แล้วตั้งเวลาเผื่อกรณีผู้เล่นหยุดพิมพ์ไปเฉยๆ (เช่น 5 วินาที)
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => {
                 socket.emit('stopTyping');
-            }, 10000);
-        });
-    }
+            }, 5000); 
+        }
+    });
+}
 
     socket.on('displayTyping', (data) => {
         if (typingIndicator) {
