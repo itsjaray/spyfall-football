@@ -1,6 +1,8 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -8,23 +10,20 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-const footballers = [
-    { name: "Lionel Messi", position: "RW/AM", foot: "Left" },
-    { name: "Cristiano Ronaldo", position: "ST", foot: "Right" },
-    { name: "Kylian Mbappé", position: "ST/LW", foot: "Right" },
-    { name: "Erling Haaland", position: "ST", foot: "Left" },
-    { name: "Kevin De Bruyne", position: "CM/AM", foot: "Right" },
-    { name: "Jude Bellingham", position: "AM/CM", foot: "Right" },
-    { name: "Mohamed Salah", position: "RW", foot: "Left" },
-    { name: "Virgil van Dijk", position: "CB", foot: "Right" },
-    { name: "Luka Modrić", position: "CM", foot: "Right" },
-    { name: "N'Golo Kanté", position: "DM/CM", foot: "Right" },
-    { name: "Bukayo Saka", position: "RW", foot: "Left" },
-    { name: "Robert Lewandowski", position: "ST", foot: "Right" },
-    { name: "Harry Kane", position: "ST", foot: "Right" },
-    { name: "Vinícius Júnior", position: "LW", foot: "Right" },
-    { name: "Pedri", position: "CM", foot: "Right" }
-];
+// โหลดฐานข้อมูลนักเตะจากไฟล์ players.json อัตโนมัติ
+let footballers = [];
+try {
+    const rawData = fs.readFileSync(path.join(__dirname, 'players.json'), 'utf8');
+    footballers = JSON.parse(rawData);
+    console.log(`โหลดรายชื่อนักเตะสำเร็จทั้งหมด: ${footballers.length} คน`);
+} catch (error) {
+    console.error("ไม่สามารถโหลดไฟล์ players.json ได้:", error);
+    // กรณีหาไฟล์ไม่เจอ ให้ใช้ค่าสำรองกันเว็บพัง
+    footballers = [
+        { name: "Lionel Messi", position: "RW/AM", foot: "Left" },
+        { name: "Cristiano Ronaldo", position: "ST", foot: "Right" }
+    ];
+}
 
 let players = [];
 let gameState = {
