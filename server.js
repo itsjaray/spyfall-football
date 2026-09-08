@@ -140,13 +140,33 @@ io.on('connection', (socket) => {
         const spyIndex = Math.floor(Math.random() * players.length);
         gameState.spyId = players[spyIndex].id;
 
-        const sameAttrDecoys = footballers.filter(f => 
-            f.name !== selectedTarget.name && 
-            (f.position === selectedTarget.position || f.foot === selectedTarget.foot)
-        );
-        const selectedDecoy = sameAttrDecoys.length > 0 
-            ? sameAttrDecoys[Math.floor(Math.random() * sameAttrDecoys.length)]
-            : footballers.find(f => f.name !== selectedTarget.name);
+        // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "RW / AM" จะดึงแค่ "RW")
+    const getPrimaryPos = (posStr) => {
+        if (!posStr) return "";
+        return posStr.split(/[\/\s]+/)[0].toUpperCase();
+    };
+
+    const targetPrimaryPos = getPrimaryPos(selectedTarget.position);
+    const targetFoot = selectedTarget.foot ? selectedTarget.foot.trim().toLowerCase() : "";
+
+    // กรองหานักเตะที่มีตำแหน่งหลักใกล้เคียงกัน หรือ เท้าข้างเดียวกัน
+    let validDecoys = footballers.filter(f => {
+        if (f.name === selectedTarget.name) return false;
+        const fPrimaryPos = getPrimaryPos(f.position);
+        const fFoot = f.foot ? f.foot.trim().toLowerCase() : "";
+
+        const isPosMatch = targetPrimaryPos && fPrimaryPos && (targetPrimaryPos === fPrimaryPos);
+        const isFootMatch = targetFoot && fFoot && (targetFoot === fFoot);
+
+        return isPosMatch || isFootMatch;
+    });
+
+    if (validDecoys.length === 0) {
+        validDecoys = footballers.filter(f => f.name !== selectedTarget.name);
+    }
+
+    const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
+    gameState.decoyFootballer = selectedDecoy;
 
         gameState.decoyFootballer = selectedDecoy;
 
