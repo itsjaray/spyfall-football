@@ -128,6 +128,37 @@
 </div>
 
 <script>
+
+
+    // ฟังก์ชันส่งคำสั่งไปขอข้อมูลตาที่แล้วจาก Server
+function requestLastGameResult() {
+    socket.emit('getLastGameResult');
+}
+
+// รับข้อมูลผลสรุปจาก Server แล้วนำมาแสดงบนหน้าจอ
+socket.on('lastGameResultResponse', (data) => {
+    const resultBox = document.getElementById('lastGameResultBox');
+    const secretText = document.getElementById('lastSecretText');
+    const decoyText = document.getElementById('lastDecoyText');
+
+    secretText.innerHTML = `⚽ <b>นักเตะตัวจริง (เป้าหมาย):</b> ${data.secret} (${data.secretPos})`;
+    decoyText.innerHTML = `🕵️ <b>นักเตะตัวหลอก (ของสปาย):</b> ${data.decoy} (${data.decoyPos})`;
+
+    resultBox.style.display = 'block'; // แสดงกล่องข้อความ
+});
+
+// (ตัวเลือกเสริม) ให้ปุ่มแสดงขึ้นมาเฉพาะตอนเกมจบ หรือซ่อนตอนกำลังเล่น
+socket.on('gameOver', () => {
+    document.getElementById('btnLastGame').style.display = 'inline-block';
+});
+
+socket.on('gameStarted', () => {
+    document.getElementById('btnLastGame').style.display = 'none';
+    document.getElementById('lastGameResultBox').style.display = 'none'; // ซ่อนกล่องผลลัพธ์เก่าตอนเริ่มเกมใหม่
+});
+
+    
+    
     const socket = io();
     let currentPlayers = [];
     let hasVoted = false;
