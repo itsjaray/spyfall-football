@@ -11,7 +11,7 @@ const io = new Server(server);
 // ตัวแปรสำหรับเก็บประวัติรอบที่แล้วและสรุปเกม
 let previousRoundSecret = null;
 let previousRoundDecoy = null;
-let roundCount = 0; // ตัวแปรนับรอบเกม
+let roundCount = 0;
 
 let lastGameSummary = {
     secret: null,
@@ -30,10 +30,9 @@ try {
     console.log(`โหลดรายชื่อนักเตะสำเร็จทั้งหมด: ${footballers.length} คน`);
 } catch (error) {
     console.error("ไม่สามารถโหลดไฟล์ players.json ได้:", error);
-    // กรณีหาไฟล์ไม่เจอ ให้ใช้ค่าสำรองกันเว็บพัง
     footballers = [
         { name: "Lionel Messi", position: "RW/AM", foot: "Left", image: "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/efcf/live/3e629830-a558-11f1-9acf-19576105f049.jpg.webp" },
-        { name: "Mohamed Salah", position: "RW", "foot": "Left", image: "https://imageio.forbes.com/specials-images/imageserve/627be91e09849a3247a3642a/0x0.jpg"}
+        { name: "Mohamed Salah", position: "RW", foot: "Left", image: "https://imageio.forbes.com/specials-images/imageserve/627be91e09849a3247a3642a/0x0.jpg"}
     ];
 }
 
@@ -41,7 +40,8 @@ let players = [];
 let gameState = {
     isStarted: false,
     secretFootballer: null,
-    spyId: null,
+    decoyFootballer: null,
+    spyIds: [],
     votes: {},
     votedPlayers: new Set()
 };
@@ -84,20 +84,18 @@ function isFlexibleMatch(input, target) {
 
     if (!cleanInput) return false;
 
-    // ถ้ามีส่วนหนึ่งตรงกันเป๊ะ เช่น พิมพ์นามสกุล "messi" หรือชื่อ "lionel"
     const targetParts = target.toLowerCase().split(' ').map(p => p.replace(/[^a-z0-9]/g, ''));
     if (cleanTarget.includes(cleanInput) || targetParts.some(part => part.length >= 3 && cleanInput.includes(part))) {
         return true;
     }
 
-    // ตรวจระยะความต่างของอักขระ (ยอมให้สะกดผิดได้เล็กน้อย)
     const distance = levenshteinDistance(cleanInput, cleanTarget);
     const maxAllowedDiff = Math.max(2, Math.floor(cleanTarget.length * 0.35));
     return distance <= maxAllowedDiff;
 }
 
 function startTimer() {
-    clearInterval(gameTimer);
+    if (gameTimer) clearInterval(gameTimer);
     timeRemaining = 180;
     io.emit('timerUpdate', timeRemaining);
 
@@ -113,14 +111,11 @@ function startTimer() {
 }
 
 io.on('connection', (socket) => {
-    // 1. ดึงชื่อที่แนบมากับ query ตอนเชื่อมต่อ
     const clientName = socket.handshake.query.name;
     const initialName = (clientName && clientName.trim() !== '') ? clientName.trim() : 'ผู้เล่น';
 
-    // 2. ป้องกันเคสรีเฟรชแล้วไอดีค้างซ้อนกัน
     players = players.filter(p => p.id !== socket.id);
 
-    // 3. เพิ่มผู้เล่นเข้ามาด้วยชื่อเดิม (หรือ 'ผู้เล่น' ถ้ายังไม่เคยตั้ง) ตั้งแต่ทีแรกเลย
     players.push({
         id: socket.id,
         name: initialName,
@@ -130,13 +125,9 @@ io.on('connection', (socket) => {
 
     io.emit('updatePlayers', players);
 
-    // 2. ย้าย Event ของ socket ทั้งหมดมาไว้ข้างในนี้
     socket.on('disconnect', () => {
-        const index = players.findIndex(p => p.id === socket.id);
-        if (index !== -1) {
-            players.splice(index, 1);
-            io.emit('updatePlayers', players);
-        }
+        players = players.filter(p => p.id !== socket.id);
+        io.emit('updatePlayers', players);
     });
 
     socket.on('setName', (name) => {
@@ -148,85 +139,113 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startGame', (data) => {
-    const requestedSpyCount = data && data.spyCount ? parseInt(data.spyCount) : 1;
-    const maxAllowedSpies = players.length - 2;
+        if (players.length < 3) {
+            socket.emit('errorMsg', 'ไม่สามารถเริ่มเกมได้ ต้องมีผู้เล่นขั้นต่ำ 3 คนขึ้นไป');
+            return;
+        }
 
-    if (players.length < 3) {
-        socket.emit('errorMsg', 'ไม่สามารถเริ่มเกมได้ ต้องมีผู้เล่นขั้นต่ำ 3 คนขึ้นไป');
-        return;
-    }
-    
-        // 1. นำข้อมูลของรอบปัจจุบัน (ก่อนจะสุ่มใหม่) ไปเก็บไว้เป็น "รอบที่แล้ว"
-    if (gameState.secretFootballer && gameState.secretFootballer.name) {
-        previousRoundSecret = gameState.secretFootballer;
-        previousRoundDecoy = gameState.decoyFootballer;
-    }
+        if (gameState.secretFootballer && gameState.secretFootballer.name) {
+            previousRoundSecret = gameState.secretFootballer;
+            previousRoundDecoy = gameState.decoyFootballer;
+            lastGameSummary = {
+                secret: previousRoundSecret.name,
+                secretPos: previousRoundSecret.position || "",
+                decoy: previousRoundDecoy ? previousRoundDecoy.name : "",
+                decoyPos: previousRoundDecoy ? previousRoundDecoy.position : ""
+            };
+        }
 
-    roundCount++; // นับเพิ่ม 1 รอบ
+        roundCount++;
+        gameState.isStarted = true;
+        gameState.votes = {};
+        gameState.votedPlayers.clear();
 
-    gameState.isStarted = true;
-    gameState.votes = {};
-    gameState.votedPlayers.clear();
+        const playerPool = Array.isArray(footballers) ? footballers : [];
+        if (playerPool.length === 0) return;
 
-        
+        // 1. สุ่มเลือกนักเตะเป้าหมายหลัก
+        const targetPlayer = playerPool[Math.floor(Math.random() * playerPool.length)];
+        gameState.secretFootballer = targetPlayer;
 
-       // 1. สุ่มเลือกนักเตะเป้าหมายหลัก
-    const playerPool = Array.isArray(footballers) ? footballers : [];
-    if (playerPool.length === 0) return;
-    
-    const targetPlayer = playerPool[Math.floor(Math.random() * playerPool.length)];
-    gameState.secretFootballer = targetPlayer;
+        // 2. สุ่มเลือก Spy
+        const spyCountInput = data && data.spyCount ? parseInt(data.spyCount) : 1;
+        const shuffledPlayers = [...players].sort(() => 0.5 - Math.random());
+        const spies = shuffledPlayers.slice(0, spyCountInput);
+        const spyIdsSet = new Set(spies.map(p => p.id));
+        gameState.spyIds = Array.from(spyIdsSet);
 
-    // 2. สุ่มเลือก Spy
-    const shuffledPlayers = [...players].sort(() => 0.5 - Math.random());
-    const spyCountInput = data && data.spyCount ? data.spyCount : 1;
-    const spies = shuffledPlayers.slice(0, spyCountInput);
-    const spyIds = new Set(spies.map(p => p.id));
-    gameState.spyIds = Array.from(spyIds);
+        // 3. สุ่มตัวหลอก (Decoy)
+        let validDecoys = playerPool.filter(f => f && f.id !== targetPlayer.id);
+        const matchingDecoys = playerPool.filter(f => {
+            if (!f || f.id === targetPlayer.id) return false;
+            let match = 0;
+            if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
+            if (f.nationality && targetPlayer.nationality && f.nationality === targetPlayer.nationality) match++;
+            if (f.foot && targetPlayer.foot && f.foot === targetPlayer.foot) match++;
+            if (f.current_team && targetPlayer.current_team && f.current_team === targetPlayer.current_team) match++;
+            return match >= 2;
+        });
 
-    // 3. ระบบสุ่มตัวหลอกแบบปลอดภัย (ไม่ใช้ฟังก์ชันซับซ้อนที่เสี่ยงทำให้ Server Crash)
-    let validDecoys = playerPool.filter(f => f && f.id !== targetPlayer.id);
+        if (matchingDecoys.length > 0) {
+            validDecoys = matchingDecoys;
+        }
 
-    // ถ้ามีข้อมูลพอ ลองกรองหาตัวที่คล้ายกัน (เช็คแบบตรงๆ ป้องกัน Error)
-    const matchingDecoys = playerPool.filter(f => {
-        if (!f || f.id === targetPlayer.id) return false;
-        let match = 0;
-        if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
-        if (f.nationality && targetPlayer.nationality && f.nationality === targetPlayer.nationality) match++;
-        if (f.foot && targetPlayer.foot && f.foot === targetPlayer.foot) match++;
-        if (f.current_team && targetPlayer.current_team && f.current_team === targetPlayer.current_team) match++;
-        return match >= 2; // เอาที่ตรงกันอย่างน้อย 2 อย่างขึ้นไป
+        const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
+        gameState.decoyFootballer = selectedDecoy;
+
+        // แจ้งบทบาทให้ผู้เล่นแต่ละคน
+        players.forEach(p => {
+            if (spyIdsSet.has(p.id)) {
+                p.role = 'SPY';
+                io.to(p.id).emit('assignRole', {
+                    role: 'SPY',
+                    decoyName: selectedDecoy ? selectedDecoy.name : '???',
+                    position: selectedDecoy ? selectedDecoy.position : '???',
+                    foot: selectedDecoy ? selectedDecoy.foot : '???',
+                    image: selectedDecoy ? selectedDecoy.image : ''
+                });
+            } else {
+                p.role = 'PLAYER';
+                io.to(p.id).emit('assignRole', {
+                    role: 'PLAYER',
+                    name: targetPlayer.name,
+                    position: targetPlayer.position || '???',
+                    foot: targetPlayer.foot || '???',
+                    image: targetPlayer.image || ''
+                });
+            }
+        });
+
+        const playOrder = shuffleArray(players);
+
+        let summaryToSend = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
+        if (previousRoundSecret) {
+            summaryToSend = lastGameSummary;
+        }
+
+        io.emit('gameStarted', { 
+            playOrder: playOrder,
+            lastGame: summaryToSend,
+            roundCount: roundCount
+        });
+
+        setTimeout(() => {
+            startTimer();
+        }, 3000);
     });
 
-    if (matchingDecoys.length > 0) {
-        validDecoys = matchingDecoys;
-    }
-
-    // สุ่มเลือกตัวหลอกให้ Spy
-    const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
-    gameState.decoyFootballer = selectedDecoy;
-
-    // เพิ่มสองบรรทัดนี้ลงไปตรงท้ายสุดของ socket.on('startGame')
-    io.emit('gameStarted', gameState);
-    });
-});
-        
-
-    // รับคำสั่งรีเซ็ตห้องจากปุ่ม Home
     socket.on('resetRoom', () => {
-        if (typeof gameTimer !== 'undefined' && gameTimer) {
+        if (gameTimer) {
             clearInterval(gameTimer);
             gameTimer = null;
         }
-        io.emit('updateTimer', '03:00'); // ส่งสัญญาณบอกทุกคนให้เปลี่ยนเวลาเป็น 03:00
-        io.emit('hideGameUI'); // 🛑 เพิ่มคำสั่งนี้เพื่อส่งสัญญาณบอกทุกจอให้ซ่อนกล่องโหวต/ผลงานเก่า
-        
-        // เคลียร์บทบาทและสถานะเกมของผู้เล่นทุกคน แต่คงคะแนนไว้
+        io.emit('timerUpdate', '03:00');
+        io.emit('hideGameUI');
+
         players.forEach(player => {
             player.role = null; 
         });
 
-        // ส่งสัญญาณบอกทุกคนในห้องให้รีเซ็ตหน้าจอและเวลาพร้อมกัน
         io.emit('gameReset', players);
     });
 
@@ -248,131 +267,72 @@ io.on('connection', (socket) => {
         });
     });
 
-
-    // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
     socket.on('typing', (data) => {
-    // ส่งชื่อคนที่กำลังพิมพ์ไปบอกทุกคน ยกเว้นคนที่พิมพ์อยู่เอง
-    socket.broadcast.emit('displayTyping', { senderName: data.senderName });
+        socket.broadcast.emit('displayTyping', { senderName: data.senderName });
     });
 
     socket.on('stopTyping', () => {
-    socket.broadcast.emit('hideTyping');
-    });
-
-       players.forEach(p => {
-    if (spyIds.has(p.id)) {
-        p.role = 'SPY';
-        io.to(p.id).emit('assignRole', {
-            role: 'SPY',
-            decoyName: selectedDecoy ? selectedDecoy.name : '???',
-            position: selectedDecoy ? selectedDecoy.position : '???',
-            foot: selectedDecoy ? selectedDecoy.foot : '???',
-            image: selectedDecoy ? selectedDecoy.image : '' // <--- เพิ่มบรรทัดนี้เพื่อให้ส่งรูปลิงก์ของตัวหลอกไปด้วยครับ
-        });
-    } else {
-        p.role = 'PLAYER';
-        io.to(p.id).emit('assignRole', {
-            role: 'PLAYER',
-            name: selectedTarget.name,
-            position: targetPrimaryPos, 
-            foot: targetFoot,
-            image: selectedTarget.image // <--- เพิ่มบรรทัดนี้เข้าไปครับ
-        });
-    }
-});
-
-        const playOrder = shuffleArray(players);
-
-// จัดเตรียมข้อมูลสรุปของรอบที่แล้วจากตัวแปรสำรอง
-    let summaryToSend = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
-    if (previousRoundSecret) {
-        summaryToSend.secret = previousRoundSecret.name;
-        summaryToSend.secretPos = previousRoundSecret.position || "";
-        summaryToSend.decoy = previousRoundDecoy ? previousRoundDecoy.name : "";
-        summaryToSend.decoyPos = previousRoundDecoy ? previousRoundDecoy.position : "";
-    }
-    
-    io.emit('gameStarted', { 
-        playOrder: playOrder,
-        lastGame: summaryToSend,
-        roundCount: roundCount
-    });
-
-    setTimeout(() => {
-        startTimer();
-    }, 3000);
-        
+        socket.broadcast.emit('hideTyping');
     });
 
     socket.on('castVote', (targetId) => {
-    // ป้องกันไม่ให้เกมยังไม่เริ่ม, ผู้เล่นโหวตซ้ำ, หรือ *พยายามโหวตให้ตัวเอง*
-    if (!gameState.isStarted || gameState.votedPlayers.has(socket.id) || targetId === socket.id) return;
+        if (!gameState.isStarted || gameState.votedPlayers.has(socket.id) || targetId === socket.id) return;
 
-    gameState.votedPlayers.add(socket.id);
-    gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
+        gameState.votedPlayers.add(socket.id);
+        gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
 
-    // เพิ่มบรรทัดนี้เพื่อเช็กข้อมูลใน Terminal/Log ของ Server
-    console.log(`[VOTE] ผู้เล่น ${socket.id} โหวตให้ targetId: ${targetId} | Spy ตัวจริงคือ: ${gameState.spyIds}`);
-
-    io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
+        io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
         if (gameState.votedPlayers.size === players.length) {
-        clearInterval(gameTimer);
-        let maxVotes = -1;
-        let suspectedId = null;
+            if (gameTimer) clearInterval(gameTimer);
+            let maxVotes = -1;
+            let suspectedId = null;
 
-        for (const [pid, count] of Object.entries(gameState.votes)) {
-            if (count > maxVotes) {
-                maxVotes = count;
-                suspectedId = pid;
+            for (const [pid, count] of Object.entries(gameState.votes)) {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    suspectedId = pid;
+                }
+            }
+
+            if (gameState.spyIds && gameState.spyIds.includes(suspectedId)) {
+                if (gameState.spyIds.length > 0) {
+                    io.to(gameState.spyIds[0]).emit('spyMustGuess');
+                }
+                players.forEach(p => {
+                    if (!gameState.spyIds.includes(p.id)) {
+                        io.to(p.id).emit('waitingForSpyGuess');
+                    }
+                });
+            } else {
+                const spyPlayers = players.filter(p => gameState.spyIds && gameState.spyIds.includes(p.id));
+                spyPlayers.forEach(sp => sp.score += 2);
+                const spyNamesStr = spyPlayers.map(p => p.name).join(', ');
+                const suspectedPlayer = players.find(p => p.id === suspectedId);
+
+                io.emit('finalResult', {
+                    winner: 'SPY',
+                    reason: 'voteWrong',
+                    suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
+                    spyName: spyNamesStr,
+                    secretFootballer: gameState.secretFootballer.name,
+                    decoyFootballer: gameState.decoyFootballer.name
+                });
+
+                gameState.isStarted = false;
+                io.emit('updatePlayers', players);
             }
         }
-
-        const spyPlayer = players.find(p => p.id === gameState.spyIds);
-
-        // โหวตจับ SPY ถูกตัวหรือไม่?
-        if (gameState.spyIds && gameState.spyIds.includes(suspectedId)) {
-            // โหวตถูก -> ให้ SPY ได้โอกาสสุดท้ายในการพิมพ์ทายคำตอบ
-            io.to(gameState.spyIds).emit('spyMustGuess');
-
-            players.forEach(p => {
-                if (p.id !== gameState.spyIds) {
-                    io.to(p.id).emit('waitingForSpyGuess');
-                }
-            });
-       } else {
-        // โหวตผิดตัว -> SPY ชนะทันที (+2 คะแนน)
-        const spyPlayers = players.filter(p => gameState.spyIds && gameState.spyIds.includes(p.id));
-        spyPlayers.forEach(sp => sp.score += 2);
-        const spyNamesStr = spyPlayers.map(p => p.name).join(', ');
-
-        const suspectedPlayer = players.find(p => p.id === suspectedId);
-
-        io.emit('finalResult', {
-            winner: 'SPY',
-            reason: 'voteWrong',
-            suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
-            spyName: spyNamesStr, // <--- ใช้ตัวแปรนี้แทน จะแสดงชื่อ/เลขของ Spy จริงๆ เช่น "2"
-            secretFootballer: gameState.secretFootballer.name,
-            decoyFootballer: gameState.decoyFootballer.name
-        });
-
-            gameState.isStarted = false;
-            io.emit('updatePlayers', players);
-        }
-    }
     });
 
     socket.on('spyGuess', (guessedName) => {
         if (!gameState.isStarted || !gameState.spyIds.includes(socket.id)) return;
 
-        // ป้องกันกรณีไม่ได้พิมพ์มา หรือค่าว่าง ให้ถือว่าทายผิดทันที
         const trimmedGuess = guessedName ? guessedName.trim() : '';
         const isCorrect = trimmedGuess !== '' && isFlexibleMatch(trimmedGuess, gameState.secretFootballer.name);
         const spyPlayer = players.find(p => gameState.spyIds.includes(p.id));
 
         if (isCorrect) {
-            // SPY พิมพ์ทายถูก -> SPY พลิกกลับมาชนะ (+2 คะแนน)
             if (spyPlayer) spyPlayer.score += 2;
             io.emit('finalResult', {
                 winner: 'SPY',
@@ -383,7 +343,6 @@ io.on('connection', (socket) => {
                 spyGuess: guessedName
             });
         } else {
-            // SPY พิมพ์ทายผิด -> ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)
             players.forEach(p => {
                 if (!gameState.spyIds.includes(p.id)) p.score += 1;
             });
@@ -412,12 +371,6 @@ io.on('connection', (socket) => {
         io.emit('updatePlayers', players);
     });
 
-    socket.on('disconnect', () => {
-        players = players.filter(p => p.id !== socket.id);
-        io.emit('updatePlayers', players);
-    });
-
-// รับคำสั่งเมื่อผู้เล่นกดขอผลสรุปเกมรอบที่แล้ว
     socket.on('getLastGameResult', () => {
         if (!lastGameSummary.secret) {
             socket.emit('errorMsg', 'ยังไม่มีประวัติการเล่นในรอบนี้');
