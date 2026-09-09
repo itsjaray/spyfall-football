@@ -533,26 +533,35 @@
     });
 
     socket.on('finalResult', (result) => {
+        // 🛑 รีเซ็ตเวลาเป็น 03:00 และหยุด Timer ทันทีที่เกมจบ
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.innerText = '🕒 03:00';
+        }
+        if (typeof timerInterval !== 'undefined' && timerInterval) {
+            clearInterval(timerInterval);
+        }
+
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'none';
         const display = document.getElementById('role-display');
 
         if (result.winner === 'PLAYERS') {
-            display.innerHTML = `<span style='color:var(--pl-green);'>🎉 ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
-            <small style='color:#ff6b81;'>(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br><br>
+            display.innerHTML = `<span style="color:var(--pl-green);">&#127919; ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
+            <small style="color:#ff6b81;">(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
-            <small style='color:var(--pl-cyan);'>นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
-            <small style='color:#aaa;'>(นักเตะหลอกของ SPY: ${result.decoyFootballer})</small>`;
+            <small style="color:var(--pl-cyan);">นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
+            <small style="color:#aaa;">นักเตะหลอกของ SPY: ${result.decoyFootballer}</small>`;
         } else {
             let reasonText = result.reason === 'voteWrong' 
-                ? `คนธรรมดาโหวตผิดตัว!` 
+                ? `คนธรรมดาโหวตผิดตัว!`
                 : `SPY ใช้โอกาสสุดท้ายพิมพ์ทายถูกต้อง! ("${result.spyGuess}")`;
 
-            display.innerHTML = `<span style='color:var(--pl-pink);'>🏆 SPY ชนะ (+2 คะแนน)!</span><br>
-            <small style='color:#ffb8b8;'>(${reasonText})</small><br><br>
+            display.innerHTML = `<span style="color:var(--pl-pink);">&#127942; SPY ชนะ (+2 คะแนน)!</span><br>
+            <small style="color:#ffb8b8;">(${reasonText})</small><br>
             <b>SPY คือ:</b> ${result.spyName}<br>
-            <small style='color:var(--pl-cyan);'>นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
-            <small style='color:#aaa;'>(นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer})</small>`;
+            <small style="color:var(--pl-cyan);">นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
+            <small style="color:#aaa;">นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer}</small>`;
         }
     });
 
