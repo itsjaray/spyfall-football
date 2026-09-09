@@ -288,13 +288,17 @@
     let cachedGameData = null; 
 
     function handleNameSubmit(e) {
-        e.preventDefault();
-        const nameInput = document.getElementById('username');
-        if (nameInput.value.trim() !== '') {
-            socket.emit('setName', nameInput.value.trim());
+    e.preventDefault();
+    const nameInput = document.getElementById('username');
+    if (nameInput) {
+        const name = nameInput.value.trim();
+        if (name !== '') {
+            localStorage.setItem('spyfall_player_name', name); // บันทึกชื่อลงในเครื่อง
+            socket.emit('setName', name);                    // ส่งชื่อไปบอกเซิร์ฟเวอร์
             alert('ตั้งชื่อเรียบร้อยแล้ว!');
         }
     }
+}
 
     function handleChatSubmit(e) {
         e.preventDefault();
