@@ -184,6 +184,7 @@
 <body>
 
 <div class="container">
+    <button onclick="resetGameRoom()" title="รีเซ็ตเกมกลับหน้าหลัก" style="position: absolute; left: 15px; top: 15px; background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; z-index: 99;">🏠</button>
     <h1>SPYFALL FOOTBALL <br><b>MADE BY JARAY</b></h1>
     
     <form id="name-form" onsubmit="handleNameSubmit(event)">
@@ -601,6 +602,18 @@
         socket.emit('setName', savedName);
     }
 });
+
+    function resetGameRoom() {
+        if (confirm('คุณต้องการรีเซ็ตเกมกลับหน้าหลัก (คะแนนยังคงอยู่) ใช่หรือไม่?')) {
+        socket.emit('resetRoom');
+        }
+    }
+
+    socket.on('gameReset', (serverPlayers) => {
+        currentPlayers = serverPlayers;
+        updatePlayerTable(currentPlayers);
+        window.location.reload(); // หรือปรับให้เคลียร์หน้าจอเกมตามฟังก์ชันของคุณ
+    });
     
 </script>
 </body>
