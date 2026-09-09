@@ -208,6 +208,7 @@ io.on('connection', (socket) => {
 
     // เพิ่มสองบรรทัดนี้ลงไปตรงท้ายสุดของ socket.on('startGame')
     io.emit('gameStarted', gameState);
+    });
 });
         
 
