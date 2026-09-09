@@ -254,10 +254,10 @@ io.on('connection', (socket) => {
     gameState.decoyFootballer = selectedDecoy;
 
 // สุ่มหรือตรวจสอบไอดี SPY ให้แน่ใจว่ามีอยู่จริงก่อนแจกบทบาท
-    let spyPlayer = players.find(p => p.id === gameState.spyId);
+    let spyPlayer = players.find(p => p.id === gameState.spyIds);
     if (!spyPlayer && players.length > 0) {
         const randomSpy = players[Math.floor(Math.random() * players.length)];
-        gameState.spyId = randomSpy.id;
+        gameState.spyIds = randomSpy.id;
     }
 
        
@@ -312,7 +312,7 @@ io.on('connection', (socket) => {
     gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
 
     // เพิ่มบรรทัดนี้เพื่อเช็กข้อมูลใน Terminal/Log ของ Server
-    console.log(`[VOTE] ผู้เล่น ${socket.id} โหวตให้ targetId: ${targetId} | Spy ตัวจริงคือ: ${gameState.spyId}`);
+    console.log(`[VOTE] ผู้เล่น ${socket.id} โหวตให้ targetId: ${targetId} | Spy ตัวจริงคือ: ${gameState.spyIds}`);
 
     io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
@@ -328,15 +328,15 @@ io.on('connection', (socket) => {
             }
         }
 
-        const spyPlayer = players.find(p => p.id === gameState.spyId);
+        const spyPlayer = players.find(p => p.id === gameState.spyIds);
 
         // โหวตจับ SPY ถูกตัวหรือไม่?
-        if (suspectedId === gameState.spyId) {
+        if (gameState.spyIds && gameState.spyIds.includes(suspectedId)) {
             // โหวตถูก -> ให้ SPY ได้โอกาสสุดท้ายในการพิมพ์ทายคำตอบ
-            io.to(gameState.spyId).emit('spyMustGuess');
+            io.to(gameState.spyIds).emit('spyMustGuess');
 
             players.forEach(p => {
-                if (p.id !== gameState.spyId) {
+                if (p.id !== gameState.spyIds) {
                     io.to(p.id).emit('waitingForSpyGuess');
                 }
             });
@@ -361,12 +361,12 @@ io.on('connection', (socket) => {
     });
 
     socket.on('spyGuess', (guessedName) => {
-        if (!gameState.isStarted || socket.id !== gameState.spyId) return;
+        if (!gameState.isStarted || !gameState.spyIds.includes(socket.id)) return;
 
         // ป้องกันกรณีไม่ได้พิมพ์มา หรือค่าว่าง ให้ถือว่าทายผิดทันที
         const trimmedGuess = guessedName ? guessedName.trim() : '';
         const isCorrect = trimmedGuess !== '' && isFlexibleMatch(trimmedGuess, gameState.secretFootballer.name);
-        const spyPlayer = players.find(p => p.id === gameState.spyId);
+        const spyPlayer = players.find(p => gameState.spyIds.includes(p.id));
 
         if (isCorrect) {
             // SPY พิมพ์ทายถูก -> SPY พลิกกลับมาชนะ (+2 คะแนน)
@@ -382,7 +382,7 @@ io.on('connection', (socket) => {
         } else {
             // SPY พิมพ์ทายผิด -> ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)
             players.forEach(p => {
-                if (p.id !== gameState.spyId) p.score += 1;
+                if (!gameState.spyIds.includes(p.id)) p.score += 1;
             });
             io.emit('finalResult', {
                 winner: 'PLAYERS',
