@@ -270,7 +270,10 @@
 </div>
 
 <script>
-    const socket = io();
+    const savedName = localStorage.getItem('spyfall_player_name') || '';
+    const socket = io({
+        query: { name: savedName }
+    });
     let currentPlayers = [];
     let hasVoted = false;
     let cachedGameData = null; 
