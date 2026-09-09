@@ -113,6 +113,9 @@ function startTimer() {
 }
 
 io.on('connection', (socket) => {
+    // ป้องกันเคสรีเฟรชแล้วค้างซ้อนกัน
+    players = players.filter(p => p.id !== socket.id);
+
     players.push({
         id: socket.id,
         name: `ผู้เล่น ${players.length + 1}`,
@@ -121,6 +124,7 @@ io.on('connection', (socket) => {
     });
 
     io.emit('updatePlayers', players);
+});
 
     socket.on('disconnect', () => {
         const index = players.findIndex(p => p.id === socket.id);
