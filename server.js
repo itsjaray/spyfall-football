@@ -167,10 +167,13 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startGame', (data) => {
-        if (players.length < 3) {
-            socket.emit('errorMsg', 'ต้องมีผู้เล่นอย่างน้อย 3 คนขึ้นไปถึงจะเริ่มเกมได้');
-            return;
-        }
+    const requestedSpyCount = data && data.spyCount ? parseInt(data.spyCount) : 1;
+    const maxAllowedSpies = players.length - 2;
+
+    if (players.length < 3 || requestedSpyCount > maxAllowedSpies) {
+        socket.emit('errorMsg', `ไม่สามารถเลือก Spy ${requestedSpyCount} คนได้ (มีผู้เล่น ${players.length} คน เลือกสปายได้สูงสุด ${Math.max(1, maxAllowedSpies)} คนครับ)`);
+        return;
+    }
 
         // 1. นำข้อมูลของรอบปัจจุบัน (ก่อนจะสุ่มใหม่) ไปเก็บไว้เป็น "รอบที่แล้ว"
     if (gameState.secretFootballer && gameState.secretFootballer.name) {
