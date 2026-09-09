@@ -311,6 +311,10 @@
     }
 
     function startGame() {
+        // 🛑 ซ่อนกล่องโหวตและกล่องทายผลทันทีเมื่อกดเริ่มเกมใหม่
+    document.getElementById('vote-section').style.display = 'none';
+    document.getElementById('guess-section').style.display = 'none';
+        
     const spyCountInput = document.getElementById('spy-count');
     const spyCount = spyCountInput ? parseInt(spyCountInput.value) : 1;
     
