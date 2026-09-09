@@ -155,7 +155,7 @@ io.on('connection', (socket) => {
         socket.emit('errorMsg', 'ไม่สามารถเริ่มเกมได้ ต้องมีผู้เล่นขั้นต่ำ 3 คนขึ้นไป');
         return;
     }
-
+    
         // 1. นำข้อมูลของรอบปัจจุบัน (ก่อนจะสุ่มใหม่) ไปเก็บไว้เป็น "รอบที่แล้ว"
     if (gameState.secretFootballer && gameState.secretFootballer.name) {
         previousRoundSecret = gameState.secretFootballer;
@@ -205,7 +205,10 @@ io.on('connection', (socket) => {
     // สุ่มเลือกตัวหลอกให้ Spy
     const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
     gameState.decoyFootballer = selectedDecoy;
-       
+
+    // เพิ่มสองบรรทัดนี้ลงไปตรงท้ายสุดของ socket.on('startGame')
+    io.emit('gameStarted', gameState);
+});
         
 
     // รับคำสั่งรีเซ็ตห้องจากปุ่ม Home
