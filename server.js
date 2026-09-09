@@ -306,12 +306,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('castVote', (targetId) => {
-        if (!gameState.isStarted || gameState.votedPlayers.has(socket.id)) return;
+    if (!gameState.isStarted || gameState.votedPlayers.has(socket.id)) return;
 
-        gameState.votedPlayers.add(socket.id);
-        gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
+    gameState.votedPlayers.add(socket.id);
+    gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
 
-        io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
+    // เพิ่มบรรทัดนี้เพื่อเช็กข้อมูลใน Terminal/Log ของ Server
+    console.log(`[VOTE] ผู้เล่น ${socket.id} โหวตให้ targetId: ${targetId} | Spy ตัวจริงคือ: ${gameState.spyId}`);
+
+    io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
         if (gameState.votedPlayers.size === players.length) {
         clearInterval(gameTimer);
