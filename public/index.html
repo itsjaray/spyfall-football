@@ -350,6 +350,9 @@
     socket.on('updatePlayers', (players) => {
         currentPlayers = players;
         document.getElementById('count').innerText = players.length;
+
+        // 👈 เรียกใช้ฟังก์ชันอัปเดตตัวเลือกจำนวน Spy ตรงนี้เพื่อให้เปลี่ยนตามจำนวนผู้เล่นแบบเรียลไทม์
+        updateSpyDropdown(players.length);
         
         const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
         const tbody = document.getElementById('players-tbody');
@@ -364,6 +367,27 @@
             </tr>`;
         }).join('');
     });
+
+    function updateSpyDropdown(playersCount) {
+    const select = document.getElementById('spy-count');
+    if (!select) return;
+    
+    const currentValue = select.value;
+    select.innerHTML = '';
+
+    const maxSpies = Math.max(1, playersCount - 2);
+
+    for (let i = 1; i <= maxSpies; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i} คน`;
+        select.appendChild(option);
+    }
+
+    if (currentValue <= maxSpies) {
+        select.value = currentValue;
+    }
+    }
 
     socket.on('assignRole', (data) => {
         window.cachedRoleData = data;
