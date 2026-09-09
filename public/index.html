@@ -509,7 +509,14 @@
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'block';
-        document.getElementById('role-display').innerHTML = `<span class='spy'>🕵️ คุณถูกจับได้แล้ว!<br>แต่ยังมีโอกาสสุดท้าย พิมพ์ทายชื่อนักเตะจริงด้านล่างเพื่อพลิกกลับมาชนะ!</span>`;
+        document.getElementById('role-display').innerHTML = `
+            <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
+                🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
+            </span><br>
+            <span style="color: #ff9999; font-size: 13px;">
+                ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
+            </span>
+        `;
     });
 
     socket.on('waitingForSpyGuess', () => {
