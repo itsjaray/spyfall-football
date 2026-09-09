@@ -217,7 +217,7 @@ io.on('connection', (socket) => {
 
         
 
-        // 1. สุ่มเลือกนักเตะเป้าหมายหลัก (Target Player) สำหรับผู้เล่นทั่วไป
+       // 1. สุ่มเลือกนักเตะเป้าหมายหลัก (Target Player) สำหรับผู้เล่นทั่วไป
     const targetPlayer = footballers[Math.floor(Math.random() * footballers.length)];
     gameState.secretFootballer = targetPlayer;
 
@@ -228,8 +228,12 @@ io.on('connection', (socket) => {
     const spyIds = new Set(spies.map(p => p.id));
     gameState.spyIds = Array.from(spyIds);
 
-    // ฟังก์ชันช่วยจัดการข้อมูลให้เทียบเคียงได้ง่าย (แปลงเป็นตัวพิมพ์เล็ก ตัดช่องว่าง)
-    const cleanStr = (str) => (str ? str.trim().toLowerCase() : "");
+    // ฟังก์ชันช่วยจัดการข้อมูลให้ปลอดภัย ป้องกัน Error กรณีข้อมูลเป็นค่าว่าง
+    const cleanStr = (str) => {
+        if (!str) return "";
+        if (typeof str === 'string') return str.trim().toLowerCase();
+        return String(str).trim().toLowerCase();
+    };
 
     const targetPos = cleanStr(targetPlayer.position);
     const targetNat = cleanStr(targetPlayer.nationality);
@@ -238,40 +242,38 @@ io.on('connection', (socket) => {
 
     // 3. ค้นหานักเตะตัวหลอก (สำหรับ Spy) ที่มีคุณสมบัติ "ตรงกันอย่างน้อย 3 ใน 4 อย่าง"
     let validDecoys = footballers.filter(f => {
-        if (f.id === targetPlayer.id) return false; // ห้ามเป็นตัวเดียวกัน
+        if (!f || f.id === targetPlayer.id) return false;
 
         let matchCount = 0;
-        if (cleanStr(f.position) === targetPos) matchCount++;
-        if (cleanStr(f.nationality) === targetNat) matchCount++;
-        if (cleanStr(f.foot) === targetFoot) matchCount++;
-        if (cleanStr(f.current_team) === targetTeam) matchCount++;
+        if (targetPos && cleanStr(f.position) === targetPos) matchCount++;
+        if (targetNat && cleanStr(f.nationality) === targetNat) matchCount++;
+        if (targetFoot && cleanStr(f.foot) === targetFoot) matchCount++;
+        if (targetTeam && cleanStr(f.current_team) === targetTeam) matchCount++;
 
-        // เงื่อนไข: ต้องตรงกันตั้งแต่ 3 อย่างขึ้นไป
         return matchCount >= 3;
     });
 
-    // เงื่อนไขสำรอง: หากมีตัวที่ตรงกัน 3 อย่างน้อยเกินไป ให้ผ่อนปรนเหลือตรงกันอย่างน้อย 2 อย่าง
+    // เงื่อนไขสำรอง 1: หากไม่เจอ ให้ลดเหลือตรงกันอย่างน้อย 2 อย่าง
     if (validDecoys.length === 0) {
         validDecoys = footballers.filter(f => {
-            if (f.id === targetPlayer.id) return false;
+            if (!f || f.id === targetPlayer.id) return false;
             let matchCount = 0;
-            if (cleanStr(f.position) === targetPos) matchCount++;
-            if (cleanStr(f.nationality) === targetNat) matchCount++;
-            if (cleanStr(f.foot) === targetFoot) matchCount++;
-            if (cleanStr(f.current_team) === targetTeam) matchCount++;
+            if (targetPos && cleanStr(f.position) === targetPos) matchCount++;
+            if (targetNat && cleanStr(f.nationality) === targetNat) matchCount++;
+            if (targetFoot && cleanStr(f.foot) === targetFoot) matchCount++;
+            if (targetTeam && cleanStr(f.current_team) === targetTeam) matchCount++;
             return matchCount >= 2;
         });
     }
 
-    // หากยังไม่พบอีก ให้สุ่มเลือกใครก็ได้ที่ไม่ใช่ตัวหลัก
+    // เงื่อนไขสำรองสุดท้าย: หากยังไม่พบอีก เอาใครก็ได้ที่ไม่ใช่ตัวหลัก
     if (validDecoys.length === 0) {
-        validDecoys = footballers.filter(f => f.id !== targetPlayer.id);
+        validDecoys = footballers.filter(f => f && f.id !== targetPlayer.id);
     }
 
     // สุ่มเลือกนักเตะตัวหลอกให้ Spy
     const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
     gameState.decoyFootballer = selectedDecoy;
-
        
         
        players.forEach(p => {
