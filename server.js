@@ -143,6 +143,7 @@ io.on('connection', (socket) => {
         const senderName = player ? player.name : 'Unknown';
   
         const timestamp = new Date().toLocaleTimeString('th-TH', { 
+            timeZone: 'Asia/Bangkok',
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false 
