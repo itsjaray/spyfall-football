@@ -521,7 +521,25 @@
 
     socket.on('waitingForSpyGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('role-display').innerHTML = `<span style='color:var(--pl-green);'>🎯 ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br><br><span style='color:var(--pl-yellow);'>⏳ กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>`;
+        
+        // เช็คว่าถ้าเราเป็น SPY ให้แสดงข้อความเตือนสีแดง, แต่ถ้าไม่ใช่ให้แสดงข้อความปกติ
+        const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
+        
+        if (isSpy) {
+            document.getElementById('role-display').innerHTML = `
+                <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
+                    🎯 แย่แล้ว คุณถูกจับได้ว่าเป็น SPY
+                </span><br>
+                <span style="color: #ff9999; font-size: 13px;">
+                    ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
+                </span>
+            `;
+        } else {
+            document.getElementById('role-display').innerHTML = `
+                <span style="color:var(--pl-green);">&#127919; ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br>
+                <span style="font-size: 13px; color: #ccc;">กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>
+            `;
+        }
     });
 
     socket.on('finalResult', (result) => {
