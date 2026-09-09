@@ -563,6 +563,29 @@
             typingIndicator.innerText = '';
         }
     });
+
+    function saveName() {
+    const nameInput = document.getElementById('username');
+    if (nameInput) {
+        const name = nameInput.value.trim();
+        if (name) {
+            localStorage.setItem('spyfall_player_name', name); // บันทึกเก็บไว้ในเครื่อง
+            socket.emit('setName', name);                    // ส่งชื่อไปบอกเซิร์ฟเวอร์
+        }
+    }
+}
+
+    socket.on('connect', () => {
+    const savedName = localStorage.getItem('spyfall_player_name');
+    if (savedName) {
+        const nameInput = document.getElementById('username');
+        if (nameInput) {
+            nameInput.value = savedName;
+        }
+        socket.emit('setName', savedName);
+    }
+});
+    
 </script>
 </body>
 </html>
