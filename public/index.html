@@ -661,8 +661,15 @@
 
         const guessSection = document.getElementById('guess-section');
         if (guessSection) guessSection.style.display = 'none';
+
+        // 6. ซ่อนกล่องโหวตชี้ตัว และกล่องผลการเล่นตาที่แล้ว
+        const voteSection = document.getElementById('vote-section');
+        if (voteSection) voteSection.style.display = 'none';
+
+        const lastGameBox = document.getElementById('lastGameResultBox');
+        if (lastGameBox) lastGameBox.style.display = 'none';
+        }
     }
-}
 
     socket.on('gameReset', (serverPlayers) => {
     // 1. อัปเดตตารางคะแนน (คะแนนยังอยู่เท่าเดิม)
