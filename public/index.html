@@ -536,6 +536,14 @@
         }
     });
 
+    // ตัวรับสัญญาณอัปเดตเวลาจาก Server
+    socket.on('updateTimer', (timeString) => {
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.innerText = `🕒 ${timeString}`;
+        }
+    });
+    
     socket.on('finalResult', (result) => {
         // 🛑 รีเซ็ตเวลาเป็น 03:00 และหยุด Timer ทันทีที่เกมจบ
         const timerDisplay = document.getElementById('timer-display');
