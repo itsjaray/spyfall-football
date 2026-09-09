@@ -305,7 +305,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('castVote', (targetId) => {
-    if (!gameState.isStarted || gameState.votedPlayers.has(socket.id)) return;
+    // ป้องกันไม่ให้เกมยังไม่เริ่ม, ผู้เล่นโหวตซ้ำ, หรือ *พยายามโหวตให้ตัวเอง*
+    if (!gameState.isStarted || gameState.votedPlayers.has(socket.id) || targetId === socket.id) return;
 
     gameState.votedPlayers.add(socket.id);
     gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
