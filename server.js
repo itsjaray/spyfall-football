@@ -147,6 +147,17 @@ io.on('connection', (socket) => {
         }
     });
 
+    // รับคำสั่งรีเซ็ตห้องจากผู้เล่น
+    socket.on('resetRoom', () => {
+        // เคลียร์บทบาทของผู้เล่นทุกคน แต่ "ไม่แตะต้องคะแนน (score)"
+        players.forEach(player => {
+            player.role = null; 
+        });
+
+        // ส่งข้อมูลผู้เล่น (ที่คะแนนยังอยู่ แต่บทบาทถูกรีเซ็ต) กลับไปให้ทุกคนในห้อง
+        io.emit('gameReset', players);
+    });
+
     socket.on('sendChatMessage', (message) => {
         const player = players.find(p => p.id === socket.id);
         const senderName = player ? player.name : 'Unknown';
