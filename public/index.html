@@ -271,9 +271,18 @@
 
 <script>
     const savedName = localStorage.getItem('spyfall_player_name') || '';
+    
+    window.addEventListener('DOMContentLoaded', () => {
+        const nameInput = document.getElementById('username');
+        if (nameInput && savedName) {
+            nameInput.value = savedName;
+        }
+    });
+
     const socket = io({
         query: { name: savedName }
     });
+    
     let currentPlayers = [];
     let hasVoted = false;
     let cachedGameData = null; 
