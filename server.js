@@ -159,7 +159,7 @@ io.on('connection', (socket) => {
             timestamp: timestamp
         });
     });
-});
+
 
     // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
     socket.on('typing', (data) => {
@@ -407,7 +407,7 @@ io.on('connection', (socket) => {
             decoyPos: lastGameSummary.decoyPos
         });
     });
-
+});
 
 server.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
