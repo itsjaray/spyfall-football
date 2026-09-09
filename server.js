@@ -113,13 +113,17 @@ function startTimer() {
 }
 
 io.on('connection', (socket) => {
-    // 1. ป้องกันเคสรีเฟรชแล้วค้างซ้อนกัน
+    // 1. ดึงชื่อที่แนบมากับ query ตอนเชื่อมต่อ
+    const clientName = socket.handshake.query.name;
+    const initialName = (clientName && clientName.trim() !== '') ? clientName.trim() : 'ผู้เล่น';
+
+    // 2. ป้องกันเคสรีเฟรชแล้วไอดีค้างซ้อนกัน
     players = players.filter(p => p.id !== socket.id);
 
-    // 2. กำหนดชื่อเริ่มต้นให้เป็นคำว่า "ผู้เล่น" ธรรมดา
+    // 3. เพิ่มผู้เล่นเข้ามาด้วยชื่อเดิม (หรือ 'ผู้เล่น' ถ้ายังไม่เคยตั้ง) ตั้งแต่ทีแรกเลย
     players.push({
         id: socket.id,
-        name: 'ผู้เล่น',
+        name: initialName,
         role: null,
         score: 0
     });
