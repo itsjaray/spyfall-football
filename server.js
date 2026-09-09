@@ -137,9 +137,9 @@ io.on('connection', (socket) => {
 
     socket.on('setName', (name) => {
         const player = players.find(p => p.id === socket.id);
-        if (player) {
-        player.name = name.trim() || 'ผู้เล่น';
-        io.emit('updatePlayers', players);
+        if (player && name) {
+            player.name = name.trim() || 'ผู้เล่น';
+            io.emit('updatePlayers', players);
         }
     });
 
