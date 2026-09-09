@@ -1,7 +1,7 @@
 [
   {"id": 1, "name": "Lionel Messi", "aliases": ["Messi", "Leo Messi"], "position": "RW / AM", "foot": "Left", "image": "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/efcf/live/3e629830-a558-11f1-9acf-19576105f049.jpg.webp"},
   {"id": 2, "name": "Mohamed Salah", "aliases": ["Salah"], "position": "RW", "foot": "Left", "image": "https://cdn-img.staticzz.com/img/jogadores/new/75/88/207588_mohamed_salah_20260114143557.png"},
-  {"id": 3, "name": "Kylian Mbappe", "aliases": ["Mbappe"], "position": "ST / LW", "foot": "Right", "image": "https://people.com/thmb/pDfIYScc6BR-s1K9wVhExXDY6F4=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc():focal(999x0:1001x2)/kylian-mbappe-fifa-world-cup-france-senegal-game-072826-13aafebb3ac549598af9d28d622e01f8.jpg"}},
+  {"id": 3, "name": "Kylian Mbappe", "aliases": ["Mbappe"], "position": "ST / LW", "foot": "Right", "image": "https://people.com/thmb/pDfIYScc6BR-s1K9wVhExXDY6F4=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc():focal(999x0:1001x2)/kylian-mbappe-fifa-world-cup-france-senegal-game-072826-13aafebb3ac549598af9d28d622e01f8.jpg"},
   {"id": 4, "name": "Erling Haaland", "aliases": ["Haaland"], "position": "ST", "foot": "Left", "image": " ใส่ลิงค์ "},
   {"id": 5, "name": "Kevin De Bruyne", "aliases": ["De Bruyne", "KDB"], "position": "CM / AM", "foot": "Right", "image": "https://img.a.transfermarkt.technology/portrait/big/88755-1713391485.jpg"},
   {"id": 6, "name": "Vinicius Junior", "aliases": ["Vinicius", "Vini Jr"], "position": "LW", "foot": "Right", "image": "https://upload.wikimedia.org/wikipedia/commons/1/10/Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg"},
