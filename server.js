@@ -339,19 +339,22 @@ io.on('connection', (socket) => {
                     io.to(p.id).emit('waitingForSpyGuess');
                 }
             });
-        } else {
-            // โหวตผิดตัว -> SPY ชนะทันที (+2 คะแนน)
-            if (spyPlayer) spyPlayer.score += 2;
-            const suspectedPlayer = players.find(p => p.id === suspectedId);
+       } else {
+        // โหวตผิดตัว -> SPY ชนะทันที (+2 คะแนน)
+        const spyPlayers = players.filter(p => gameState.spyIds && gameState.spyIds.includes(p.id));
+        spyPlayers.forEach(sp => sp.score += 2);
+        const spyNamesStr = spyPlayers.map(p => p.name).join(', ');
 
-            io.emit('finalResult', {
-                winner: 'SPY',
-                reason: 'voteWrong',
-                suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
-                spyName: spyPlayer ? spyPlayer.name : 'SPY',
-                secretFootballer: gameState.secretFootballer.name,
-                decoyFootballer: gameState.decoyFootballer.name
-            });
+        const suspectedPlayer = players.find(p => p.id === suspectedId);
+
+        io.emit('finalResult', {
+            winner: 'SPY',
+            reason: 'voteWrong',
+            suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
+            spyName: spyNamesStr, // <--- ใช้ตัวแปรนี้แทน จะแสดงชื่อ/เลขของ Spy จริงๆ เช่น "2"
+            secretFootballer: gameState.secretFootballer.name,
+            decoyFootballer: gameState.decoyFootballer.name
+        });
 
             gameState.isStarted = false;
             io.emit('updatePlayers', players);
