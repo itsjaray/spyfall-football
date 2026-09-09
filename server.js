@@ -135,13 +135,24 @@ io.on('connection', (socket) => {
     if (player) {
         player.name = name;
         io.emit('updatePlayers', players);
-    }
-});
+        }
+    });
 
     socket.on('sendChatMessage', (message) => {
         const player = players.find(p => p.id === socket.id);
         const senderName = player ? player.name : 'Unknown';
-        io.emit('newChatMessage', { sender: senderName, message: message });
+  
+        const timestamp = new Date().toLocaleTimeString('th-TH', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        }) + ' น.';
+
+      io.emit('newChatMessage', { 
+            sender: senderName, 
+            message: message, 
+            timestamp: timestamp 
+      });
     });
 
     // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
