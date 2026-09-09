@@ -8,7 +8,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// ตัวแปรสำหรับเก็บประวัติรอบที่แล้วและสรุปเกม
 let previousRoundSecret = null;
 let previousRoundDecoy = null;
 let roundCount = 0;
@@ -22,7 +21,6 @@ let lastGameSummary = {
 
 app.use(express.static('public'));
 
-// โหลดฐานข้อมูลนักเตะจากไฟล์ players.json อัตโนมัติ
 let footballers = [];
 try {
     const rawData = fs.readFileSync(path.join(__dirname, 'players.json'), 'utf8');
@@ -31,8 +29,8 @@ try {
 } catch (error) {
     console.error("ไม่สามารถโหลดไฟล์ players.json ได้:", error);
     footballers = [
-        { name: "Lionel Messi", position: "RW/AM", foot: "Left", image: "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/efcf/live/3e629830-a558-11f1-9acf-19576105f049.jpg.webp" },
-        { name: "Mohamed Salah", position: "RW", foot: "Left", image: "https://imageio.forbes.com/specials-images/imageserve/627be91e09849a3247a3642a/0x0.jpg"}
+        { name: "Lionel Messi", position: "RW/AM", nationality: "Argentina", foot: "Left", current_team: "Inter Miami", image: "" },
+        { name: "Mohamed Salah", position: "RW", nationality: "Egypt", foot: "Left", current_team: "Liverpool", image: "" }
     ];
 }
 
@@ -58,7 +56,6 @@ function shuffleArray(array) {
     return arr;
 }
 
-// ฟังก์ชันคำนวณ Levenshtein Distance ตรวจคำสะกดใกล้เคียง
 function levenshteinDistance(a, b) {
     const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
     for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
@@ -77,7 +74,6 @@ function levenshteinDistance(a, b) {
     return matrix[a.length][b.length];
 }
 
-// ฟังก์ชันตรวจว่าคำตอบของ SPY ใกล้เคียงคำตอบจริงหรือไม่
 function isFlexibleMatch(input, target) {
     const cleanInput = input.toLowerCase().replace(/[^a-z0-9]/g, '');
     const cleanTarget = target.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -115,7 +111,6 @@ io.on('connection', (socket) => {
     const initialName = (clientName && clientName.trim() !== '') ? clientName.trim() : 'ผู้เล่น';
 
     players = players.filter(p => p.id !== socket.id);
-
     players.push({
         id: socket.id,
         name: initialName,
@@ -174,16 +169,21 @@ io.on('connection', (socket) => {
         const spyIdsSet = new Set(spies.map(p => p.id));
         gameState.spyIds = Array.from(spyIdsSet);
 
-        // 3. สุ่มตัวหลอก (Decoy)
+        // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 อย่างขึ้นไป (ตำแหน่ง, สัญชาติ, เท้า, ทีม)
         let validDecoys = playerPool.filter(f => f && f.id !== targetPlayer.id);
         const matchingDecoys = playerPool.filter(f => {
             if (!f || f.id === targetPlayer.id) return false;
             let match = 0;
+
             if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
             if (f.nationality && targetPlayer.nationality && f.nationality === targetPlayer.nationality) match++;
             if (f.foot && targetPlayer.foot && f.foot === targetPlayer.foot) match++;
-            if (f.current_team && targetPlayer.current_team && f.current_team === targetPlayer.current_team) match++;
-            return match >= 2;
+
+            const targetTeam = targetPlayer.current_team || targetPlayer.team;
+            const fTeam = f.current_team || f.team;
+            if (fTeam && targetTeam && fTeam === targetTeam) match++;
+
+            return match >= 3;
         });
 
         if (matchingDecoys.length > 0) {
@@ -193,6 +193,9 @@ io.on('connection', (socket) => {
         const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
         gameState.decoyFootballer = selectedDecoy;
 
+        const targetTeam = targetPlayer.current_team || targetPlayer.team || '???';
+        const decoyTeam = selectedDecoy ? (selectedDecoy.current_team || selectedDecoy.team || '???') : '???';
+
         // แจ้งบทบาทให้ผู้เล่นแต่ละคน
         players.forEach(p => {
             if (spyIdsSet.has(p.id)) {
@@ -201,7 +204,9 @@ io.on('connection', (socket) => {
                     role: 'SPY',
                     decoyName: selectedDecoy ? selectedDecoy.name : '???',
                     position: selectedDecoy ? selectedDecoy.position : '???',
+                    nationality: selectedDecoy ? (selectedDecoy.nationality || '???') : '???',
                     foot: selectedDecoy ? selectedDecoy.foot : '???',
+                    team: decoyTeam,
                     image: selectedDecoy ? selectedDecoy.image : ''
                 });
             } else {
@@ -210,7 +215,9 @@ io.on('connection', (socket) => {
                     role: 'PLAYER',
                     name: targetPlayer.name,
                     position: targetPlayer.position || '???',
+                    nationality: targetPlayer.nationality || '???',
                     foot: targetPlayer.foot || '???',
+                    team: targetTeam,
                     image: targetPlayer.image || ''
                 });
             }
