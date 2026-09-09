@@ -544,16 +544,28 @@
         }
     });
 
-    // 🛑 นำโค้ดซ่อนกล่องนี้มาวางต่อไว้ตรงนี้ได้เลยครับ
     socket.on('hideGameUI', () => {
+        // 1. ซ่อนกล่องโหวตและกล่องทายผล
         const voteSection = document.getElementById('vote-section');
         if (voteSection) voteSection.style.display = 'none';
 
         const guessSection = document.getElementById('guess-section');
         if (guessSection) guessSection.style.display = 'none';
 
+        // 2. ซ่อนผลการเล่นตาที่แล้ว
         const lastGameBox = document.getElementById('lastGameResultBox');
         if (lastGameBox) lastGameBox.style.display = 'none';
+
+        // 🛑 3. เพิ่มการซ่อนกล่องบทบาท (Role) และกล่องลำดับการตั้งคำถามตรงนี้ครับ
+        const roleDisplay = document.getElementById('role-display');
+        if (roleDisplay) {
+            roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
+        }
+
+        const orderSection = document.getElementById('order-section');
+        if (orderSection) {
+            orderSection.style.display = 'none';
+        }
     });
     
     socket.on('finalResult', (result) => {
