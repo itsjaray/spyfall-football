@@ -462,9 +462,11 @@
         }).join('');
 
         const voteBtnsContainer = document.getElementById('vote-buttons');
-        voteBtnsContainer.innerHTML = currentPlayers.map(p => 
-            `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
-        ).join('');
+        voteBtnsContainer.innerHTML = currentPlayers
+            .filter(p => p.id !== socket.id) // 🛑 กรองไอดีตัวเองออก ไม่ให้มีปุ่มโหวตตัวเอง
+            .map(p => 
+                `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
+            ).join('');
 
         const display = document.getElementById('role-display');
         const dataRole = window.cachedRoleData;
