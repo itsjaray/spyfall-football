@@ -166,7 +166,7 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('hideTyping');
     });
 
-    socket.on('startGame', () => {
+    socket.on('startGame', (data) => {
         if (players.length < 3) {
             socket.emit('errorMsg', 'ต้องมีผู้เล่นอย่างน้อย 3 คนขึ้นไปถึงจะเริ่มเกมได้');
             return;
@@ -189,8 +189,12 @@ io.on('connection', (socket) => {
         const selectedTarget = footballers[Math.floor(Math.random() * footballers.length)];
     gameState.secretFootballer = selectedTarget;
 
-    const spyIndex = Math.floor(Math.random() * players.length);
-    gameState.spyId = players[spyIndex].id;
+    const shuffledPlayers = [...players].sort(() => 0.5 - Math.random());
+    const spyCountInput = data && data.spyCount ? data.spyCount : 1;
+    const spies = shuffledPlayers.slice(0, spyCountInput);
+    const spyIds = new Set(spies.map(p => p.id));
+    
+    gameState.spyIds = Array.from(spyIds);
 
         // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "CM / RM", "MF", "CB" ตัดเอาคำแรก)
     const getPrimaryPos = (posStr) => {
@@ -235,24 +239,32 @@ io.on('connection', (socket) => {
        
         
        players.forEach(p => {
-    if (p.id === gameState.spyId) {
-        p.role = 'SPY';
-        io.to(p.id).emit('assignRole', {
-            role: 'SPY',
-            decoyName: selectedDecoy.name,
-            position: selectedDecoy.position,
-            foot: selectedDecoy.foot
-        });
-    } else {
-        p.role = 'PLAYER';
-        io.to(p.id).emit('assignRole', {
-            role: 'PLAYER',
-            name: selectedTarget.name,
-            position: selectedTarget.position, // 👈 เพิ่มบรรทัดนี้
-            foot: selectedTarget.foot          // 👈 และเพิ่มบรรทัดนี้
-        });
-    }
-});
+        if (spyIds.has(p.id)) {
+            p.role = 'SPY';
+            io.to(p.id).emit('assignRole', {
+                role: 'SPY',
+                name: '???',
+                position: '???',
+                foot: '???'
+            });
+        } else if (p.id === selectedDecoy?.id) {
+            p.role = 'DECOY';
+            io.to(p.id).emit('assignRole', {
+                role: 'DECOY',
+                name: selectedDecoy.name,
+                position: selectedDecoy.position,
+                foot: selectedDecoy.foot
+            });
+        } else {
+            p.role = 'PLAYER';
+            io.to(p.id).emit('assignRole', {
+                role: 'PLAYER',
+                name: selectedTarget.name,
+                position: targetPrimaryPos,
+                foot: targetFoot
+            });
+        }
+    });
 
         const playOrder = shuffleArray(players);
 
