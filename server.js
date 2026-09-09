@@ -116,9 +116,10 @@ io.on('connection', (socket) => {
     // 1. ป้องกันเคสรีเฟรชแล้วค้างซ้อนกัน
     players = players.filter(p => p.id !== socket.id);
 
+    // 2. กำหนดชื่อเริ่มต้นให้เป็นคำว่า "ผู้เล่น" ธรรมดา
     players.push({
         id: socket.id,
-        name: `ผู้เล่น ${players.length + 1}`,
+        name: 'ผู้เล่น',
         role: null,
         score: 0
     });
@@ -137,8 +138,8 @@ io.on('connection', (socket) => {
     socket.on('setName', (name) => {
         const player = players.find(p => p.id === socket.id);
         if (player) {
-            player.name = name;
-            io.emit('updatePlayers', players);
+        player.name = name.trim() || 'ผู้เล่น';
+        io.emit('updatePlayers', players);
         }
     });
 
