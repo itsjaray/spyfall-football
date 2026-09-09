@@ -34,6 +34,10 @@ try {
     ];
 }
 
+// เพิ่มตัวแปรเก็บประวัตินักเตะที่เพิ่งออกไป (ใส่ไว้บนสุดของไฟล์หรือแถวที่มีตัวแปร gameState)
+let recentTargets = [];
+let recentDecoys = [];
+
 let players = [];
 let gameState = {
     isStarted: false,
@@ -158,9 +162,18 @@ io.on('connection', (socket) => {
         const playerPool = Array.isArray(footballers) ? footballers : [];
         if (playerPool.length === 0) return;
 
-        // 1. สุ่มเลือกนักเตะเป้าหมายหลัก
-        const targetPlayer = playerPool[Math.floor(Math.random() * playerPool.length)];
+        // 1. สุ่มนักเตะหลัก (Target) โดยพยายามไม่ให้ซ้ำกับ 3ตาล่าสุด
+        let availableTargets = playerPool.filter(f => f && !recentTargets.includes(f.id));
+        if (availableTargets.length === 0) {
+            recentTargets = []; // ถ้าหมดคลังแล้ว ให้ล้างประวัติเริ่มใหม่
+            availableTargets = playerPool;
+        }
+        const targetPlayer = availableTargets[Math.floor(Math.random() * availableTargets.length)];
         gameState.secretFootballer = targetPlayer;
+
+        // บันทึกประวัติตัวจริง (เก็บไว้กันซ้ำ 3 ตาหลัง)
+        recentTargets.push(targetPlayer.id);
+        if (recentTargets.length > 3) recentTargets.shift();
 
         // 2. สุ่มเลือก Spy
         const spyCountInput = data && data.spyCount ? parseInt(data.spyCount) : 1;
@@ -169,9 +182,9 @@ io.on('connection', (socket) => {
         const spyIdsSet = new Set(spies.map(p => p.id));
         gameState.spyIds = Array.from(spyIdsSet);
 
-        // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 จาก 4 อย่าง (ตำแหน่ง, สัญชาติ, เท้า, ทีม)
+        // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 จาก 4 อย่าง และไม่ซ้ำกับ 2ตาล่าสุด
         let validDecoys = playerPool.filter(f => {
-            if (!f || f.id === targetPlayer.id) return false;
+            if (!f || f.id === targetPlayer.id || recentDecoys.includes(f.id)) return false;
             let match = 0;
 
             if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
@@ -185,7 +198,7 @@ io.on('connection', (socket) => {
             return match >= 3;
         });
 
-        // กรณีหา 3 ข้อไม่เจอ ลดเกณฑ์เหลือ 2 ข้อเพื่อป้องกันเกมติดขัด
+        // กรณีหา 3 ข้อไม่เจอ (หรือติดเงื่อนไขประวัติจนหมด) ให้ผ่อนปรนเหลือ 2 ข้อ
         if (validDecoys.length === 0) {
             validDecoys = playerPool.filter(f => {
                 if (!f || f.id === targetPlayer.id) return false;
@@ -206,6 +219,10 @@ io.on('connection', (socket) => {
 
         const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
         gameState.decoyFootballer = selectedDecoy;
+
+        // บันทึกประวัติตัวหลอก (เก็บไว้กันซ้ำ 2 ตาหลัง)
+        recentDecoys.push(selectedDecoy.id);
+        if (recentDecoys.length > 2) recentDecoys.shift();
         
         const targetTeam = targetPlayer.current_team || targetPlayer.team || '???';
         const decoyTeam = selectedDecoy ? (selectedDecoy.current_team || selectedDecoy.team || '???') : '???';
