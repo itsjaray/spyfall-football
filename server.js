@@ -147,53 +147,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // รับคำสั่งรีเซ็ตห้องจากปุ่ม Home
-    socket.on('resetRoom', () => {
-        if (typeof gameTimer !== 'undefined' && gameTimer) {
-            clearInterval(gameTimer);
-            gameTimer = null;
-        }
-        io.emit('updateTimer', '03:00'); // ส่งสัญญาณบอกทุกคนให้เปลี่ยนเวลาเป็น 03:00
-        io.emit('hideGameUI'); // 🛑 เพิ่มคำสั่งนี้เพื่อส่งสัญญาณบอกทุกจอให้ซ่อนกล่องโหวต/ผลงานเก่า
-        
-        // เคลียร์บทบาทและสถานะเกมของผู้เล่นทุกคน แต่คงคะแนนไว้
-        players.forEach(player => {
-            player.role = null; 
-        });
-
-        // ส่งสัญญาณบอกทุกคนในห้องให้รีเซ็ตหน้าจอและเวลาพร้อมกัน
-        io.emit('gameReset', players);
-    });
-
-    socket.on('sendChatMessage', (message) => {
-        const player = players.find(p => p.id === socket.id);
-        const senderName = player ? player.name : 'Unknown';
-        
-        const timestamp = new Date().toLocaleTimeString('th-TH', {
-            timeZone: 'Asia/Bangkok',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }) + ' น.';
-
-        io.emit('newChatMessage', {
-            sender: senderName,
-            message: message,
-            timestamp: timestamp
-        });
-    });
-
-
-    // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
-    socket.on('typing', (data) => {
-    // ส่งชื่อคนที่กำลังพิมพ์ไปบอกทุกคน ยกเว้นคนที่พิมพ์อยู่เอง
-    socket.broadcast.emit('displayTyping', { senderName: data.senderName });
-    });
-
-    socket.on('stopTyping', () => {
-    socket.broadcast.emit('hideTyping');
-    });
-
     socket.on('startGame', (data) => {
     const requestedSpyCount = data && data.spyCount ? parseInt(data.spyCount) : 1;
     const maxAllowedSpies = players.length - 2;
@@ -254,6 +207,54 @@ io.on('connection', (socket) => {
     gameState.decoyFootballer = selectedDecoy;
        
         
+
+    // รับคำสั่งรีเซ็ตห้องจากปุ่ม Home
+    socket.on('resetRoom', () => {
+        if (typeof gameTimer !== 'undefined' && gameTimer) {
+            clearInterval(gameTimer);
+            gameTimer = null;
+        }
+        io.emit('updateTimer', '03:00'); // ส่งสัญญาณบอกทุกคนให้เปลี่ยนเวลาเป็น 03:00
+        io.emit('hideGameUI'); // 🛑 เพิ่มคำสั่งนี้เพื่อส่งสัญญาณบอกทุกจอให้ซ่อนกล่องโหวต/ผลงานเก่า
+        
+        // เคลียร์บทบาทและสถานะเกมของผู้เล่นทุกคน แต่คงคะแนนไว้
+        players.forEach(player => {
+            player.role = null; 
+        });
+
+        // ส่งสัญญาณบอกทุกคนในห้องให้รีเซ็ตหน้าจอและเวลาพร้อมกัน
+        io.emit('gameReset', players);
+    });
+
+    socket.on('sendChatMessage', (message) => {
+        const player = players.find(p => p.id === socket.id);
+        const senderName = player ? player.name : 'Unknown';
+        
+        const timestamp = new Date().toLocaleTimeString('th-TH', {
+            timeZone: 'Asia/Bangkok',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }) + ' น.';
+
+        io.emit('newChatMessage', {
+            sender: senderName,
+            message: message,
+            timestamp: timestamp
+        });
+    });
+
+
+    // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
+    socket.on('typing', (data) => {
+    // ส่งชื่อคนที่กำลังพิมพ์ไปบอกทุกคน ยกเว้นคนที่พิมพ์อยู่เอง
+    socket.broadcast.emit('displayTyping', { senderName: data.senderName });
+    });
+
+    socket.on('stopTyping', () => {
+    socket.broadcast.emit('hideTyping');
+    });
+
        players.forEach(p => {
     if (spyIds.has(p.id)) {
         p.role = 'SPY';
