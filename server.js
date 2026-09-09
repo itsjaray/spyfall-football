@@ -169,9 +169,8 @@ io.on('connection', (socket) => {
         const spyIdsSet = new Set(spies.map(p => p.id));
         gameState.spyIds = Array.from(spyIdsSet);
 
-        // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 อย่างขึ้นไป (ตำแหน่ง, สัญชาติ, เท้า, ทีม)
-        let validDecoys = playerPool.filter(f => f && f.id !== targetPlayer.id);
-        const matchingDecoys = playerPool.filter(f => {
+        // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 จาก 4 อย่าง (ตำแหน่ง, สัญชาติ, เท้า, ทีม)
+        let validDecoys = playerPool.filter(f => {
             if (!f || f.id === targetPlayer.id) return false;
             let match = 0;
 
@@ -186,13 +185,28 @@ io.on('connection', (socket) => {
             return match >= 3;
         });
 
-        if (matchingDecoys.length > 0) {
-            validDecoys = matchingDecoys;
+        // กรณีหา 3 ข้อไม่เจอ ลดเกณฑ์เหลือ 2 ข้อเพื่อป้องกันเกมติดขัด
+        if (validDecoys.length === 0) {
+            validDecoys = playerPool.filter(f => {
+                if (!f || f.id === targetPlayer.id) return false;
+                let match = 0;
+                if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
+                if (f.nationality && targetPlayer.nationality && f.nationality === targetPlayer.nationality) match++;
+                if (f.foot && targetPlayer.foot && f.foot === targetPlayer.foot) match++;
+                const targetTeam = targetPlayer.current_team || targetPlayer.team;
+                const fTeam = f.current_team || f.team;
+                if (fTeam && targetTeam && fTeam === targetTeam) match++;
+                return match >= 2;
+            });
+        }
+
+        if (validDecoys.length === 0) {
+            validDecoys = playerPool.filter(f => f && f.id !== targetPlayer.id);
         }
 
         const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
         gameState.decoyFootballer = selectedDecoy;
-
+        
         const targetTeam = targetPlayer.current_team || targetPlayer.team || '???';
         const decoyTeam = selectedDecoy ? (selectedDecoy.current_team || selectedDecoy.team || '???') : '???';
 
