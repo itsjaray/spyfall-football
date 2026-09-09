@@ -239,26 +239,24 @@ io.on('connection', (socket) => {
        
         
        players.forEach(p => {
-        if (spyIds.has(p.id)) {
-            // ถ้าเป็น Spy (ในระบบของคุณคือ Decoy ที่ได้ชื่อตัวหลอก)
-            p.role = 'SPY'; // หรือจะปรับเป็น 'DECOY' ตามที่ระบบเดิมคุณใช้ก็ได้ครับ
-            io.to(p.id).emit('assignRole', {
-                role: 'SPY',
-                name: selectedDecoy ? selectedDecoy.name : '???', // ได้ชื่อตัวหลอกไปเนียน
-                position: selectedDecoy ? selectedDecoy.position : '???',
-                foot: selectedDecoy ? selectedDecoy.foot : '???'
-            });
-        } else {
-            // ผู้เล่นปกติ (ได้ตัวจริง)
-            p.role = 'PLAYER';
-            io.to(p.id).emit('assignRole', {
-                role: 'PLAYER',
-                name: selectedTarget.name,
-                position: targetPrimaryPos,
-                foot: targetFoot
-            });
-        }
-    });
+    if (p.id === gameState.spyId) {
+        p.role = 'SPY';
+        io.to(p.id).emit('assignRole', {
+            role: 'SPY',
+            decoyName: selectedDecoy.name,
+            position: selectedDecoy.position,
+            foot: selectedDecoy.foot
+        });
+    } else {
+        p.role = 'PLAYER';
+        io.to(p.id).emit('assignRole', {
+            role: 'PLAYER',
+            name: selectedTarget.name,
+            position: selectedTarget.position, // 👈 เพิ่มบรรทัดนี้
+            foot: selectedTarget.foot          // 👈 และเพิ่มบรรทัดนี้
+        });
+    }
+});
 
         const playOrder = shuffleArray(players);
 
