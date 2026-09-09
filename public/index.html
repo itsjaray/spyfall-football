@@ -412,8 +412,17 @@
     }
 
     socket.on('assignRole', (data) => {
-        window.cachedRoleData = data;
-    });
+    window.cachedRoleData = data;
+    
+    // ตัวอย่างการอัปเดตลง HTML ทันที (ปรับ ID ตามหน้าเว็บของคุณ)
+    // ถ้ารู้สึกว่ามีฟังก์ชันเรนเดอร์การ์ดอยู่แล้ว สามารถเรียกใช้ฟังก์ชันนั้นตรงนี้ได้เลยครับ
+    if (document.getElementById('player-nationality')) {
+        document.getElementById('player-nationality.innerText = `สัญชาติ: ${data.nationality || data.decoyNationality}`;
+    }
+    if (document.getElementById('player-team')) {
+        document.getElementById('player-team').innerText = `ทีม: ${data.team || data.decoyTeam}`;
+    }
+});
 
     socket.on('gameStarted', (data) => {
         cachedGameData = data;
