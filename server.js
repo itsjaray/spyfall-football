@@ -239,21 +239,21 @@ io.on('connection', (socket) => {
        
         
        players.forEach(p => {
-    if (p.id === gameState.spyId) {
+    if (spyIds.has(p.id)) {
         p.role = 'SPY';
         io.to(p.id).emit('assignRole', {
             role: 'SPY',
-            decoyName: selectedDecoy.name,
-            position: selectedDecoy.position,
-            foot: selectedDecoy.foot
+            decoyName: selectedDecoy ? selectedDecoy.name : '???',
+            position: selectedDecoy ? selectedDecoy.position : '???',
+            foot: selectedDecoy ? selectedDecoy.foot : '???'
         });
     } else {
         p.role = 'PLAYER';
         io.to(p.id).emit('assignRole', {
             role: 'PLAYER',
             name: selectedTarget.name,
-            position: selectedTarget.position, // 👈 เพิ่มบรรทัดนี้
-            foot: selectedTarget.foot          // 👈 และเพิ่มบรรทัดนี้
+            position: targetPrimaryPos, 
+            foot: targetFoot        
         });
     }
 });
