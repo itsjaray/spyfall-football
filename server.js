@@ -113,7 +113,7 @@ function startTimer() {
 }
 
 io.on('connection', (socket) => {
-    // ป้องกันเคสรีเฟรชแล้วค้างซ้อนกัน
+    // 1. ป้องกันเคสรีเฟรชแล้วค้างซ้อนกัน
     players = players.filter(p => p.id !== socket.id);
 
     players.push({
@@ -124,8 +124,8 @@ io.on('connection', (socket) => {
     });
 
     io.emit('updatePlayers', players);
-});
 
+    // 2. ย้าย Event ของ socket ทั้งหมดมาไว้ข้างในนี้
     socket.on('disconnect', () => {
         const index = players.findIndex(p => p.id === socket.id);
         if (index !== -1) {
@@ -133,32 +133,33 @@ io.on('connection', (socket) => {
             io.emit('updatePlayers', players);
         }
     });
-    
+
     socket.on('setName', (name) => {
-    const player = players.find(p => p.id === socket.id);
-    if (player) {
-        player.name = name;
-        io.emit('updatePlayers', players);
+        const player = players.find(p => p.id === socket.id);
+        if (player) {
+            player.name = name;
+            io.emit('updatePlayers', players);
         }
     });
 
     socket.on('sendChatMessage', (message) => {
         const player = players.find(p => p.id === socket.id);
         const senderName = player ? player.name : 'Unknown';
-  
-        const timestamp = new Date().toLocaleTimeString('th-TH', { 
+        
+        const timestamp = new Date().toLocaleTimeString('th-TH', {
             timeZone: 'Asia/Bangkok',
-            hour: '2-digit', 
+            hour: '2-digit',
             minute: '2-digit',
-            hour12: false 
+            hour12: false
         }) + ' น.';
 
-      io.emit('newChatMessage', { 
-            sender: senderName, 
-            message: message, 
-            timestamp: timestamp 
-      });
+        io.emit('newChatMessage', {
+            sender: senderName,
+            message: message,
+            timestamp: timestamp
+        });
     });
+});
 
     // แจ้งเตือนคนอื่นว่ากำลังพิมพ์อยู่
     socket.on('typing', (data) => {
