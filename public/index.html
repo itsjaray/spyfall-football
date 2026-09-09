@@ -543,6 +543,18 @@
             timerDisplay.innerText = `🕒 ${timeString}`;
         }
     });
+
+    // 🛑 นำโค้ดซ่อนกล่องนี้มาวางต่อไว้ตรงนี้ได้เลยครับ
+    socket.on('hideGameUI', () => {
+        const voteSection = document.getElementById('vote-section');
+        if (voteSection) voteSection.style.display = 'none';
+
+        const guessSection = document.getElementById('guess-section');
+        if (guessSection) guessSection.style.display = 'none';
+
+        const lastGameBox = document.getElementById('lastGameResultBox');
+        if (lastGameBox) lastGameBox.style.display = 'none';
+    });
     
     socket.on('finalResult', (result) => {
         // 🛑 รีเซ็ตเวลาเป็น 03:00 และหยุด Timer ทันทีที่เกมจบ
