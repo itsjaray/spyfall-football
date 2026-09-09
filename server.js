@@ -34,6 +34,8 @@ try {
     ];
 }
 
+let recentSpies = new Set(); // เก็บรายชื่อ ID ของคนที่เพิ่งเป็น Spy ในตาก่อนหน้า
+
 // เพิ่มตัวแปรเก็บประวัตินักเตะที่เพิ่งออกไป (ใส่ไว้บนสุดของไฟล์หรือแถวที่มีตัวแปร gameState)
 let recentTargets = [];
 let recentDecoys = [];
@@ -175,12 +177,23 @@ io.on('connection', (socket) => {
         recentTargets.push(targetPlayer.id);
         if (recentTargets.length > 3) recentTargets.shift();
 
-        // 2. สุ่มเลือก Spy
+        // 2. สุ่มเลือก Spy โดยพยายามหลีกเลี่ยงคนเดิมจากตาก่อนหน้า
         const spyCountInput = data && data.spyCount ? parseInt(data.spyCount) : 1;
-        const shuffledPlayers = [...players].sort(() => 0.5 - Math.random());
+        
+        let availablePlayersForSpy = players.filter(p => !recentSpies.has(p.id));
+        
+        if (availablePlayersForSpy.length < spyCountInput) {
+            recentSpies.clear();
+            availablePlayersForSpy = [...players];
+        }
+
+        const shuffledPlayers = [...availablePlayersForSpy].sort(() => 0.5 - Math.random());
         const spies = shuffledPlayers.slice(0, spyCountInput);
         const spyIdsSet = new Set(spies.map(p => p.id));
         gameState.spyIds = Array.from(spyIdsSet);
+
+        recentSpies.clear();
+        spyIdsSet.forEach(id => recentSpies.add(id));
 
         // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 จาก 4 อย่าง และไม่ซ้ำกับ 2ตาล่าสุด
         let validDecoys = playerPool.filter(f => {
