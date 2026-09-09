@@ -604,10 +604,35 @@
 });
 
     function resetGameRoom() {
-        if (confirm('คุณต้องการรีเซ็ตเกมกลับหน้าหลัก (คะแนนยังคงอยู่) ใช่หรือไม่?')) {
+    if (confirm('คุณต้องการรีเซ็ตเกมกลับหน้าหลัก (คะแนนยังคงอยู่) ใช่หรือไม่?')) {
+        // 1. ส่งสัญญาณไปบอกเซิร์ฟเวอร์และเพื่อนคนอื่นด้วย
         socket.emit('resetRoom');
+
+        // 2. หยุดเวลาที่กำลังเดินอยู่ทันที
+        if (typeof timerInterval !== 'undefined') {
+            clearInterval(timerInterval);
         }
+
+        // 3. บังคับเปลี่ยนตัวเลขเวลากลับเป็น 03:00 ทันที
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.innerHTML = '⏱️ 03:00';
+        }
+
+        // 4. บังคับเปลี่ยนข้อความตรงกลางกลับเป็นสถานะรอห้อง
+        const roleDisplay = document.getElementById('role-display');
+        if (roleDisplay) {
+            roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
+        }
+
+        // 5. ซ่อนส่วนอื่นๆ ของเกม (เช่น ลำดับคำถาม, ช่องทายสปาย, ผลการเล่น)
+        const orderSection = document.getElementById('order-section');
+        if (orderSection) orderSection.style.display = 'none';
+
+        const guessSection = document.getElementById('guess-section');
+        if (guessSection) guessSection.style.display = 'none';
     }
+}
 
     socket.on('gameReset', (serverPlayers) => {
     // 1. อัปเดตตารางคะแนน (คะแนนยังอยู่เท่าเดิม)
