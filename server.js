@@ -149,6 +149,12 @@ io.on('connection', (socket) => {
 
     // รับคำสั่งรีเซ็ตห้องจากปุ่ม Home
     socket.on('resetRoom', () => {
+        if (typeof gameTimer !== 'undefined' && gameTimer) {
+            clearInterval(gameTimer);
+            gameTimer = null;
+        }
+        io.emit('updateTimer', '03:00'); // ส่งสัญญาณบอกทุกคนให้เปลี่ยนเวลาเป็น 03:00
+        
         // เคลียร์บทบาทและสถานะเกมของผู้เล่นทุกคน แต่คงคะแนนไว้
         players.forEach(player => {
             player.role = null; 
