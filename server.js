@@ -217,54 +217,60 @@ io.on('connection', (socket) => {
 
         
 
-        const selectedTarget = footballers[Math.floor(Math.random() * footballers.length)];
-    gameState.secretFootballer = selectedTarget;
+        // 1. สุ่มเลือกนักเตะเป้าหมายหลัก (Target Player) สำหรับผู้เล่นทั่วไป
+    const targetPlayer = footballers[Math.floor(Math.random() * footballers.length)];
+    gameState.secretFootballer = targetPlayer;
 
+    // 2. สุ่มเลือก Spy จากรายชื่อผู้เล่นทั้งหมดในห้อง
     const shuffledPlayers = [...players].sort(() => 0.5 - Math.random());
     const spyCountInput = data && data.spyCount ? data.spyCount : 1;
     const spies = shuffledPlayers.slice(0, spyCountInput);
     const spyIds = new Set(spies.map(p => p.id));
-    
     gameState.spyIds = Array.from(spyIds);
 
-        // ฟังก์ชันช่วยดึงตำแหน่งหลัก (เช่น "CM / RM", "MF", "CB" ตัดเอาคำแรก)
-    const getPrimaryPos = (posStr) => {
-        if (!posStr) return "";
-        return posStr.split(/[\/\s-,]+/)[0].toUpperCase();
-    };
+    // ฟังก์ชันช่วยจัดการข้อมูลให้เทียบเคียงได้ง่าย (แปลงเป็นตัวพิมพ์เล็ก ตัดช่องว่าง)
+    const cleanStr = (str) => (str ? str.trim().toLowerCase() : "");
 
-    const targetPrimaryPos = getPrimaryPos(selectedTarget.position);
-    const targetFoot = selectedTarget.foot ? selectedTarget.foot.trim().toLowerCase() : "";
+    const targetPos = cleanStr(targetPlayer.position);
+    const targetNat = cleanStr(targetPlayer.nationality);
+    const targetFoot = cleanStr(targetPlayer.foot);
+    const targetTeam = cleanStr(targetPlayer.current_team);
 
-    // 1. ค้นหาคนที่ "ตำแหน่งหลักตรงกันเป๊ะๆ" ก่อนเป็นอันดับแรก
+    // 3. ค้นหานักเตะตัวหลอก (สำหรับ Spy) ที่มีคุณสมบัติ "ตรงกันอย่างน้อย 3 ใน 4 อย่าง"
     let validDecoys = footballers.filter(f => {
-        if (f.name === selectedTarget.name) return false;
-        const fPrimaryPos = getPrimaryPos(f.position);
-        return targetPrimaryPos && fPrimaryPos && (targetPrimaryPos === fPrimaryPos);
+        if (f.id === targetPlayer.id) return false; // ห้ามเป็นตัวเดียวกัน
+
+        let matchCount = 0;
+        if (cleanStr(f.position) === targetPos) matchCount++;
+        if (cleanStr(f.nationality) === targetNat) matchCount++;
+        if (cleanStr(f.foot) === targetFoot) matchCount++;
+        if (cleanStr(f.current_team) === targetTeam) matchCount++;
+
+        // เงื่อนไข: ต้องตรงกันตั้งแต่ 3 อย่างขึ้นไป
+        return matchCount >= 3;
     });
 
-    // 2. ถ้าไม่มีตำแหน่งเดียวกันจริงๆ ค่อยผ่อนปรนให้หาคนที่มี "เท้าที่ถนัดข้างเดียวกัน"
+    // เงื่อนไขสำรอง: หากมีตัวที่ตรงกัน 3 อย่างน้อยเกินไป ให้ผ่อนปรนเหลือตรงกันอย่างน้อย 2 อย่าง
     if (validDecoys.length === 0) {
         validDecoys = footballers.filter(f => {
-            if (f.name === selectedTarget.name) return false;
-            const fFoot = f.foot ? f.foot.trim().toLowerCase() : "";
-            return targetFoot && fFoot && (targetFoot === fFoot);
+            if (f.id === targetPlayer.id) return false;
+            let matchCount = 0;
+            if (cleanStr(f.position) === targetPos) matchCount++;
+            if (cleanStr(f.nationality) === targetNat) matchCount++;
+            if (cleanStr(f.foot) === targetFoot) matchCount++;
+            if (cleanStr(f.current_team) === targetTeam) matchCount++;
+            return matchCount >= 2;
         });
     }
 
-    // 3. ถ้ายังหาไม่ได้อีก เอาใครก็ได้ที่ไม่ใช่คนเดิม
+    // หากยังไม่พบอีก ให้สุ่มเลือกใครก็ได้ที่ไม่ใช่ตัวหลัก
     if (validDecoys.length === 0) {
-        validDecoys = footballers.filter(f => f.name !== selectedTarget.name);
+        validDecoys = footballers.filter(f => f.id !== targetPlayer.id);
     }
 
+    // สุ่มเลือกนักเตะตัวหลอกให้ Spy
     const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
     gameState.decoyFootballer = selectedDecoy;
-
-// สุ่มหรือตรวจสอบไอดี SPY ให้แน่ใจว่ามีอยู่จริงก่อนแจกบทบาท
-    if (!gameState.spyIds || gameState.spyIds.length === 0) {
-        const randomSpy = players[Math.floor(Math.random() * players.length)];
-        gameState.spyIds = [randomSpy.id];
-    }
 
        
         
