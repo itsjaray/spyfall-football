@@ -367,25 +367,26 @@
         
         const sortedPlayers = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
     
-        // 🔍 ปรับมาใช้ tbody ตัวเดิมในโค้ดของคุณ (หรือเช็กจาก ID จริงในตาราง)
-        const tbody = document.querySelector('#players-tbody') || document.querySelector('table tbody');
+    // ค้นหา tbody ในตารางคะแนนโดยตรง (ปลอดภัยที่สุด ไม่พึ่ง ID)
+    const table = document.querySelector('table') || document.querySelector('.score-table');
+    const tbody = table ? table.querySelector('tbody') : null;
 
-        if (tbody) {
-            tbody.innerHTML = sortedPlayers.map((p, index) => {
-                const isSelf = p.id === socket.id;
-                const kickBtn = isSelf ? '' : `<button class="btn-kick" onclick="kickPlayer('${p.id}', '${p.name || 'ผู้เล่น'}')">❌ เตะ</button>`;
+    if (tbody) {
+        tbody.innerHTML = sortedPlayers.map((p, index) => {
+            const isSelf = p.id === socket.id;
+            const kickBtn = isSelf ? '' : `<button class="btn-kick" onclick="kickPlayer('${p.id}', '${p.name || 'ผู้เล่น'}')">❌ เตะ</button>`;
             
-                let medal = '';
-                if (index === 0) medal = ' 🥇';
-                else if (index === 1) medal = ' 🥈';
-                else if (index === 2) medal = ' 🥉';
+            let medal = '';
+            if (index === 0) medal = ' 🥇';
+            else if (index === 1) medal = ' 🥈';
+            else if (index === 2) medal = ' 🥉';
 
-                return `<tr>
-                    <td>${p.name || 'ผู้เล่น'}${medal} ${kickBtn}</td>
-                    <td><span class="score-badge">${p.score || 0} pt</span></td>
-                </tr>`;
-            }).join('');
-        }
+            return `<tr>
+                <td>${p.name || 'ผู้เล่น'}${medal} ${kickBtn}</td>
+                <td><span class="score-badge">${p.score || 0} pt</span></td>
+            </tr>`;
+        }).join('');
+    }
 
     function updateSpyDropdown(playersCount) {
     const select = document.getElementById('spy-count');
