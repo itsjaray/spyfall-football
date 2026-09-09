@@ -275,7 +275,8 @@ io.on('connection', (socket) => {
             role: 'SPY',
             decoyName: selectedDecoy ? selectedDecoy.name : '???',
             position: selectedDecoy ? selectedDecoy.position : '???',
-            foot: selectedDecoy ? selectedDecoy.foot : '???'
+            foot: selectedDecoy ? selectedDecoy.foot : '???',
+            image: selectedDecoy ? selectedDecoy.image : '' // <--- เพิ่มบรรทัดนี้เพื่อให้ส่งรูปลิงก์ของตัวหลอกไปด้วยครับ
         });
     } else {
         p.role = 'PLAYER';
