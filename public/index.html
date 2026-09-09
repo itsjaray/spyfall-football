@@ -638,15 +638,20 @@
         // 1. ส่งสัญญาณไปบอกเซิร์ฟเวอร์และเพื่อนคนอื่นด้วย
         socket.emit('resetRoom');
 
-        // 2. หยุดเวลาที่กำลังเดินอยู่ทันที
-        if (typeof timerInterval !== 'undefined') {
-            clearInterval(timerInterval);
+        // 1. เคลียร์ตัวจับเวลาทั้งหมดที่มีอยู่ฝั่ง Client ทันที
+        if (typeof timerInterval !== 'undefined' && timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        }
+        // เผื่อกรณีมีการประกาศตัวแปรเก็บ interval ไว้ชื่ออื่น
+        if (window.intervalId) {
+        clearInterval(window.intervalId);
         }
 
-        // 3. บังคับเปลี่ยนตัวเลขเวลากลับเป็น 03:00 ทันที
+        // 2. บังคับเปลี่ยนตัวเลขเวลาให้กลับเป็น 03:00 ทันทีแบบเด็ดขาด
         const timerDisplay = document.getElementById('timer-display');
         if (timerDisplay) {
-            timerDisplay.innerHTML = '⏱️ 03:00';
+        timerDisplay.innerText = '🕒 03:00';
         }
 
         // 4. บังคับเปลี่ยนข้อความตรงกลางกลับเป็นสถานะรอห้อง
