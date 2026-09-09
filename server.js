@@ -198,8 +198,8 @@ io.on('connection', (socket) => {
     const requestedSpyCount = data && data.spyCount ? parseInt(data.spyCount) : 1;
     const maxAllowedSpies = players.length - 2;
 
-    if (players.length < 3 || requestedSpyCount > maxAllowedSpies) {
-        socket.emit('errorMsg', `ไม่สามารถเลือก Spy ${requestedSpyCount} คนได้ (มีผู้เล่น ${players.length} คน เลือกสปายได้สูงสุด ${Math.max(1, maxAllowedSpies)} คนครับ)`);
+    if (players.length < 3) {
+        socket.emit('errorMsg', 'ไม่สามารถเริ่มเกมได้ ต้องมีผู้เล่นขั้นต่ำ 3 คนขึ้นไป');
         return;
     }
 
