@@ -240,22 +240,16 @@ io.on('connection', (socket) => {
         
        players.forEach(p => {
         if (spyIds.has(p.id)) {
-            p.role = 'SPY';
+            // ถ้าเป็น Spy (ในระบบของคุณคือ Decoy ที่ได้ชื่อตัวหลอก)
+            p.role = 'SPY'; // หรือจะปรับเป็น 'DECOY' ตามที่ระบบเดิมคุณใช้ก็ได้ครับ
             io.to(p.id).emit('assignRole', {
                 role: 'SPY',
-                name: '???',
-                position: '???',
-                foot: '???'
-            });
-        } else if (p.id === selectedDecoy?.id) {
-            p.role = 'DECOY';
-            io.to(p.id).emit('assignRole', {
-                role: 'DECOY',
-                name: selectedDecoy.name,
-                position: selectedDecoy.position,
-                foot: selectedDecoy.foot
+                name: selectedDecoy ? selectedDecoy.name : '???', // ได้ชื่อตัวหลอกไปเนียน
+                position: selectedDecoy ? selectedDecoy.position : '???',
+                foot: selectedDecoy ? selectedDecoy.foot : '???'
             });
         } else {
+            // ผู้เล่นปกติ (ได้ตัวจริง)
             p.role = 'PLAYER';
             io.to(p.id).emit('assignRole', {
                 role: 'PLAYER',
