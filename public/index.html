@@ -322,12 +322,15 @@
     }
 
     socket.on('newChatMessage', (data) => {
-        const chatBox = document.getElementById('chat-box');
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'chat-msg';
-        msgDiv.innerHTML = `<b>${data.sender}:</b> ${data.message}`;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
+    const chatBox = document.getElementById('chat-box');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg';
+    
+    // เพิ่ม ${data.timestamp} เข้าไปตรงนี้
+    msgDiv.innerHTML = `<b>${data.sender}:</b> ${data.message} <span style="font-size: 0.75rem; color: #888; float: right;">${data.timestamp}</span>`;
+    
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
     });
 
     socket.on('updatePlayers', (players) => {
