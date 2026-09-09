@@ -32,8 +32,8 @@ try {
     console.error("ไม่สามารถโหลดไฟล์ players.json ได้:", error);
     // กรณีหาไฟล์ไม่เจอ ให้ใช้ค่าสำรองกันเว็บพัง
     footballers = [
-        { name: "Lionel Messi", position: "RW/AM", foot: "Left" },
-        { name: "Cristiano Ronaldo", position: "ST", foot: "Right" }
+        { name: "Lionel Messi", position: "RW/AM", foot: "Left", image: "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/efcf/live/3e629830-a558-11f1-9acf-19576105f049.jpg.webp" },
+        { name: "Mohamed Salah", position: "RW", "foot": "Left", image: "https://imageio.forbes.com/specials-images/imageserve/627be91e09849a3247a3642a/0x0.jpg"}
     ];
 }
 
@@ -283,7 +283,8 @@ io.on('connection', (socket) => {
             role: 'PLAYER',
             name: selectedTarget.name,
             position: targetPrimaryPos, 
-            foot: targetFoot        
+            foot: targetFoot,
+            image: selectedTarget.image // <--- เพิ่มบรรทัดนี้เข้าไปครับ
         });
     }
 });
