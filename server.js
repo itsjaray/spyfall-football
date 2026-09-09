@@ -314,47 +314,47 @@ io.on('connection', (socket) => {
         io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
         if (gameState.votedPlayers.size === players.length) {
-            clearInterval(gameTimer);
-            let maxVotes = 0;
-            let suspectedId = null;
+        clearInterval(gameTimer);
+        let maxVotes = -1;
+        let suspectedId = null;
 
-            for (const [pId, count] of Object.entries(gameState.votes)) {
-                if (count > maxVotes) {
-                    maxVotes = count;
-                    suspectedId = pId;
-                }
-            }
-
-            const spyPlayer = players.find(p => p.id === gameState.spyId);
-
-            // โหวตจับ SPY ถูกตัวหรือไม่?
-            if (suspectedId === gameState.spyId) {
-                // โหวตถูกตัว -> ให้ SPY ได้โอกาสสุดท้ายในการพิมพ์ทายคำตอบ
-                io.to(gameState.spyId).emit('spyMustGuess');
-                
-                players.forEach(p => {
-                    if (p.id !== gameState.spyId) {
-                        io.to(p.id).emit('waitingForSpyGuess');
-                    }
-                });
-            } else {
-                // โหวตผิดตัว -> SPY ชนะทันที (+2 คะแนน)!
-                if (spyPlayer) spyPlayer.score += 2;
-                const suspectedPlayer = players.find(p => p.id === suspectedId);
-                
-                io.emit('finalResult', {
-                    winner: 'SPY',
-                    reason: 'voteWrong',
-                    suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
-                    spyName: spyPlayer ? spyPlayer.name : 'SPY',
-                    secretFootballer: gameState.secretFootballer.name,
-                    decoyFootballer: gameState.decoyFootballer.name
-                });
-
-                gameState.isStarted = false;
-                io.emit('updatePlayers', players);
+        for (const [pid, count] of Object.entries(gameState.votes)) {
+            if (count > maxVotes) {
+                maxVotes = count;
+                suspectedId = pid;
             }
         }
+
+        const spyPlayer = players.find(p => p.id === gameState.spyId);
+
+        // โหวตจับ SPY ถูกตัวหรือไม่?
+        if (suspectedId === gameState.spyId) {
+            // โหวตถูก -> ให้ SPY ได้โอกาสสุดท้ายในการพิมพ์ทายคำตอบ
+            io.to(gameState.spyId).emit('spyMustGuess');
+
+            players.forEach(p => {
+                if (p.id !== gameState.spyId) {
+                    io.to(p.id).emit('waitingForSpyGuess');
+                }
+            });
+        } else {
+            // โหวตผิดตัว -> SPY ชนะทันที (+2 คะแนน)
+            if (spyPlayer) spyPlayer.score += 2;
+            const suspectedPlayer = players.find(p => p.id === suspectedId);
+
+            io.emit('finalResult', {
+                winner: 'SPY',
+                reason: 'voteWrong',
+                suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
+                spyName: spyPlayer ? spyPlayer.name : 'SPY',
+                secretFootballer: gameState.secretFootballer.name,
+                decoyFootballer: gameState.decoyFootballer.name
+            });
+
+            gameState.isStarted = false;
+            io.emit('updatePlayers', players);
+        }
+    }
     });
 
     socket.on('spyGuess', (guessedName) => {
