@@ -508,11 +508,21 @@
         document.getElementById('total-voters').innerText = total;
     });
 
-    socket.on('timerUpdate', (seconds) => {
-        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const secs = String(seconds % 60).padStart(2, '0');
-        document.getElementById('timer-display').innerText = `⏱️ ${mins}:${secs}`;
-    });
+    socket.on('timerUpdate', (timeRemaining) => {
+    const timerDisplay = document.getElementById('timer-display');
+    if (!timerDisplay) return;
+
+    // ถ้า Server ส่งมาเป็น String อยู่แล้ว (เช่น '03:00') ให้แสดงผลทันที
+    if (typeof timeRemaining === 'string') {
+        timerDisplay.innerText = `⏱️ ${timeRemaining}`;
+        return;
+    }
+
+    // ถ้า Server ส่งมาเป็นตัวเลขวินาที ให้แปลงเป็น MM:SS
+    const mins = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+    const secs = String(timeRemaining % 60).padStart(2, '0');
+    timerDisplay.innerText = `⏱️ ${mins}:${secs}`;
+});
 
     socket.on('timeUp', () => {
         document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
