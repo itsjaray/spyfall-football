@@ -360,7 +360,9 @@ io.on('connection', (socket) => {
     socket.on('spyGuess', (guessedName) => {
         if (!gameState.isStarted || socket.id !== gameState.spyId) return;
 
-        const isCorrect = isFlexibleMatch(guessedName.trim(), gameState.secretFootballer.name);
+        // ป้องกันกรณีไม่ได้พิมพ์มา หรือค่าว่าง ให้ถือว่าทายผิดทันที
+        const trimmedGuess = guessedName ? guessedName.trim() : '';
+        const isCorrect = trimmedGuess !== '' && isFlexibleMatch(trimmedGuess, gameState.secretFootballer.name);
         const spyPlayer = players.find(p => p.id === gameState.spyId);
 
         if (isCorrect) {
