@@ -372,8 +372,14 @@
             const isSelf = p.id === socket.id;
             const kickBtn = isSelf ? '' : `<button class="btn-kick" onclick="kickPlayer('${p.id}', '${p.name}')">❌ เตะ</button>`;
             
+            // 🥇 🥈 🥉 ใส่เหรียญตามอันดับ (index 0 คือที่ 1, index 1 คือที่ 2, index 2 คือที่ 3)
+            let medal = '';
+            if (index === 0) medal = ' 🥇';
+            else if (index === 1) medal = ' 🥈';
+            else if (index === 2) medal = ' 🥉';
+
             return `<tr>
-                <td>${p.name} ${kickBtn}</td>
+                <td>${p.name}${medal} ${kickBtn}</td>
                 <td><span class="score-badge">${p.score} pt</span></td>
             </tr>`;
         }).join('');
