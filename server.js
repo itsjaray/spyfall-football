@@ -503,7 +503,7 @@ io.on('connection', (socket) => {
             lastGameResult = {
                 winner: 'SPY',
                 reason: 'spyGuessedCorrect',
-                spyName: spyPlayer ? spyPlayer.name : 'SPY',
+                spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName,
@@ -538,7 +538,7 @@ io.on('connection', (socket) => {
             lastGameResult = {
                 winner: 'PLAYERS',
                 reason: 'spyGuessedWrong',
-                spyName: spyPlayer ? spyPlayer.name : 'SPY',
+                spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName,
