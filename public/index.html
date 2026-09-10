@@ -755,20 +755,6 @@
                     const guessSec = document.getElementById('guess-section');
                     if (guessSec) guessSec.style.display = 'block';
 
-                    const guessInput = document.getElementById('spy-guess-input');
-                    const submitBtn = document.getElementById('submit-guess-btn');
-
-                    if (submitBtn && guessInput) {
-                        submitBtn.onclick = function() {
-                            const guessedName = guessInput.value.trim();
-                            if (guessedName) {
-                                socket.emit('spyGuess', guessedName);
-                            } else {
-                                alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
-                            }
-                        };
-                    }
-
                     const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
                     const roleDisplay = document.getElementById('role-display');
                     
