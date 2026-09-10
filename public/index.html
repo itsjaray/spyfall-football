@@ -849,7 +849,19 @@
                             `;
                         }
                     }
-                }
+            }
+        }
+
+        // 📌 เพิ่มส่วนนี้: สั่งแสดงกล่อง "ผลการเล่นตาที่แล้ว" (วงกลมสีเขียว) ตอนกด F5
+        if (data && data.lastGame && data.lastGame.secret) {
+            const lastGameBox = document.getElementById('lastGameResultBox');
+            if (lastGameBox) {
+                lastGameBox.style.display = 'block';
+                const lastSecretText = document.getElementById('lastSecretText');
+                const lastDecoyText = document.getElementById('lastDecoyText');
+                if (lastSecretText) lastSecretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos || ''})`;
+                if (lastDecoyText) lastDecoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy || ''} (${data.lastGame.decoyPos || ''})`;
+            }
         }
     });
 
