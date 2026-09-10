@@ -352,7 +352,7 @@ io.on('connection', (socket) => {
             players: players,
             spyIds: gameState.spyIds,
             // 📌 เพิ่มบรรทัดนี้ เพื่อส่งประวัติผลการเล่นตาที่แล้วกลับไปด้วยเวลาผู้เล่นกด F5
-            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
         });
     }
 });
@@ -364,7 +364,7 @@ io.on('connection', (socket) => {
         }
 
         // 📌 เพิ่มบรรทัดนี้ เพื่อเคลียร์ผลลัพธ์เก่าทิ้งตอนกดปุ่ม Home (รีเซ็ตห้อง)
-        lastGameResult = null;
+        lastGameSummary = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
         
         io.emit('timerUpdate', '03:00');
         io.emit('hideGameUI');
