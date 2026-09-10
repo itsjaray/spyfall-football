@@ -740,6 +740,7 @@
             socket.emit('setName', savedName);
         }
         socket.emit('requestCurrentRole');
+        socket.emit('requestGameState');
     });
 
     // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
