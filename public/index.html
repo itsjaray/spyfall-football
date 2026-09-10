@@ -743,6 +743,17 @@
         socket.emit('requestGameState');
     });
 
+    // รับข้อมูลสรุปผลเกม (รวมถึงตอนกด F5 แล้วเซิร์ฟเวอร์ส่งค่า lastGameResult กลับมา)
+    socket.on('finalResult', (data) => {
+        // เรียกฟังก์ชันแสดงผลหน้าจอสรุปผลเดิมที่มีอยู่แล้วในโปรเจกต์ของคุณ
+        if (typeof showGameResult === 'function') {
+            showGameResult(data);
+        } else {
+            // เผื่อกรณีฉุกเฉิน ถ้าฟังก์ชันแสดงผลชื่ออื่น ให้ใส่คำสั่งเปิดหน้าจอสรุปผลตรงนี้แทนได้ครับ
+            console.log("ได้รับผลลัพธ์เกม:", data);
+        }
+    });
+    
     // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
     socket.on('restoreGameState', (data) => {
         if (data.isStarted) {
