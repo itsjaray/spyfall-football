@@ -211,7 +211,7 @@
         <form id="spy-guess-form">
         <div class="input-group">
             <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
-            <button type="submit">ส่งคำตอบ</button>
+            <button type="submit" id="submit-guess-btn">ส่งคำตอบ</button>
             </div>
         </form>
     </div>
@@ -765,19 +765,19 @@
                     const guessSec = document.getElementById('guess-section');
                     if (guessSec) guessSec.style.display = 'block';
 
-                    const guessInput = guessSec.querySelector('input');
-                        const submitBtn = guessSec.querySelector('button');
+                    const guessInput = document.getElementById('spy-guess-input');
+                    const submitBtn = document.getElementById('submit-guess-btn');
 
-                        if (submitBtn && guessInput) {
-                            submitBtn.onclick = function() {
-                                const guessedName = guessInput.value.trim();
-                                if (guessedName) {
-                                    socket.emit('spyGuess', guessedName);
-                                } else {
-                                    alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
-                                }
-                            };
-                        }
+                    if (submitBtn && guessInput) {
+                        submitBtn.onclick = function() {
+                            const guessedName = guessInput.value.trim();
+                            if (guessedName) {
+                                socket.emit('spyGuess', guessedName);
+                            } else {
+                                alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+                            }
+                        };
+                    }
 
                     const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
                     const roleDisplay = document.getElementById('role-display');
