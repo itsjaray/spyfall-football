@@ -891,19 +891,24 @@
     if (guessSection) guessSection.style.display = 'none';
 });
 
-    // ฟังก์ชันกลางรองรับการกดส่งคำตอบ (รองรับทั้งตอนเล่นปกติและหลังกด F5)
-function handleFormGuess(event) {
-    event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรชเอง
-    const guessInput = document.getElementById('spy-guess-input');
-    if (guessInput) {
-        const guessedName = guessInput.value.trim();
-        if (guessedName) {
-            socket.emit('spyGuess', guessedName);
-        } else {
-            alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+    // ฟังก์ชันดักจับและผูกปุ่มส่งคำตอบให้อัตโนมัติ ป้องกันปุ่มตายหลังกด F5
+document.addEventListener('click', function(e) {
+    // เช็กว่าคลิกที่ปุ่มส่งคำตอบ หรือมีตัวหนังสือ "ส่งคำตอบ" อยู่ข้างใน
+    const submitBtn = e.target.closest('#submit-guess-btn') || (e.target.textContent && e.target.textContent.includes('ส่งคำตอบ'));
+    
+    if (submitBtn) {
+        e.preventDefault();
+        const guessInput = document.getElementById('spy-guess-input');
+        if (guessInput) {
+            const guessedName = guessInput.value.trim();
+            if (guessedName !== '') {
+                socket.emit('spyGuess', guessedName);
+            } else {
+                alert('กรุณาพิมพ์ชื่อนักเตะก่อนกดส่งครับ');
+            }
         }
     }
-}
+});
 
 </script>
 </body>
