@@ -297,8 +297,8 @@ io.on('connection', (socket) => {
     if (gameState.isStarted) {
         // เช็กจากชื่อ (player.name) หรือสถานะใน player ว่าเป็น Spy หรือไม่
         const isCurrentSpy = (gameState.spyNames && gameState.spyNames.includes(player.name)) || 
-                             player.role === 'SPY' ||
-                             (gameState.spyIds && gameState.spyIds.includes(socket.id));
+                               player.role === 'SPY' ||
+                               (gameState.spyIds && gameState.spyIds.includes(socket.id));
 
         // ฟังก์ชันช่วยหาชื่อทีมจากทุกความเป็นไปได้ของฟิลด์ข้อมูล
         const getTeam = (obj) => {
@@ -335,11 +335,13 @@ io.on('connection', (socket) => {
                 image: secret ? secret.image : ''
             });
         }
-        // 2. **[เพิ่มเข้ามาใหม่]** ส่งข้อมูลสถานะเกมและลำดับการเล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
-            socket.emit('restoreGameState', {
-                isStarted: gameState.isStarted,
-                playOrder: gameState.playOrder || players // ส่งลำดับการเล่นกลับไปด้วย
-            });
+        
+        // ส่งข้อมูลสถานะเกม ลำดับการเล่น และรายชื่อผู้เล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
+        socket.emit('restoreGameState', {
+            isStarted: gameState.isStarted,
+            playOrder: gameState.playOrder || players,
+            players: players
+        });
     }
 });
     
