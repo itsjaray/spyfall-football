@@ -285,6 +285,33 @@ io.on('connection', (socket) => {
         }, 3000);
     });
 
+    // เมื่อมีผู้เล่นเชื่อมต่อเข้ามาใหม่ ให้ตรวจสอบว่าเกมกำลังเล่นอยู่หรือไม่ ถ้าเล่นอยู่ให้ส่งบทบาทเดิมคืนให้
+    socket.on('requestCurrentRole', () => {
+        const player = players.find(p => p.id === socket.id);
+        if (!player) return;
+
+        if (gameState.isStarted) {
+            // เช็กว่าเป็น Spy หรือ Player ปกติ
+            if (gameState.spyIds && gameState.spyIds.includes(socket.id)) {
+                socket.emit('assignRole', {
+                    role: 'SPY',
+                    decoyName: gameState.decoyFootballer ? gameState.decoyFootballer.name : '???',
+                    position: gameState.decoyFootballer ? gameState.decoyFootballer.position : '???',
+                    foot: gameState.decoyFootballer ? gameState.decoyFootballer.foot : '???',
+                    image: gameState.decoyFootballer ? gameState.decoyFootballer.image : ''
+                });
+            } else {
+                socket.emit('assignRole', {
+                    role: 'PLAYER',
+                    name: gameState.secretFootballer ? gameState.secretFootballer.name : '???',
+                    position: gameState.secretFootballer ? gameState.secretFootballer.position : '???',
+                    foot: gameState.secretFootballer ? gameState.secretFootballer.foot : '???',
+                    image: gameState.secretFootballer ? gameState.secretFootballer.image : ''
+                });
+            }
+        }
+    });
+
     socket.on('resetRoom', () => {
         if (gameTimer) {
             clearInterval(gameTimer);
