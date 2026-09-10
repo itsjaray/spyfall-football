@@ -327,7 +327,6 @@ io.on('connection', (socket) => {
                 
             if (gameState.isSpyGuessing) {
                 socket.emit('spyMustGuess');
-                return; // จบการทำงานฟังก์ชันนี้เลย จะได้ไม่หลุดไปส่งค่าอื่นทับ
             }
             
         } else {
@@ -344,7 +343,6 @@ io.on('connection', (socket) => {
 
             if (gameState.isSpyGuessing) {
                 socket.emit('waitingForSpyGuess');
-                return;
             }
         }
         
