@@ -187,10 +187,10 @@
     <button onclick="resetGameRoom()" title="รีเซ็ตเกมกลับหน้าหลัก" style="position: absolute; left: 15px; top: 15px; background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; z-index: 99;">🏠</button>
     <h1>SPYFALL FOOTBALL <br><b>MADE BY JARAY</b></h1>
     
-    <form id="spy-guess-form" onsubmit="handleGuessSubmit(event)">
+    <form id="name-form" onsubmit="handleNameSubmit(event)">
         <div class="input-group">
-            <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
-            <button type="submit" id="submit-guess-btn">ส่งคำตอบ</button>
+            <input type="text" id="username" placeholder="พิมพ์ชื่อผู้เล่นของคุณ..." required />
+            <button type="submit">บันทึก</button>
         </div>
     </form>
 
@@ -302,16 +302,11 @@
     }
 
     function handleGuessSubmit(e) {
-        e.preventDefault(); // ป้องกันหน้าเว็บรีเฟรช
+        e.preventDefault();
         const guessInput = document.getElementById('spy-guess-input');
-        if (guessInput) {
-            const guessedName = guessInput.value.trim();
-            if (guessedName !== '') {
-                socket.emit('spyGuess', guessedName);
-                guessInput.value = ''; // เคลียร์ช่องพิมพ์
-            } else {
-                alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
-            }
+        if (guessInput.value.trim() !== '') {
+            socket.emit('spyGuess', guessInput.value.trim());
+            guessInput.value = '';
         }
     }
 
@@ -565,19 +560,34 @@
     });
 
     socket.on('spyMustGuess', () => {
-    document.getElementById('vote-section').style.display = 'none';
-    const guessSection = document.getElementById('guess-section');
-    guessSection.style.display = 'block';
+        document.getElementById('vote-section').style.display = 'none';
+        const guessSection = document.getElementById('guess-section');
+        guessSection.style.display = 'block';
+        
+        document.getElementById('role-display').innerHTML = `
+            <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
+                🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
+            </span><br>
+            <span style="color: #ff9999; font-size: 13px;">
+                ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
+            </span>
+        `;
 
-    document.getElementById('role-display').innerHTML = `
-        <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
-            🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
-        </span><br>
-        <span style="color: #ff9999; font-size: 13px;">
-            ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
-        </span>
-    `;
-});
+        // สั่งค้นหาช่องพิมพ์ (<input>) และปุ่มกด (<button>) ที่อยู่ข้างใน guess-section อัตโนมัติทันที
+        const guessInput = guessSection.querySelector('input');
+        const submitBtn = guessSection.querySelector('button');
+
+        if (submitBtn && guessInput) {
+            submitBtn.onclick = function() {
+                const guessedName = guessInput.value.trim();
+                if (guessedName) {
+                    socket.emit('spyGuess', guessedName);
+                } else {
+                    alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+                }
+            };
+        }
+    });
 
     socket.on('waitingForSpyGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
@@ -755,6 +765,20 @@
                     const guessSec = document.getElementById('guess-section');
                     if (guessSec) guessSec.style.display = 'block';
 
+                    const guessInput = document.getElementById('spy-guess-input');
+                    const submitBtn = document.getElementById('submit-guess-btn');
+
+                    if (submitBtn && guessInput) {
+                        submitBtn.onclick = function() {
+                            const guessedName = guessInput.value.trim();
+                            if (guessedName) {
+                                socket.emit('spyGuess', guessedName);
+                            } else {
+                                alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+                            }
+                        };
+                    }
+
                     const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
                     const roleDisplay = document.getElementById('role-display');
                     
@@ -867,9 +891,22 @@
     if (guessSection) guessSection.style.display = 'none';
 });
 
-  
-
-
+    // ผูกปุ่มส่งคำตอบโดยตรงอย่างปลอดภัย ไม่ติด CSP
+const submitGuessBtn = document.querySelector('#guess-section button') || document.querySelector('button'); 
+if (submitGuessBtn) {
+    submitGuessBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const guessInput = document.getElementById('spy-guess-input');
+        if (guessInput) {
+            const guessedName = guessInput.value.trim();
+            if (guessedName !== '') {
+                socket.emit('spyGuess', guessedName);
+            } else {
+                alert('กรุณาพิมพ์ชื่อนักเตะก่อนครับ');
+            }
+        }
+    });
+}
 
 </script>
 </body>
