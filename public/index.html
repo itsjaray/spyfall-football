@@ -879,7 +879,8 @@
         if (chatContainer) {
             chatContainer.innerHTML = ''; 
             data.chatHistory.forEach(chat => {
-                chatContainer.innerHTML += `<div><b>${chat.sender}</b>: ${chat.message} <span style="font-size:10px; color:#aaa;">${chat.timestamp}</span></div>`;
+                // 📌 เพิ่ม style สีเหลืองตรงชื่อ ${chat.sender} ตรงนี้ครับ
+                chatContainer.innerHTML += `<div><b style="color: var(--pl-yellow);">${chat.sender}</b>: ${chat.message} <span style="font-size:10px; color:#aaa;">${chat.timestamp}</span></div>`;
             });
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
