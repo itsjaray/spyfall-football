@@ -740,6 +740,36 @@
                 const guessSection = document.getElementById('guess-section');
                 if (guessSection) guessSection.style.display = 'block';
             }
+
+            if (data.isSpyGuessing) {
+                    const voteSec = document.getElementById('vote-section');
+                    if (voteSec) voteSec.style.display = 'none';
+
+                    const guessSec = document.getElementById('guess-section');
+                    if (guessSec) guessSec.style.display = 'block';
+
+                    const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
+                    const roleDisplay = document.getElementById('role-display');
+                    
+                    if (roleDisplay) {
+                        if (isSpy) {
+                            roleDisplay.innerHTML = `
+                                <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
+                                    🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
+                                </span><br>
+                                <span style="color: #ff9999; font-size: 13px;">
+                                    ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
+                                </span>
+                            `;
+                        } else {
+                            roleDisplay.innerHTML = `
+                                <span style="color: #ffbb33; font-weight: bold; font-size: 15px;">
+                                    ⏳ กำลังรอ Spy ตอบชื่อ...
+                                </span>
+                            `;
+                        }
+                    }
+                }
         }
     });
 
