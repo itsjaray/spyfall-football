@@ -860,18 +860,18 @@
             }
         }
 
-        // 📌 เพิ่มส่วนนี้: สั่งแสดงกล่อง "ผลการเล่นตาที่แล้ว" (วงกลมสีเขียว) ตอนกด F5
-        if (data && data.lastGame && data.lastGame.secret) {
-            const lastGameBox = document.getElementById('lastGameResultBox');
-            if (lastGameBox) {
-                lastGameBox.style.display = 'block';
-                const lastSecretText = document.getElementById('lastSecretText');
-                const lastDecoyText = document.getElementById('lastDecoyText');
-                if (lastSecretText) lastSecretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos || ''})`;
-                if (lastDecoyText) lastDecoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy || ''} (${data.lastGame.decoyPos || ''})`;
-            }
+        // เช็กและแสดงกล่องประวัติผลการเล่นตาที่แล้ว
+        const lastGameBox = document.getElementById('lastGameResultBox');
+        if (data.lastGame && data.lastGame.secret) {
+            if (lastGameBox) lastGameBox.style.display = 'block';
+            const secretEl = document.getElementById('lastSecretText');
+            const decoyEl = document.getElementById('lastDecoyText');
+            if (secretEl) secretEl.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos || ''})`;
+            if (decoyEl) decoyEl.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy || ''} (${data.lastGame.decoyPos || ''})`;
+        } else {
+            if (lastGameBox) lastGameBox.style.display = 'none';
         }
-    });
+});
 
     function submitSpyGuess(event) {
     event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรชเอง
