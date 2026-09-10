@@ -443,18 +443,16 @@ io.on('connection', (socket) => {
                 const spyPlayers = players.filter(p => gameState.spyIds && gameState.spyIds.includes(p.id));
                 spyPlayers.forEach(sp => sp.score += 2);
                 const spyNamesStr = spyPlayers.map(p => p.name).join(', ');
-                const suspectedPlayer = players.find(p => p.id === suspectedId);
+                const suspectedPlayer = players.find(p => suspectedId && p.id === suspectedId);
 
-                
-                /*io.emit('finalResult', {
-                    winner: 'SPY',
-                    reason: 'voteWrong',
-                    suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
-                    spyName: spyNamesStr,
-                    secretFootballer: gameState.secretFootballer.name,
-                    decoyFootballer: gameState.decoyFootballer.name
-                });*/
+                // ✅ 1. เก็บค่า playOrder ไว้ในตัวแปรก่อนเคลียร์
+                const savedPlayOrder = gameState.playOrder;
 
+                // ✅ 2. เคลียร์ค่าสถานะเกมก่อน
+                gameState.isStarted = false;
+                gameState.playOrder = [];
+
+                // ✅ 3. เอาตัวแปรที่เก็บไว้มาใส่ใน lastGameResult
                 lastGameResult = {
                     winner: 'SPY',
                     reason: 'voteWrong',
@@ -462,15 +460,11 @@ io.on('connection', (socket) => {
                     spyName: spyNamesStr,
                     secretFootballer: gameState.secretFootballer.name,
                     decoyFootballer: gameState.decoyFootballer.name,
-                    playOrder: gameState.playOrder,
+                    playOrder: savedPlayOrder, 
                     lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
                 };
 
                 io.emit('finalResult', lastGameResult);
-                
-
-                gameState.isStarted = false;
-                gameState.playOrder = [];
                 io.emit('updatePlayers', players);
             }
         }
@@ -502,6 +496,15 @@ io.on('connection', (socket) => {
         if (isCorrect) {
             if (spyPlayer) spyPlayer.score += 2;
             
+            // ✅ 1. เก็บค่า playOrder ไว้ก่อนเคลียร์
+            const savedPlayOrder = gameState.playOrder;
+
+            // ✅ 2. เคลียร์สถานะเกม
+            gameState.isStarted = false;
+            gameState.isSpyGuessing = false;
+            gameState.playOrder = [];
+
+            // ✅ 3. สร้างชุดข้อมูลผลลัพธ์
             lastGameResult = {
                 winner: 'SPY',
                 reason: 'spyGuessedCorrect',
@@ -509,16 +512,28 @@ io.on('connection', (socket) => {
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName,
-                playOrder: gameState.playOrder,
+                playOrder: savedPlayOrder,
                 lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             };
 
-    io.emit('finalResult', lastGameResult);
+            io.emit('finalResult', lastGameResult);
+            io.emit('updatePlayers', players); // อย่าลืมใส่บรรทัดอัปเดตผู้เล่นตรงนี้ด้วยครับ
+            return; // ป้องกันไม่ให้มันไปโดนชุดคำสั่งด้านล่างซ้ำซ้อน
+            
         } else {
             players.forEach(p => {
                 if (!gameState.spyIds.includes(p.id)) p.score += 1;
             });
 
+            // ✅ 1. เก็บค่า playOrder ไว้ก่อนเคลียร์
+            const savedPlayOrder = gameState.playOrder;
+
+            // ✅ 2. เคลียร์สถานะเกม
+            gameState.isStarted = false;
+            gameState.isSpyGuessing = false;
+            gameState.playOrder = [];
+
+            // ✅ 3. สร้างชุดข้อมูลผลลัพธ์
             lastGameResult = {
                 winner: 'PLAYERS',
                 reason: 'spyGuessedWrong',
@@ -526,16 +541,13 @@ io.on('connection', (socket) => {
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName,
-                playOrder: gameState.playOrder,
+                playOrder: savedPlayOrder,
                 lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             };
 
-    io.emit('finalResult', lastGameResult);
+            io.emit('finalResult', lastGameResult);
+            io.emit('updatePlayers', players);
         }
-
-        gameState.isStarted = false;
-        gameState.isSpyGuessing = false;
-        io.emit('updatePlayers', players);
     });
 
     socket.on('resetScores', () => {
