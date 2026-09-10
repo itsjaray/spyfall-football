@@ -352,6 +352,7 @@ io.on('connection', (socket) => {
             isSpyGuessing: gameState.isSpyGuessing,
             playOrder: gameState.playOrder || players,
             players: players
+            spyIds: gameState.spyIds
         });
     }
 });
