@@ -162,7 +162,21 @@ io.on('connection', (socket) => {
 
         roundCount++;
         gameState.isStarted = true;
-        lastGameResult = null;
+        
+        //lastGameResult = null;
+        if (gameState.secretFootballer && gameState.secretFootballer.name) {
+            previousRoundSecret = gameState.secretFootballer;
+            previousRoundDecoy = gameState.decoyFootballer;
+            lastGameSummary = {
+                secret: previousRoundSecret.name,
+                secretPos: previousRoundSecret.position || "",
+                decoy: previousRoundDecoy ? previousRoundDecoy.name : "",
+                decoyPos: previousRoundDecoy ? previousRoundDecoy.position : "",
+                winner: lastGameResult ? lastGameResult.winner : null,
+                spyName: lastGameResult ? lastGameResult.spyName : null
+            };
+        }
+        
         gameState.votes = {};
         gameState.votedPlayers.clear();
 
@@ -575,12 +589,25 @@ io.on('connection', (socket) => {
         });
     });
 
-        // คอยรับคำขอสถานะเกมล่าสุดจาก Client (เช่น กรณีผู้เล่นกด F5 รีเฟรชหน้าเว็บ)
         socket.on('requestGameState', () => {
-            if (lastGameResult) {
-                socket.emit('finalResult', lastGameResult);
-            }
-        });
+        if (lastGameResult) {
+            socket.emit('finalResult', lastGameResult);
+        } else if (lastGameSummary && lastGameSummary.secret) {
+            // ส่งข้อมูลผลการเล่นตาที่แล้วกลับไปแสดงผล แม้ว่าเกมรอบใหม่จะเริ่มเล่นอยู่ก็ตาม
+            socket.emit('finalResult', {
+                winner: lastGameSummary.winner || 'PLAYERS',
+                spyName: lastGameSummary.spyName || '???',
+                secretFootballer: lastGameSummary.secret,
+                decoyFootballer: lastGameSummary.decoy,
+                lastGame: {
+                    secret: lastGameSummary.secret,
+                    secretPos: lastGameSummary.secretPos,
+                    decoy: lastGameSummary.decoy,
+                    decoyPos: lastGameSummary.decoyPos
+                }
+            });
+        }
+    });
 });
 
 server.listen(3000, () => {
