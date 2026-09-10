@@ -46,6 +46,7 @@ let gameState = {
     secretFootballer: null,
     decoyFootballer: null,
     spyIds: [],
+    spyNames: [],
     votes: {},
     votedPlayers: new Set()
 };
@@ -191,6 +192,7 @@ io.on('connection', (socket) => {
         const spies = shuffledPlayers.slice(0, spyCountInput);
         const spyIdsSet = new Set(spies.map(p => p.id));
         gameState.spyIds = Array.from(spyIdsSet);
+        gameState.spyNames = spies.map(p => p.name);
 
         recentSpies.clear();
         spyIdsSet.forEach(id => recentSpies.add(id));
@@ -290,20 +292,20 @@ io.on('connection', (socket) => {
     if (!player) return;
 
     if (gameState.isStarted) {
-        // เช็กจากชื่อผู้เล่น หรือเช็กจากสถานะที่บันทึกไว้ประจำตัวผู้เล่นคนนั้นๆ
+        // เช็กจากชื่อ (player.name) หรือสถานะใน player ว่าเป็น Spy หรือไม่
         const isCurrentSpy = (gameState.spyNames && gameState.spyNames.includes(player.name)) || 
-                             (gameState.spyIds && gameState.spyIds.includes(socket.id)) ||
-                             player.role === 'SPY';
+                             player.role === 'SPY' ||
+                             (gameState.spyIds && gameState.spyIds.includes(socket.id));
 
-        // ดึงข้อมูลทีมโดยเช็กหลายๆ ชื่อฟิลด์กันพลาด (team, club, teamName)
+        // ฟังก์ชันช่วยหาชื่อทีมจากทุกความเป็นไปได้ของฟิลด์ข้อมูล
         const getTeam = (obj) => {
             if (!obj) return '-';
-            return obj.team || obj.club || obj.teamName || '-';
+            return obj.team || obj.club || obj.teamName || obj.currentTeam || obj.squad || obj.t || '-';
         };
 
         const getNationality = (obj) => {
             if (!obj) return '-';
-            return obj.nationality || obj.nation || '-';
+            return obj.nationality || obj.nation || obj.country || '-';
         };
 
         if (isCurrentSpy) {
