@@ -875,7 +875,7 @@
 
     // 3. 📌 เพิ่มส่วนนี้: ดึงประวัติข้อความแชทเก่ามาแสดงตอนกด F5 (แก้ปัญหาข้อความหาย)
     if (data && data.chatHistory && Array.isArray(data.chatHistory)) {
-        const chatContainer = document.getElementById('chatMessages'); // ตรวจสอบ ID กล่องแชทของคุณ
+        const chatContainer = document.getElementById('chat-box'); // ตรวจสอบ ID กล่องแชทของคุณ
         if (chatContainer) {
             chatContainer.innerHTML = ''; 
             data.chatHistory.forEach(chat => {
