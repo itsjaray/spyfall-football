@@ -584,13 +584,19 @@ io.on('connection', (socket) => {
     });
 
         socket.on('requestGameState', () => {
-        // ✅ ถ้าเกมกำลังดำเนินอยู่ ให้เรียกขอ Role ปกติ
+        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้คืนค่า Role ปัจจุบัน
         if (gameState.isStarted) {
             socket.emit('requestCurrentRole');
             return;
         }
 
-        // 🛑 ถ้าเกมไม่ได้เริ่ม (กด Home รีเซ็ตแล้ว) ให้ส่งค่าว่างเปล่ากลับไปเคลียร์หน้าจอ
+        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์ (lastGameResult) ให้แสดงหน้าสรุปผลตามเดิม (รองรับการกด F5 ตอนหน้าสรุปผล)
+        if (lastGameResult) {
+            socket.emit('finalResult', lastGameResult);
+            return;
+        } 
+        
+        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (หมายถึงเพิ่งกดปุ่ม Home รีเซ็ตห้องมา) ค่อยส่งค่าเคลียร์หน้าจอ
         socket.emit('restoreGameState', {
             isStarted: false,
             lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
