@@ -324,10 +324,11 @@ io.on('connection', (socket) => {
                 team: getTeam(decoy),
                 image: decoy ? decoy.image : ''
             });
-            // ** เพิ่มเช็กตรงนี้: ถ้ากำลังอยู่ในช่วงทายชื่อ ให้สั่งเปิดหน้าจอทายชื่อซ้ำให้ด้วยตอน F5 **
-                if (gameState.isSpyGuessing) {
-                    socket.emit('spyMustGuess');
-                }
+                
+            if (gameState.isSpyGuessing) {
+                socket.emit('spyMustGuess');
+                return; // จบการทำงานฟังก์ชันนี้เลย จะได้ไม่หลุดไปส่งค่าอื่นทับ
+            }
             
         } else {
             const secret = gameState.secretFootballer;
@@ -340,6 +341,11 @@ io.on('connection', (socket) => {
                 team: getTeam(secret),
                 image: secret ? secret.image : ''
             });
+
+            if (gameState.isSpyGuessing) {
+                socket.emit('waitingForSpyGuess');
+                return;
+            }
         }
         
         // ส่งข้อมูลสถานะเกม ลำดับการเล่น และรายชื่อผู้เล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
