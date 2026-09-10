@@ -551,6 +551,13 @@ io.on('connection', (socket) => {
             decoyPos: lastGameSummary.decoyPos
         });
     });
+
+        // คอยรับคำขอสถานะเกมล่าสุดจาก Client (เช่น กรณีผู้เล่นกด F5 รีเฟรชหน้าเว็บ)
+        socket.on('requestGameState', () => {
+            if (lastGameResult) {
+                socket.emit('finalResult', lastGameResult);
+            }
+        });
 });
 
 server.listen(3000, () => {
