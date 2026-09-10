@@ -590,6 +590,13 @@ io.on('connection', (socket) => {
     });
 
         socket.on('requestGameState', () => {
+            // ✅ ถ้าเกมกำลังดำเนินอยู่ (อยู่ในรอบการเล่นปัจจุบัน) ให้เรียกขอ Role ปกติแทนที่จะแสดงหน้าสรุปผล
+        if (gameState.isStarted) {
+            socket.emit('requestCurrentRole');
+            return;
+        }
+
+        // ถ้าเกมยังไม่เริ่ม (อยู่ในหน้าสรุปผล) ค่อยแสดงหน้าสรุปผลตามปกติ
         if (lastGameResult) {
             socket.emit('finalResult', lastGameResult);
         } else if (lastGameSummary && lastGameSummary.secret) {
