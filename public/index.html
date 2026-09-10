@@ -691,6 +691,7 @@
         }
         socket.emit('setName', savedName);
     }
+    socket.emit('requestCurrentRole');      
 });
 
     function resetGameRoom() {
