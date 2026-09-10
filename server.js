@@ -52,6 +52,8 @@ let gameState = {
     votedPlayers: new Set()
 };
 
+let lastGameResult = null; // เก็บข้อมูลผลลัพธ์เกมรอบล่าสุดไว้
+
 let gameTimer = null;
 let timeRemaining = 180;
 
@@ -438,14 +440,27 @@ io.on('connection', (socket) => {
                 const spyNamesStr = spyPlayers.map(p => p.name).join(', ');
                 const suspectedPlayer = players.find(p => p.id === suspectedId);
 
-                io.emit('finalResult', {
+                
+                /*io.emit('finalResult', {
                     winner: 'SPY',
                     reason: 'voteWrong',
                     suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
                     spyName: spyNamesStr,
                     secretFootballer: gameState.secretFootballer.name,
                     decoyFootballer: gameState.decoyFootballer.name
-                });
+                });*/
+
+                lastGameResult = {
+                    winner: 'SPY',
+                    reason: 'voteWrong',
+                    suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
+                    spyName: spyNamesStr,
+                    secretFootballer: gameState.secretFootballer.name,
+                    decoyFootballer: gameState.decoyFootballer.name
+                };
+
+                io.emit('finalResult', lastGameResult);
+                
 
                 gameState.isStarted = false;
                 gameState.playOrder = [];
@@ -479,26 +494,32 @@ io.on('connection', (socket) => {
 
         if (isCorrect) {
             if (spyPlayer) spyPlayer.score += 2;
-            io.emit('finalResult', {
+            
+            lastGameResult = {
                 winner: 'SPY',
                 reason: 'spyGuessedCorrect',
                 spyName: spyPlayer ? spyPlayer.name : 'SPY',
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName
-            });
+            };
+
+    io.emit('finalResult', lastGameResult);
         } else {
             players.forEach(p => {
                 if (!gameState.spyIds.includes(p.id)) p.score += 1;
             });
-            io.emit('finalResult', {
+
+            lastGameResult = {
                 winner: 'PLAYERS',
                 reason: 'spyGuessedWrong',
                 spyName: spyPlayer ? spyPlayer.name : 'SPY',
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName
-            });
+            };
+
+    io.emit('finalResult', lastGameResult);
         }
 
         gameState.isStarted = false;
