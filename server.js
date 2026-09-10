@@ -367,6 +367,9 @@ io.on('connection', (socket) => {
     gameState.isStarted = false;
     gameState.isSpyGuessing = false;
     gameState.spyIds = [];
+    
+    lastGameResult = null;
+        
     lastGameSummary = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
 
     io.emit('timerUpdate', '03:00');
