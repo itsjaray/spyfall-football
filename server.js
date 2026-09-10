@@ -416,7 +416,6 @@ io.on('connection', (socket) => {
                     }
                 });
 
-                gameState.isStarted = false;
                 gameState.playOrder = [];
                 
             } else {
