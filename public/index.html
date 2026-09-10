@@ -801,6 +801,26 @@
     
     // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
     socket.on('restoreGameState', (data) => {
+
+    if (!data.isStarted && (!data.lastGame || !data.lastGame.secret)) {
+        const roleDisplay = document.getElementById('role-display');
+        if (roleDisplay) roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
+        
+        const orderSection = document.getElementById('order-section');
+        if (orderSection) orderSection.style.display = 'none';
+
+        const voteSection = document.getElementById('vote-section');
+        if (voteSection) voteSection.style.display = 'none';
+
+        const guessSection = document.getElementById('guess-section');
+        if (guessSection) guessSection.style.display = 'none';
+
+        const lastGameBox = document.getElementById('lastGameResultBox');
+        if (lastGameBox) lastGameBox.style.display = 'none';
+        
+        return; // ตัดจบ ไม่ให้มันไปรันโค้ดดึงหน้าผลลัพธ์เก่าขึ้นมาแสดง
+    }
+        
     // 1. จัดการสถานะหน้าจอเกมหลัก
     if (data.isStarted) {
         // ใช้ฟังก์ชัน applyGameStartedState ที่มีอยู่แล้วในระบบเพื่อวาดหน้าจอทั้งหมด
