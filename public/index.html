@@ -891,23 +891,6 @@
     if (guessSection) guessSection.style.display = 'none';
 });
 
-    // ผูกปุ่มส่งคำตอบโดยตรงอย่างปลอดภัย ไม่ติด CSP
-const submitGuessBtn = document.querySelector('#guess-section button') || document.querySelector('button'); 
-if (submitGuessBtn) {
-    submitGuessBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const guessInput = document.getElementById('spy-guess-input');
-        if (guessInput) {
-            const guessedName = guessInput.value.trim();
-            if (guessedName !== '') {
-                socket.emit('spyGuess', guessedName);
-            } else {
-                alert('กรุณาพิมพ์ชื่อนักเตะก่อนครับ');
-            }
-        }
-    });
-}
-
 </script>
 </body>
 </html>
