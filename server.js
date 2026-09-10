@@ -292,9 +292,18 @@ io.on('connection', (socket) => {
         // ** เพิ่มบรรทัดนี้เพื่อเก็บบันทึกลำดับการเล่นไว้บน Server **
         gameState.playOrder = playOrder;
 
+        // เตรียมข้อมูลตาที่แล้วให้พร้อมส่ง
         let summaryToSend = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
-        if (previousRoundSecret) {
+        
+        if (previousRoundSecret && previousRoundSecret.name) {
             summaryToSend = lastGameSummary;
+        } else if (lastGameResult && lastGameResult.secretFootballer) {
+            summaryToSend = {
+                secret: lastGameResult.secretFootballer,
+                secretPos: lastGameResult.secretPos || "",
+                decoy: lastGameResult.decoyFootballer,
+                decoyPos: lastGameResult.decoyPos || ""
+            };
         }
 
         io.emit('gameStarted', { 
