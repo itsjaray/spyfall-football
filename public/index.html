@@ -473,12 +473,20 @@
 
     function applyGameStartedState(data) {
         const lastGameBox = document.getElementById('lastGameResultBox');
+    
+        // 🛠️ ปรับแก้ตรงนี้: ลองเช็คจาก data.lastGame หรือถ้าไม่มี ให้ลองดึงค่าสำรองจากตัวแปรกลาง (ถ้ามี)
+        const gameDataToUse = (data && data.lastGame && data.lastGame.secret) ? data.lastGame : window.lastGameCache;
+
+        if (gameDataToUse && gameDataToUse.secret) {
+            if (lastGameBox) lastGameBox.style.display = 'block';
         
-        if (data.lastGame && data.lastGame.secret) {
-            lastGameBox.style.display = 'block';
-            document.getElementById('lastSecretText').innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos})`;
-            document.getElementById('lastDecoyText').innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy} (${data.lastGame.decoyPos})`;
+            const secretEl = document.getElementById('lastSecretText');
+            const decoyEl = document.getElementById('lastDecoyText');
+        
+            if (secretEl) secretEl.innerHTML = `⚽ <b>ตัวจริง:</b> ${gameDataToUse.secret} (${gameDataToUse.secretPos || ''})`;
+            if (decoyEl) decoyEl.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${gameDataToUse.decoy || ''} (${gameDataToUse.decoyPos || ''})`;
         } else {
+            // ถ้าไม่มีข้อมูลตาที่แล้วจริงๆ ถึงค่อยซ่อน
             if (lastGameBox) lastGameBox.style.display = 'none';
         }
         
