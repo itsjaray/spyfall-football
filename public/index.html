@@ -661,7 +661,7 @@
         if (result.winner === 'PLAYERS') {
             display.innerHTML = `<span style="color:var(--pl-green);">&#127919; ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
             <small style="color:#ff6b81;">(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br>
-            <b>SPY คือ:</b> ${result.spyName}<br>
+            <b>SPY คือ:</b> <span style="color:var(--pl-pink); font-size: 1.1em;">${result.spyName}</span><br> <!-- 👈 ปรับตรงนี้ให้เด่นและแสดงชื่อ -->
             <small style="color:var(--pl-cyan);">นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
             <small style="color:#aaa;">นักเตะหลอกของ SPY: ${result.decoyFootballer}</small>`;
         } else {
@@ -671,7 +671,7 @@
 
             display.innerHTML = `<span style="color:var(--pl-pink);">&#127942; SPY ชนะ (+2 คะแนน)!</span><br>
             <small style="color:#ffb8b8;">(${reasonText})</small><br>
-            <b>SPY คือ:</b> ${result.spyName}<br>
+            <b>SPY คือ:</b> <span style="color:var(--pl-pink); font-size: 1.1em;">${result.spyName}</span><br> <!-- 👈 และปรับตรงนี้ด้วยเช่นกัน -->
             <small style="color:var(--pl-cyan);">นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
             <small style="color:#aaa;">นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer}</small>`;
         }
