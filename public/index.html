@@ -675,6 +675,34 @@
             <small style="color:var(--pl-cyan);">นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
             <small style="color:#aaa;">นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer}</small>`;
         }
+
+        // 📌 เพิ่มส่วนแสดงผล "ลำดับการตั้งคำถาม" ตอนกด F5 หลังจบเกม
+        if (result.playOrder && result.playOrder.length > 0) {
+            const orderSection = document.getElementById('order-section');
+            const orderOl = document.getElementById('order-ol');
+            if (orderSection && orderOl) {
+                orderSection.style.display = 'block';
+                orderOl.innerHTML = result.playOrder.map((p, index) => {
+                    const playerName = typeof p === 'string' ? p : (p.name || '');
+                    if (index === 0) {
+                        return `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>`;
+                    }
+                    return `<li>${playerName}</li>`;
+                }).join('');
+            }
+        }
+
+        // 📌 เพิ่มส่วนแสดงผล "ผลการเล่นตาที่แล้ว" (ถ้ามีข้อมูล)
+        if (result.lastGame && result.lastGame.secret) {
+            const lastGameBox = document.getElementById('lastGameResultBox');
+            if (lastGameBox) {
+                lastGameBox.style.display = 'block';
+                const lastSecretText = document.getElementById('lastSecretText');
+                const lastDecoyText = document.getElementById('lastDecoyText');
+                if (lastSecretText) lastSecretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${result.lastGame.secret} (${result.lastGame.secretPos || ''})`;
+                if (lastDecoyText) lastDecoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${result.lastGame.decoy || ''} (${result.lastGame.decoyPos || ''})`;
+            }
+        }
     });
 
     socket.on('kicked', () => {
