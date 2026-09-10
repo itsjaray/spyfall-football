@@ -873,18 +873,6 @@
         if (lastGameBox) lastGameBox.style.display = 'none';
     }
 
-    // 3. 📌 เพิ่มส่วนนี้: ดึงประวัติข้อความแชทเก่ามาแสดงตอนกด F5 (แก้ปัญหาข้อความหาย)
-    if (data && data.chatHistory && Array.isArray(data.chatHistory)) {
-        const chatContainer = document.getElementById('chat-box'); // ตรวจสอบ ID กล่องแชทของคุณ
-        if (chatContainer) {
-            chatContainer.innerHTML = ''; 
-            data.chatHistory.forEach(chat => {
-                // 📌 เพิ่ม style สีเหลืองตรงชื่อ ${chat.sender} ตรงนี้ครับ
-                chatContainer.innerHTML += `<div><b style="color: var(--pl-yellow);">${chat.sender}</b>: ${chat.message} <span style="font-size:10px; color:#aaa;">${chat.timestamp}</span></div>`;
-            });
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-    }
 });
 
     function submitSpyGuess(event) {
