@@ -8,6 +8,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+let chatHistory = []; // 📌 เก็บประวัติข้อความแชททั้งหมด
+
 let previousRoundSecret = null;
 let previousRoundDecoy = null;
 let roundCount = 0;
@@ -351,6 +353,7 @@ io.on('connection', (socket) => {
             spyIds: gameState.spyIds,
             // 📌 เพิ่มบรรทัดนี้ เพื่อส่งประวัติผลการเล่นตาที่แล้วกลับไปด้วยเวลาผู้เล่นกด F5
             lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            chatHistory: chatHistory // 📌 ส่งประวัติแชทกลับไปตอน F5 ด้วย
         });
     }
 });
@@ -375,21 +378,27 @@ io.on('connection', (socket) => {
     });
 
     socket.on('sendChatMessage', (message) => {
-        const player = players.find(p => p.id === socket.id);
-        const senderName = player ? player.name : 'Unknown';
-        
-        const timestamp = new Date().toLocaleTimeString('th-TH', {
-            timeZone: 'Asia/Bangkok',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }) + ' น.';
+    const player = players.find(p => p.id === socket.id);
+    const senderName = player ? player.name : 'Unknown';
 
-        io.emit('newChatMessage', {
-            sender: senderName,
-            message: message,
-            timestamp: timestamp
-        });
+    const timestamp = new Date().toLocaleTimeString('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }) + ' น.';
+
+    const chatData = {
+        sender: senderName,
+        message: message,
+        timestamp: timestamp
+    };
+
+        // 📌 บันทึกข้อความเก็บลงประวัติ (จำกัดไว้ 50 ข้อความล่าสุด)
+        chatHistory.push(chatData);
+        if (chatHistory.length > 50) chatHistory.shift();
+
+        io.emit('newChatMessage', chatData);
     });
 
     socket.on('typing', (data) => {
