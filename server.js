@@ -455,6 +455,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('spyGuess', (guessedName) => {
+        // 🔍 ลองใส่ console.log ตรงนี้เพื่อดูว่า Server ได้รับค่าไหม และเราเป็น SPY หรือเปล่า
+        console.log("มีคนกดส่งคำตอบมา:", guessedName);
+        console.log("เกมเริ่มหรือยัง (isStarted):", gameState.isStarted);
+        console.log("ไอดีเราใช่ SPY ไหม:", gameState.spyIds.includes(socket.id));
+        
         if (!gameState.isStarted || !gameState.spyIds.includes(socket.id)) return;
 
         const trimmedGuess = guessedName ? guessedName.trim() : '';
