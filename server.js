@@ -457,7 +457,9 @@ io.on('connection', (socket) => {
                     suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
                     spyName: spyNamesStr,
                     secretFootballer: gameState.secretFootballer.name,
-                    decoyFootballer: gameState.decoyFootballer.name
+                    decoyFootballer: gameState.decoyFootballer.name,
+                    playOrder: gameState.playOrder,
+                    lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
                 };
 
                 io.emit('finalResult', lastGameResult);
@@ -502,7 +504,9 @@ io.on('connection', (socket) => {
                 spyName: spyPlayer ? spyPlayer.name : 'SPY',
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
-                spyGuess: guessedName
+                spyGuess: guessedName,
+                playOrder: gameState.playOrder,
+                lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             };
 
     io.emit('finalResult', lastGameResult);
@@ -517,7 +521,9 @@ io.on('connection', (socket) => {
                 spyName: spyPlayer ? spyPlayer.name : 'SPY',
                 secretFootballer: gameState.secretFootballer.name,
                 decoyFootballer: gameState.decoyFootballer.name,
-                spyGuess: guessedName
+                spyGuess: guessedName,
+                playOrder: gameState.playOrder,
+                lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             };
 
     io.emit('finalResult', lastGameResult);
