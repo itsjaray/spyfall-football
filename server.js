@@ -520,6 +520,12 @@ io.on('connection', (socket) => {
                 if (!gameState.spyIds.includes(p.id)) p.score += 1;
             });
 
+            // 📌 เพิ่มบรรทัดนี้ เพื่อสั่งหยุดเวลาทันทีที่เกมจบ (Spy ทายผิด)
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+
             // ✅ 1. เก็บค่า playOrder ไว้ก่อนเคลียร์
             const savedPlayOrder = gameState.playOrder;
 
