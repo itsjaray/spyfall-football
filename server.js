@@ -365,6 +365,10 @@ io.on('connection', (socket) => {
             clearInterval(gameTimer);
             gameTimer = null;
         }
+
+        // 📌 เพิ่มบรรทัดนี้ เพื่อเคลียร์ผลลัพธ์เก่าทิ้งตอนกดปุ่ม Home (รีเซ็ตห้อง)
+        lastGameResult = null;
+        
         io.emit('timerUpdate', '03:00');
         io.emit('hideGameUI');
 
