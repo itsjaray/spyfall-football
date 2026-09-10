@@ -286,31 +286,41 @@ io.on('connection', (socket) => {
     });
 
     // เมื่อมีผู้เล่นเชื่อมต่อเข้ามาใหม่ ให้ตรวจสอบว่าเกมกำลังเล่นอยู่หรือไม่ ถ้าเล่นอยู่ให้ส่งบทบาทเดิมคืนให้
-    socket.on('requestCurrentRole', () => {
-        const player = players.find(p => p.id === socket.id);
-        if (!player) return;
+socket.on('requestCurrentRole', () => {
+    const player = players.find(p => p.id === socket.id);
+    if (!player) return;
 
-        if (gameState.isStarted) {
-            // เช็กว่าเป็น Spy หรือ Player ปกติ
-            if (gameState.spyIds && gameState.spyIds.includes(socket.id)) {
-                socket.emit('assignRole', {
-                    role: 'SPY',
-                    decoyName: gameState.decoyFootballer ? gameState.decoyFootballer.name : '???',
-                    position: gameState.decoyFootballer ? gameState.decoyFootballer.position : '???',
-                    foot: gameState.decoyFootballer ? gameState.decoyFootballer.foot : '???',
-                    image: gameState.decoyFootballer ? gameState.decoyFootballer.image : ''
-                });
-            } else {
-                socket.emit('assignRole', {
-                    role: 'PLAYER',
-                    name: gameState.secretFootballer ? gameState.secretFootballer.name : '???',
-                    position: gameState.secretFootballer ? gameState.secretFootballer.position : '???',
-                    foot: gameState.secretFootballer ? gameState.secretFootballer.foot : '???',
-                    image: gameState.secretFootballer ? gameState.secretFootballer.image : ''
-                });
-            }
+    if (gameState.isStarted) {
+        // เช็กว่า socket.id นี้ตรงกับ ID ของ Spy ในเกมตอนนี้หรือไม่
+        const isCurrentSpy = gameState.spyIds && gameState.spyIds.some(spy => 
+            spy === socket.id || (typeof spy === 'object' && spy.id === socket.id)
+        );
+
+        if (isCurrentSpy) {
+            // ส่งข้อมูลสำหรับ SPY
+            socket.emit('assignRole', {
+                role: 'SPY',
+                decoyName: gameState.decoyFootballer ? gameState.decoyFootballer.name : '???',
+                position: gameState.decoyFootballer ? gameState.decoyFootballer.position : '???',
+                foot: gameState.decoyFootballer ? gameState.decoyFootballer.foot : '???',
+                nationality: gameState.decoyFootballer ? gameState.decoyFootballer.nationality : '???',
+                team: gameState.decoyFootballer ? gameState.decoyFootballer.team : '???',
+                image: gameState.decoyFootballer ? gameState.decoyFootballer.image : ''
+            });
+        } else {
+            // ส่งข้อมูลสำหรับ Player ปกติ
+            socket.emit('assignRole', {
+                role: 'PLAYER',
+                name: gameState.secretFootballer ? gameState.secretFootballer.name : '???',
+                position: gameState.secretFootballer ? gameState.secretFootballer.position : '???',
+                foot: gameState.secretFootballer ? gameState.secretFootballer.foot : '???',
+                nationality: gameState.secretFootballer ? gameState.secretFootballer.nationality : '???',
+                team: gameState.secretFootballer ? gameState.secretFootballer.team : '???',
+                image: gameState.secretFootballer ? gameState.secretFootballer.image : ''
+            });
         }
-    });
+    }
+});
 
     socket.on('resetRoom', () => {
         if (gameTimer) {
