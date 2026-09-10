@@ -208,7 +208,7 @@
     <div class="guess-section" id="guess-section">
         <h3 style="color:var(--pl-yellow); margin-top:0; font-size:15px;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
         <p style="font-size:13px; color:#cbd5e1;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ:</p>
-        <form onsubmit="handleGuessSubmit(event)">
+        <form onsubmit="submitSpyGuess(event)">
             <div class="input-group">
                 <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
                 <button type="submit">ส่งคำตอบ</button>
@@ -804,6 +804,20 @@
         }
     });
 
+    function submitSpyGuess(event) {
+    event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรชเอง
+    const guessInput = document.getElementById('spy-guess-input');
+    if (guessInput) {
+        const guessedName = guessInput.value.trim();
+        if (guessedName) {
+            socket.emit('spyGuess', guessedName);
+            guessInput.value = ''; // เคลียร์ช่องพิมพ์หลังจากส่ง
+        } else {
+            alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+        }
+    }
+}
+    
     function resetGameRoom() {
     if (confirm('คุณต้องการรีเซ็ตเกมกลับหน้าหลัก (คะแนนยังคงอยู่) ใช่หรือไม่?')) {
         // 1. ส่งสัญญาณไปบอกเซิร์ฟเวอร์และเพื่อนคนอื่นด้วย
