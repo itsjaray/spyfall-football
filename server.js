@@ -352,7 +352,7 @@ io.on('connection', (socket) => {
             players: players,
             spyIds: gameState.spyIds,
             // 📌 เพิ่มบรรทัดนี้ เพื่อส่งประวัติผลการเล่นตาที่แล้วกลับไปด้วยเวลาผู้เล่นกด F5
-            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" },
             chatHistory: chatHistory // 📌 ส่งประวัติแชทกลับไปตอน F5 ด้วย
         });
     }
