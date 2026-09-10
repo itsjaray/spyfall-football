@@ -358,23 +358,26 @@ io.on('connection', (socket) => {
 });
     
     socket.on('resetRoom', () => {
-        if (gameTimer) {
-            clearInterval(gameTimer);
-            gameTimer = null;
-        }
+    if (gameTimer) {
+        clearInterval(gameTimer);
+        gameTimer = null;
+    }
 
-        // 📌 เพิ่มบรรทัดนี้ เพื่อเคลียร์ผลลัพธ์เก่าทิ้งตอนกดปุ่ม Home (รีเซ็ตห้อง)
-        lastGameSummary = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
-        
-        io.emit('timerUpdate', '03:00');
-        io.emit('hideGameUI');
+    // 📌 เพิ่มบรรทัดเหล่านี้เพื่อเคลียร์สถานะเกมฝั่ง Server ให้กลับเป็นค่าเริ่มต้น
+    gameState.isStarted = false;
+    gameState.isSpyGuessing = false;
+    gameState.spyIds = [];
+    lastGameSummary = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
 
-        players.forEach(player => {
-            player.role = null; 
-        });
+    io.emit('timerUpdate', '03:00');
+    io.emit('hideGameUI');
 
-        io.emit('gameReset', players);
+    players.forEach(player => {
+        player.role = null;
     });
+    
+    io.emit('gameReset', players);
+});
 
     socket.on('sendChatMessage', (message) => {
     const player = players.find(p => p.id === socket.id);
