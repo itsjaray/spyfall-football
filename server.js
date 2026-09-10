@@ -271,6 +271,9 @@ io.on('connection', (socket) => {
 
         const playOrder = shuffleArray(players);
 
+        // ** เพิ่มบรรทัดนี้เพื่อเก็บบันทึกลำดับการเล่นไว้บน Server **
+        gameState.playOrder = playOrder;
+
         let summaryToSend = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
         if (previousRoundSecret) {
             summaryToSend = lastGameSummary;
@@ -332,6 +335,11 @@ io.on('connection', (socket) => {
                 image: secret ? secret.image : ''
             });
         }
+        // 2. **[เพิ่มเข้ามาใหม่]** ส่งข้อมูลสถานะเกมและลำดับการเล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
+            socket.emit('restoreGameState', {
+                isStarted: gameState.isStarted,
+                playOrder: gameState.playOrder || players // ส่งลำดับการเล่นกลับไปด้วย
+            });
     }
 });
     
