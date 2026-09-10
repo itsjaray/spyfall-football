@@ -285,43 +285,40 @@ io.on('connection', (socket) => {
         }, 3000);
     });
 
-    // เมื่อมีผู้เล่นเชื่อมต่อเข้ามาใหม่ ให้ตรวจสอบว่าเกมกำลังเล่นอยู่หรือไม่ ถ้าเล่นอยู่ให้ส่งบทบาทเดิมคืนให้
-socket.on('requestCurrentRole', () => {
+    socket.on('requestCurrentRole', () => {
     const player = players.find(p => p.id === socket.id);
     if (!player) return;
 
     if (gameState.isStarted) {
-        // เช็กว่า socket.id นี้ตรงกับ ID ของ Spy ในเกมตอนนี้หรือไม่
-        const isCurrentSpy = gameState.spyIds && gameState.spyIds.some(spy => 
-            spy === socket.id || (typeof spy === 'object' && spy.id === socket.id)
-        );
+        // เช็กแบบครอบคลุม: เช็กทั้งใน gameState.spyIds หรือเช็กจาก property .role ของตัวผู้เล่นเอง
+        const isCurrentSpy = (gameState.spyIds && gameState.spyIds.some(spy => 
+            spy === socket.id || (typeof spy === 'object' && spy && spy.id === socket.id)
+        )) || player.role === 'SPY';
 
         if (isCurrentSpy) {
-            // ส่งข้อมูลสำหรับ SPY
             socket.emit('assignRole', {
                 role: 'SPY',
                 decoyName: gameState.decoyFootballer ? gameState.decoyFootballer.name : '???',
                 position: gameState.decoyFootballer ? gameState.decoyFootballer.position : '???',
                 foot: gameState.decoyFootballer ? gameState.decoyFootballer.foot : '???',
-                nationality: gameState.decoyFootballer ? gameState.decoyFootballer.nationality : '???',
-                team: gameState.decoyFootballer ? gameState.decoyFootballer.team : '???',
+                nationality: gameState.decoyFootballer ? (gameState.decoyFootballer.nationality || gameState.decoyFootballer.nation || '-') : '-',
+                team: gameState.decoyFootballer ? (gameState.decoyFootballer.team || gameState.decoyFootballer.club || '-') : '-',
                 image: gameState.decoyFootballer ? gameState.decoyFootballer.image : ''
             });
         } else {
-            // ส่งข้อมูลสำหรับ Player ปกติ
             socket.emit('assignRole', {
                 role: 'PLAYER',
                 name: gameState.secretFootballer ? gameState.secretFootballer.name : '???',
                 position: gameState.secretFootballer ? gameState.secretFootballer.position : '???',
                 foot: gameState.secretFootballer ? gameState.secretFootballer.foot : '???',
-                nationality: gameState.secretFootballer ? gameState.secretFootballer.nationality : '???',
-                team: gameState.secretFootballer ? gameState.secretFootballer.team : '???',
+                nationality: gameState.secretFootballer ? (gameState.secretFootballer.nationality || gameState.secretFootballer.nation || '-') : '-',
+                team: gameState.secretFootballer ? (gameState.secretFootballer.team || gameState.secretFootballer.club || '-') : '-',
                 image: gameState.secretFootballer ? gameState.secretFootballer.image : ''
             });
         }
     }
 });
-
+    
     socket.on('resetRoom', () => {
         if (gameTimer) {
             clearInterval(gameTimer);
