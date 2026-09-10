@@ -949,6 +949,10 @@
 
         const lastGameBox = document.getElementById('lastGameResultBox');
         if (lastGameBox) lastGameBox.style.display = 'none';
+
+        // 6. ล้างค่าแคชเกมฝั่ง Client ทิ้งด้วย
+        cachedGameData = null;
+        window.cachedRoleData = null;
         }
     }
 
