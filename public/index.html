@@ -561,7 +561,9 @@
 
     socket.on('spyMustGuess', () => {
         document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('guess-section').style.display = 'block';
+        const guessSection = document.getElementById('guess-section');
+        guessSection.style.display = 'block';
+        
         document.getElementById('role-display').innerHTML = `
             <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
                 🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
@@ -570,6 +572,21 @@
                 ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
             </span>
         `;
+
+        // ** ค้นหาช่องพิมพ์และปุ่มส่งคำตอบจากภายในกล่อง guess-section โดยตรง (ไม่ต้องสน id) **
+        const guessInput = guessSection.querySelector('input');
+        const submitBtn = guessSection.querySelector('button');
+
+        if (submitBtn && guessInput) {
+            submitBtn.onclick = function() {
+                const guessedName = guessInput.value.trim();
+                if (guessedName) {
+                    socket.emit('spyGuess', guessedName);
+                } else {
+                    alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+                }
+            };
+        }
     });
 
     socket.on('waitingForSpyGuess', () => {
