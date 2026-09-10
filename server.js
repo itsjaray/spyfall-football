@@ -162,6 +162,7 @@ io.on('connection', (socket) => {
 
         roundCount++;
         gameState.isStarted = true;
+        lastGameResult = null;
         gameState.votes = {};
         gameState.votedPlayers.clear();
 
@@ -422,7 +423,7 @@ io.on('connection', (socket) => {
 
             if (gameState.spyIds && gameState.spyIds.includes(suspectedId)) {
                 gameState.isSpyGuessing = true;
-                gameState.isStarted = true;
+                lastGameResult = null;
                 if (gameState.spyIds.length > 0) {
                     io.to(gameState.spyIds[0]).emit('spyMustGuess');
                 }
