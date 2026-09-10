@@ -43,6 +43,7 @@ let recentDecoys = [];
 let players = [];
 let gameState = {
     isStarted: false,
+    isSpyGuessing: false,
     secretFootballer: null,
     decoyFootballer: null,
     spyIds: [],
@@ -323,6 +324,11 @@ io.on('connection', (socket) => {
                 team: getTeam(decoy),
                 image: decoy ? decoy.image : ''
             });
+            // ** เพิ่มเช็กตรงนี้: ถ้ากำลังอยู่ในช่วงทายชื่อ ให้สั่งเปิดหน้าจอทายชื่อซ้ำให้ด้วยตอน F5 **
+                if (gameState.isSpyGuessing) {
+                    socket.emit('spyMustGuess');
+                }
+            
         } else {
             const secret = gameState.secretFootballer;
             socket.emit('assignRole', {
@@ -339,6 +345,7 @@ io.on('connection', (socket) => {
         // ส่งข้อมูลสถานะเกม ลำดับการเล่น และรายชื่อผู้เล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
         socket.emit('restoreGameState', {
             isStarted: gameState.isStarted,
+            isSpyGuessing: gameState.isSpyGuessing,
             playOrder: gameState.playOrder || players,
             players: players
         });
@@ -407,6 +414,8 @@ io.on('connection', (socket) => {
             }
 
             if (gameState.spyIds && gameState.spyIds.includes(suspectedId)) {
+                gameState.isSpyGuessing = true;
+                gameState.isStarted = true;
                 if (gameState.spyIds.length > 0) {
                     io.to(gameState.spyIds[0]).emit('spyMustGuess');
                 }
@@ -472,6 +481,7 @@ io.on('connection', (socket) => {
         }
 
         gameState.isStarted = false;
+        gameState.isSpyGuessing = false;
         io.emit('updatePlayers', players);
     });
 
