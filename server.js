@@ -300,7 +300,8 @@ io.on('connection', (socket) => {
         // ฟังก์ชันช่วยหาชื่อทีมจากทุกความเป็นไปได้ของฟิลด์ข้อมูล
         const getTeam = (obj) => {
             if (!obj) return '-';
-            return obj.team || obj.club || obj.teamName || obj.currentTeam || obj.squad || obj.t || '-';
+            // ดึงค่าจาก current_team เป็นหลัก
+            return obj.current_team || obj.team || obj.club || obj.teamName || obj.currentTeam || obj.squad || obj.t || '-';
         };
 
         const getNationality = (obj) => {
