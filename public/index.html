@@ -748,12 +748,18 @@
 
     // รับข้อมูลสรุปผลเกม (รวมถึงตอนกด F5 แล้วเซิร์ฟเวอร์ส่งค่า lastGameResult กลับมา)
     socket.on('finalResult', (data) => {
-        // เรียกฟังก์ชันแสดงผลหน้าจอสรุปผลเดิมที่มีอยู่แล้วในโปรเจกต์ของคุณ
-        if (typeof showGameResult === 'function') {
-            showGameResult(data);
+        // 📌 เรียกฟังก์ชันหรือเขียนโค้ดวาดหน้าจอสรุปผลตรงนี้โดยตรง
+        console.log("ได้รับผลลัพธ์เกม:", data);
+
+        // ตัวอย่างการเรียกใช้ฟังก์ชันแสดงผลหลักที่คุณใช้ตอนจบเกมปกติ 
+        // (ถ้าปกติคุณใช้ชื่อฟังก์ชันอื่นสำหรับการแสดงหน้าจอสรุปผล สามารถเปลี่ยนชื่อตรงนี้ได้ครับ เช่น showResultScreen(data))
+        if (typeof showResultScreen === 'function') {
+            showResultScreen(data);
         } else {
-            // เผื่อกรณีฉุกเฉิน ถ้าฟังก์ชันแสดงผลชื่ออื่น ให้ใส่คำสั่งเปิดหน้าจอสรุปผลตรงนี้แทนได้ครับ
-            console.log("ได้รับผลลัพธ์เกม:", data);
+            // หรือถ้าไม่มีฟังก์ชันแยก ให้เขียนโค้ดแสดงผลผลลัพธ์/เปิดหน้าจอสรุปผลที่นี่ได้เลยครับ
+            // เช่น การดึง element หน้าจอสรุปผลมาแสดง (display = 'block')
+            const resultSection = document.getElementById('result-section'); // เปลี่ยน ID ตามโครงสร้าง HTML ของคุณ
+            if (resultSection) resultSection.style.display = 'block';
         }
     });
     
