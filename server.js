@@ -415,6 +415,10 @@ io.on('connection', (socket) => {
                         io.to(p.id).emit('waitingForSpyGuess');
                     }
                 });
+
+                gameState.isStarted = false;
+                gameState.playOrder = [];
+                
             } else {
                 const spyPlayers = players.filter(p => gameState.spyIds && gameState.spyIds.includes(p.id));
                 spyPlayers.forEach(sp => sp.score += 2);
@@ -431,6 +435,7 @@ io.on('connection', (socket) => {
                 });
 
                 gameState.isStarted = false;
+                gameState.playOrder = [];
                 io.emit('updatePlayers', players);
             }
         }
