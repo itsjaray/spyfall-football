@@ -411,9 +411,37 @@
     }
     }
 
-    socket.on('assignRole', (data) => {
-    window.cachedRoleData = data;
-    });
+    socket.on('assignRole', (dataRole) => {
+    window.cachedRoleData = dataRole;
+    const display = document.getElementById('role-display');
+    if (!display) return;
+
+    if (dataRole) {
+        if (dataRole.role === 'SPY') {
+            display.innerHTML = `
+                <span class='spy'>🕵️ คุณคือ SPY!<br>
+                ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
+                <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality} | ทีม: ${dataRole.team})</small><br>
+                <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                <div style="margin-top: 10px;">
+                <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
+                </div><br>
+                </span>
+                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
+            `;
+        } else {
+            // อัปเดตฝั่งคนธรรมดาให้แสดง ตำแหน่ง และ ถนัดเท้า ด้วย
+            display.innerHTML = `
+                <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
+                <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality} | ทีม: ${dataRole.team})</small>
+                <div style="margin-top: 10px;">
+                <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
+                </div>
+                </span>
+            `;
+        }
+    }
+});
     
 
     socket.on('gameStarted', (data) => {
