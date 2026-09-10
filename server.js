@@ -584,30 +584,17 @@ io.on('connection', (socket) => {
     });
 
         socket.on('requestGameState', () => {
-            // ✅ ถ้าเกมกำลังดำเนินอยู่ (อยู่ในรอบการเล่นปัจจุบัน) ให้เรียกขอ Role ปกติแทนที่จะแสดงหน้าสรุปผล
+        // ✅ ถ้าเกมกำลังดำเนินอยู่ ให้เรียกขอ Role ปกติ
         if (gameState.isStarted) {
             socket.emit('requestCurrentRole');
             return;
         }
 
-        // ถ้าเกมยังไม่เริ่ม (อยู่ในหน้าสรุปผล) ค่อยแสดงหน้าสรุปผลตามปกติ
-        if (lastGameResult) {
-            socket.emit('finalResult', lastGameResult);
-        } else if (lastGameSummary && lastGameSummary.secret) {
-            // ส่งข้อมูลผลการเล่นตาที่แล้วกลับไปแสดงผล แม้ว่าเกมรอบใหม่จะเริ่มเล่นอยู่ก็ตาม
-            socket.emit('finalResult', {
-                winner: lastGameSummary.winner || 'PLAYERS',
-                spyName: lastGameSummary.spyName || '???',
-                secretFootballer: lastGameSummary.secret,
-                decoyFootballer: lastGameSummary.decoy,
-                lastGame: {
-                    secret: lastGameSummary.secret,
-                    secretPos: lastGameSummary.secretPos,
-                    decoy: lastGameSummary.decoy,
-                    decoyPos: lastGameSummary.decoyPos
-                }
-            });
-        }
+        // 🛑 ถ้าเกมไม่ได้เริ่ม (กด Home รีเซ็ตแล้ว) ให้ส่งค่าว่างเปล่ากลับไปเคลียร์หน้าจอ
+        socket.emit('restoreGameState', {
+            isStarted: false,
+            lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+        });
     });
 });
 
