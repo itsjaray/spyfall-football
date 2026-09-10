@@ -728,13 +728,26 @@
     // ** เพิ่มส่วนนี้ต่อท้ายลงไปได้เลย **
     socket.on('restoreGameState', (data) => {
         if (data.isStarted) {
-            // แสดงกล่องลำดับการตั้งคำถาม
+            // 1. แสดงและเติมข้อมูล "กล่องลำดับการตั้งคำถาม"
             const orderSection = document.getElementById('order-section');
-            if (orderSection) orderSection.style.display = 'block';
+            const orderListContainer = document.getElementById('ลำดับไอดีหรือคลาสข้างในกล่องลำดับ'); // ใส่ id ของตัวแสดงรายชื่อ
+            if (orderSection) {
+                orderSection.style.display = 'block';
+                // *ตัวอย่างการวาดรายชื่อลำดับการเล่น (ปรับให้ตรงกับฟังก์ชันเดิมที่คุณใช้ตอนเริ่มเกม)*
+                if (data.playOrder && typeof renderPlayOrder === 'function') {
+                    renderPlayOrder(data.playOrder);
+                }
+            }
 
-            // แสดงกล่องโหวต
+            // 2. แสดงและเติมข้อมูล "กล่องโหวต"
             const voteSection = document.getElementById('vote-section');
-            if (voteSection) voteSection.style.display = 'block';
+            if (voteSection) {
+                voteSection.style.display = 'block';
+                // *ตัวอย่างการวาดปุ่มโหวตรายชื่อผู้เล่น (ปรับให้ตรงกับฟังก์ชันเดิมที่คุณใช้ตอนโหวต)*
+                if (data.players && typeof renderVotingButtons === 'function') {
+                    renderVotingButtons(data.players);
+                }
+            }
         }
     });
 
