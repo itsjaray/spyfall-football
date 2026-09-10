@@ -714,16 +714,29 @@
 }
 
     socket.on('connect', () => {
-    const savedName = localStorage.getItem('spyfall_player_name');
-    if (savedName) {
-        const nameInput = document.getElementById('username');
-        if (nameInput) {
-            nameInput.value = savedName;
+        const savedName = localStorage.getItem('spyfall_player_name');
+        if (savedName) {
+            const nameInput = document.getElementById('username');
+            if (nameInput) {
+                nameInput.value = savedName;
+            }
+            socket.emit('setName', savedName);
         }
-        socket.emit('setName', savedName);
-    }
-    socket.emit('requestCurrentRole');      
-});
+        socket.emit('requestCurrentRole');
+    });
+
+    // ** เพิ่มส่วนนี้ต่อท้ายลงไปได้เลย **
+    socket.on('restoreGameState', (data) => {
+        if (data.isStarted) {
+            // แสดงกล่องลำดับการตั้งคำถาม
+            const orderSection = document.getElementById('order-section');
+            if (orderSection) orderSection.style.display = 'block';
+
+            // แสดงกล่องโหวต
+            const voteSection = document.getElementById('vote-section');
+            if (voteSection) voteSection.style.display = 'block';
+        }
+    });
 
     function resetGameRoom() {
     if (confirm('คุณต้องการรีเซ็ตเกมกลับหน้าหลัก (คะแนนยังคงอยู่) ใช่หรือไม่?')) {
