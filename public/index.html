@@ -208,10 +208,10 @@
     <div class="guess-section" id="guess-section">
         <h3 style="color:var(--pl-yellow); margin-top:0; font-size:15px;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
         <p style="font-size:13px; color:#cbd5e1;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ:</p>
-        <form onsubmit="submitSpyGuess(event)">
-            <div class="input-group">
-                <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
-                <button type="submit">ส่งคำตอบ</button>
+        <form id="spy-guess-form">
+        <div class="input-group">
+            <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
+            <button type="submit">ส่งคำตอบ</button>
             </div>
         </form>
     </div>
@@ -890,7 +890,26 @@
     const guessSection = document.getElementById('guess-section');
     if (guessSection) guessSection.style.display = 'none';
 });
-    
+
+    document.addEventListener('DOMContentLoaded', () => {
+    const guessForm = document.getElementById('spy-guess-form');
+    if (guessForm) {
+        guessForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // ป้องกันหน้าเว็บรีเฟรช
+            const guessInput = document.getElementById('spy-guess-input');
+            if (guessInput) {
+                const guessedName = guessInput.value.trim();
+                if (guessedName) {
+                    socket.emit('spyGuess', guessedName);
+                    guessInput.value = '';
+                } else {
+                    alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
+                }
+            }
+        });
+    }
+});
+
 </script>
 </body>
 </html>
