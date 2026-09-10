@@ -351,7 +351,7 @@ io.on('connection', (socket) => {
             isStarted: gameState.isStarted,
             isSpyGuessing: gameState.isSpyGuessing,
             playOrder: gameState.playOrder || players,
-            players: players
+            players: players,
             spyIds: gameState.spyIds
         });
     }
