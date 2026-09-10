@@ -149,21 +149,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        if (gameState.secretFootballer && gameState.secretFootballer.name) {
-            previousRoundSecret = gameState.secretFootballer;
-            previousRoundDecoy = gameState.decoyFootballer;
-            lastGameSummary = {
-                secret: previousRoundSecret.name,
-                secretPos: previousRoundSecret.position || "",
-                decoy: previousRoundDecoy ? previousRoundDecoy.name : "",
-                decoyPos: previousRoundDecoy ? previousRoundDecoy.position : ""
-            };
-        }
-
-        roundCount++;
-        gameState.isStarted = true;
-        
-        //lastGameResult = null;
+        // 📌 1. บันทึกข้อมูลของรอบปัจจุบันเก็บไว้เป็น "ประวัติการเล่นตาที่แล้ว" ก่อนเริ่มรอบใหม่ทุกครั้ง
         if (gameState.secretFootballer && gameState.secretFootballer.name) {
             previousRoundSecret = gameState.secretFootballer;
             previousRoundDecoy = gameState.decoyFootballer;
@@ -176,6 +162,9 @@ io.on('connection', (socket) => {
                 spyName: lastGameResult ? lastGameResult.spyName : null
             };
         }
+
+        roundCount++;
+        gameState.isStarted = true;
         
         gameState.votes = {};
         gameState.votedPlayers.clear();
@@ -183,22 +172,20 @@ io.on('connection', (socket) => {
         const playerPool = Array.isArray(footballers) ? footballers : [];
         if (playerPool.length === 0) return;
 
-        // 1. สุ่มนักเตะหลัก (Target) โดยพยายามไม่ให้ซ้ำกับ 3ตาล่าสุด
+        // 2. สุ่มนักเตะหลัก (Target) โดยพยายามไม่ให้ซ้ำกับ 3ตาล่าสุด
         let availableTargets = playerPool.filter(f => f && !recentTargets.includes(f.id));
         if (availableTargets.length === 0) {
-            recentTargets = []; // ถ้าหมดคลังแล้ว ให้ล้างประวัติเริ่มใหม่
+            recentTargets = []; 
             availableTargets = playerPool;
         }
         const targetPlayer = availableTargets[Math.floor(Math.random() * availableTargets.length)];
         gameState.secretFootballer = targetPlayer;
 
-        // บันทึกประวัติตัวจริง (เก็บไว้กันซ้ำ 3 ตาหลัง)
         recentTargets.push(targetPlayer.id);
         if (recentTargets.length > 3) recentTargets.shift();
 
-        // 2. สุ่มเลือก Spy โดยพยายามหลีกเลี่ยงคนเดิมจากตาก่อนหน้า
+        // 3. สุ่มเลือก Spy
         const spyCountInput = data && data.spyCount ? parseInt(data.spyCount) : 1;
-        
         let availablePlayersForSpy = players.filter(p => !recentSpies.has(p.id));
         
         if (availablePlayersForSpy.length < spyCountInput) {
@@ -215,7 +202,7 @@ io.on('connection', (socket) => {
         recentSpies.clear();
         spyIdsSet.forEach(id => recentSpies.add(id));
 
-        // 3. สุ่มตัวหลอก (Decoy) ที่มีข้อมูลตรงกันอย่างน้อย 3 จาก 4 อย่าง และไม่ซ้ำกับ 2ตาล่าสุด
+        // 4. สุ่มตัวหลอก (Decoy)
         let validDecoys = playerPool.filter(f => {
             if (!f || f.id === targetPlayer.id || recentDecoys.includes(f.id)) return false;
             let match = 0;
@@ -231,7 +218,6 @@ io.on('connection', (socket) => {
             return match >= 3;
         });
 
-        // กรณีหา 3 ข้อไม่เจอ (หรือติดเงื่อนไขประวัติจนหมด) ให้ผ่อนปรนเหลือ 2 ข้อ
         if (validDecoys.length === 0) {
             validDecoys = playerPool.filter(f => {
                 if (!f || f.id === targetPlayer.id) return false;
@@ -253,7 +239,6 @@ io.on('connection', (socket) => {
         const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
         gameState.decoyFootballer = selectedDecoy;
 
-        // บันทึกประวัติตัวหลอก (เก็บไว้กันซ้ำ 2 ตาหลัง)
         recentDecoys.push(selectedDecoy.id);
         if (recentDecoys.length > 2) recentDecoys.shift();
         
@@ -288,27 +273,12 @@ io.on('connection', (socket) => {
         });
 
         const playOrder = shuffleArray(players);
-
-        // ** เพิ่มบรรทัดนี้เพื่อเก็บบันทึกลำดับการเล่นไว้บน Server **
         gameState.playOrder = playOrder;
 
-        // เตรียมข้อมูลตาที่แล้วให้พร้อมส่ง
-        let summaryToSend = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
-        
-        if (previousRoundSecret && previousRoundSecret.name) {
-            summaryToSend = lastGameSummary;
-        } else if (lastGameResult && lastGameResult.secretFootballer) {
-            summaryToSend = {
-                secret: lastGameResult.secretFootballer,
-                secretPos: lastGameResult.secretPos || "",
-                decoy: lastGameResult.decoyFootballer,
-                decoyPos: lastGameResult.decoyPos || ""
-            };
-        }
-
+        // 📌 2. ส่งข้อมูล lastGameSummary ที่ถูกต้องไปยัง Client เสมอ
         io.emit('gameStarted', { 
             playOrder: playOrder,
-            lastGame: summaryToSend,
+            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" },
             roundCount: roundCount
         });
 
