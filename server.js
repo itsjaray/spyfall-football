@@ -290,30 +290,43 @@ io.on('connection', (socket) => {
     if (!player) return;
 
     if (gameState.isStarted) {
-        // เช็กแบบครอบคลุม: เช็กทั้งใน gameState.spyIds หรือเช็กจาก property .role ของตัวผู้เล่นเอง
-        const isCurrentSpy = (gameState.spyIds && gameState.spyIds.some(spy => 
-            spy === socket.id || (typeof spy === 'object' && spy && spy.id === socket.id)
-        )) || player.role === 'SPY';
+        // เช็กจากชื่อผู้เล่น หรือเช็กจากสถานะที่บันทึกไว้ประจำตัวผู้เล่นคนนั้นๆ
+        const isCurrentSpy = (gameState.spyNames && gameState.spyNames.includes(player.name)) || 
+                             (gameState.spyIds && gameState.spyIds.includes(socket.id)) ||
+                             player.role === 'SPY';
+
+        // ดึงข้อมูลทีมโดยเช็กหลายๆ ชื่อฟิลด์กันพลาด (team, club, teamName)
+        const getTeam = (obj) => {
+            if (!obj) return '-';
+            return obj.team || obj.club || obj.teamName || '-';
+        };
+
+        const getNationality = (obj) => {
+            if (!obj) return '-';
+            return obj.nationality || obj.nation || '-';
+        };
 
         if (isCurrentSpy) {
+            const decoy = gameState.decoyFootballer;
             socket.emit('assignRole', {
                 role: 'SPY',
-                decoyName: gameState.decoyFootballer ? gameState.decoyFootballer.name : '???',
-                position: gameState.decoyFootballer ? gameState.decoyFootballer.position : '???',
-                foot: gameState.decoyFootballer ? gameState.decoyFootballer.foot : '???',
-                nationality: gameState.decoyFootballer ? (gameState.decoyFootballer.nationality || gameState.decoyFootballer.nation || '-') : '-',
-                team: gameState.decoyFootballer ? (gameState.decoyFootballer.team || gameState.decoyFootballer.club || '-') : '-',
-                image: gameState.decoyFootballer ? gameState.decoyFootballer.image : ''
+                decoyName: decoy ? decoy.name : '???',
+                position: decoy ? decoy.position : '???',
+                foot: decoy ? decoy.foot : '???',
+                nationality: getNationality(decoy),
+                team: getTeam(decoy),
+                image: decoy ? decoy.image : ''
             });
         } else {
+            const secret = gameState.secretFootballer;
             socket.emit('assignRole', {
                 role: 'PLAYER',
-                name: gameState.secretFootballer ? gameState.secretFootballer.name : '???',
-                position: gameState.secretFootballer ? gameState.secretFootballer.position : '???',
-                foot: gameState.secretFootballer ? gameState.secretFootballer.foot : '???',
-                nationality: gameState.secretFootballer ? (gameState.secretFootballer.nationality || gameState.secretFootballer.nation || '-') : '-',
-                team: gameState.secretFootballer ? (gameState.secretFootballer.team || gameState.secretFootballer.club || '-') : '-',
-                image: gameState.secretFootballer ? gameState.secretFootballer.image : ''
+                name: secret ? secret.name : '???',
+                position: secret ? secret.position : '???',
+                foot: secret ? secret.foot : '???',
+                nationality: getNationality(secret),
+                team: getTeam(secret),
+                image: secret ? secret.image : ''
             });
         }
     }
