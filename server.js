@@ -8,7 +8,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-let chatHistory = []; // 📌 เก็บประวัติข้อความแชททั้งหมด
+
 
 let previousRoundSecret = null;
 let previousRoundDecoy = null;
@@ -352,8 +352,7 @@ io.on('connection', (socket) => {
             players: players,
             spyIds: gameState.spyIds,
             // 📌 เพิ่มบรรทัดนี้ เพื่อส่งประวัติผลการเล่นตาที่แล้วกลับไปด้วยเวลาผู้เล่นกด F5
-            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" },
-            chatHistory: chatHistory // 📌 ส่งประวัติแชทกลับไปตอน F5 ด้วย
+            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
         });
     }
 });
@@ -393,10 +392,6 @@ io.on('connection', (socket) => {
         message: message,
         timestamp: timestamp
     };
-
-        // 📌 บันทึกข้อความเก็บลงประวัติ (จำกัดไว้ 50 ข้อความล่าสุด)
-        chatHistory.push(chatData);
-        if (chatHistory.length > 50) chatHistory.shift();
 
         io.emit('newChatMessage', chatData);
     });
