@@ -740,7 +740,10 @@
             socket.emit('setName', savedName);
         }
         socket.emit('requestCurrentRole');
-        socket.emit('requestGameState');
+        // 📌 หน่วงเวลาเล็กน้อย 300 มิลลิวินาที ให้ระบบเซ็ตชื่อเสร็จก่อนค่อยขอสถานะเกม
+        setTimeout(() => {
+            socket.emit('requestGameState');
+        }, 300);
     });
 
     // รับข้อมูลสรุปผลเกม (รวมถึงตอนกด F5 แล้วเซิร์ฟเวอร์ส่งค่า lastGameResult กลับมา)
