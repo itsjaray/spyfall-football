@@ -460,7 +460,18 @@ io.on('connection', (socket) => {
         console.log("เกมเริ่มหรือยัง (isStarted):", gameState.isStarted);
         console.log("ไอดีเราใช่ SPY ไหม:", gameState.spyIds.includes(socket.id));
         
-        if (!gameState.isStarted || !gameState.spyIds.includes(socket.id)) return;
+        // เช็กสิทธิ์แบบยืดหยุ่นเพื่อให้มั่นใจว่าจับตัว Spy ได้แน่นอน
+        const player = players.find(p => p.id === socket.id);
+        const isCurrentSpy = player && (
+            player.role === 'SPY' || 
+            (gameState.spyIds && gameState.spyIds.includes(socket.id)) ||
+            (gameState.spyNames && gameState.spyNames.includes(player.name))
+        );
+
+        if (!gameState.isStarted || !isCurrentSpy) {
+            console.log("⚠️ ตัดจบ: ไม่ใช่ Spy หรือเกมยังไม่เริ่ม");
+            return;
+        }
 
         const trimmedGuess = guessedName ? guessedName.trim() : '';
         const isCorrect = trimmedGuess !== '' && isFlexibleMatch(trimmedGuess, gameState.secretFootballer.name);
