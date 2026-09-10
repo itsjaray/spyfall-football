@@ -348,7 +348,9 @@ io.on('connection', (socket) => {
             isSpyGuessing: gameState.isSpyGuessing,
             playOrder: gameState.playOrder || players,
             players: players,
-            spyIds: gameState.spyIds
+            spyIds: gameState.spyIds,
+            // 📌 เพิ่มบรรทัดนี้ เพื่อส่งประวัติผลการเล่นตาที่แล้วกลับไปด้วยเวลาผู้เล่นกด F5
+            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
         });
     }
 });
