@@ -8,7 +8,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-
+let userVotes = {};
 
 let previousRoundSecret = null;
 let previousRoundDecoy = null;
@@ -427,6 +427,14 @@ io.on('connection', (socket) => {
 
         gameState.votedPlayers.add(socket.id);
         gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
+
+        // 📌 บันทึกว่า socket.id นี้โหวตให้ใคร (เก็บชื่อไว้แสดงผล)
+        const targetPlayer = players.find(p => p.id === targetId);
+        if (!gameState.userVotedNames) gameState.userVotedNames = {};
+        gameState.userVotedNames[socket.id] = targetPlayer ? targetPlayer.name : 'ใครบางคน';
+
+        // ส่งข้อมูลอัปเดตการโหวต พร้อมชื่อคนที่ตัวเองโหวตกลับไปหา Client คนนั้นๆ
+        socket.emit('voteSuccess', { votedName: gameState.userVotedNames[socket.id] });
 
         io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
