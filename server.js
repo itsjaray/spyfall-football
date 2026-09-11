@@ -594,7 +594,6 @@ io.on('connection', (socket) => {
                 socket.emit('assignedRole', {
                     role: player.role,
                     targetPlayer: player.targetPlayer,
-                    questionOrder: questionOrder || []
                 });
             }
             return;
