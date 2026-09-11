@@ -835,101 +835,22 @@
         }
     });
     
-    // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
+    // 🛠️ เพิ่มตัวดักรับสถานะเกมเมื่อกด F5 เพื่อบังคับเปิดหน้าจอเล่นเกมทันที
     socket.on('restoreGameState', (data) => {
-        // 📌 ถ้าสถานะเกมบอกว่าไม่ได้เริ่ม และไม่มีชื่อความลับ ให้เคลียร์หน้าจอและซ่อนผลลัพธ์เก่าทันที
-        if (!data.isStarted || !data.lastGame || !data.lastGame.secret) {
-            const roleDisplay = document.getElementById('role-display');
-            if (roleDisplay) roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
+        if (data && data.isStarted) {
+            // ซ่อนหน้าห้องรอ และแสดงหน้าจอเล่นเกม
+            const waitingRoom = document.getElementById('waiting-room'); // หรือไอดีของหน้าห้องรอที่คุณใช้
+            const gameScreen = document.getElementById('game-screen');   // หรือไอดีของหน้าจอเล่นเกมที่คุณใช้
             
-            const orderSection = document.getElementById('order-section');
-            if (orderSection) orderSection.style.display = 'none';
+            if (waitingRoom) waitingRoom.style.display = 'none';
+            if (gameScreen) gameScreen.style.display = 'block';
 
-            const voteSection = document.getElementById('vote-section');
-            if (voteSection) voteSection.style.display = 'none';
-
-            const guessSection = document.getElementById('guess-section');
-            if (guessSection) guessSection.style.display = 'none';
-
-            const lastGameBox = document.getElementById('lastGameResultBox');
-            if (lastGameBox) lastGameBox.style.display = 'none';
-            
-            return; // หยุดการทำงาน ไม่ให้ไปดึงหน้าสรุปผลเก่ามาแสดงอีก
-        }
-        
-    // 1. จัดการสถานะหน้าจอเกมหลัก
-    if (data.isStarted) {
-        // ใช้ฟังก์ชัน applyGameStartedState ที่มีอยู่แล้วในระบบเพื่อวาดหน้าจอทั้งหมด
-        if (typeof applyGameStartedState === 'function') {
-            applyGameStartedState(data);
-        } else {
-            // เผื่อกรณีฉุกเฉิน เปิดกล่องพื้นฐานเผื่อไว้
-            const orderSection = document.getElementById('order-section');
-            if (orderSection) orderSection.style.display = 'block';
-            const voteSection = document.getElementById('vote-section');
-            if (voteSection) voteSection.style.display = 'block';
-            const guessSection = document.getElementById('guess-section');
-            if (guessSection) guessSection.style.display = 'block';
-        }
-
-        if (data.isSpyGuessing) {
-            const voteSec = document.getElementById('vote-section');
-            if (voteSec) voteSec.style.display = 'none';
-
-            const guessSec = document.getElementById('guess-section');
-            if (guessSec) guessSec.style.display = 'block';
-
-            const guessInput = document.getElementById('spy-guess-input');
-            const submitBtn = document.getElementById('submit-guess-btn');
-
-            if (submitBtn && guessInput) {
-                submitBtn.onclick = function() {
-                    const guessedName = guessInput.value.trim();
-                    if (guessedName) {
-                        socket.emit('spyGuess', guessedName);
-                    } else {
-                        alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
-                    }
-                };
-            }
-
-            const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
-            const roleDisplay = document.getElementById('role-display');
-            
-            if (roleDisplay) {
-                if (isSpy) {
-                    roleDisplay.innerHTML = `
-                        <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
-                            🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
-                        </span><br>
-                        <span style="color: #ff9999; font-size: 13px;">
-                            ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
-                        </span>
-                    `;
-                } else {
-                    roleDisplay.innerHTML = `
-                        <span style="color: #ffbb33; font-weight: bold; font-size: 15px;">
-                            ⏳ กำลังรอ Spy ตอบชื่อ...
-                        </span>
-                    `;
-                }
+            // ถ้ามีข้อมูลลำดับการเล่น ให้นำไปแสดงผลตารางด้านข้าง
+            if (data.playOrder && typeof renderPlayOrder === 'function') {
+                renderPlayOrder(data.playOrder);
             }
         }
-    }
-
-    // 2. เช็กและแสดงกล่องประวัติผลการเล่นตาที่แล้ว
-    const lastGameBox = document.getElementById('lastGameResultBox');
-    if (data.lastGame && data.lastGame.secret) {
-        if (lastGameBox) lastGameBox.style.display = 'block';
-        const secretEl = document.getElementById('lastSecretText');
-        const decoyEl = document.getElementById('lastDecoyText');
-        if (secretEl) secretEl.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos || ''})`;
-        if (decoyEl) decoyEl.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy || ''} (${data.lastGame.decoyPos || ''})`;
-    } else {
-        if (lastGameBox) lastGameBox.style.display = 'none';
-    }
-
-});
+    });
 
     function submitSpyGuess(event) {
     event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรชเอง
