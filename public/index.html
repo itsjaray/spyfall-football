@@ -842,8 +842,6 @@
         }
     });
     
-    // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
-    // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
     socket.on('restoreGameState', (data) => {
         // 📌 เช็กว่าเกมเริ่มหรือยัง ถ้ายังไม่เริ่มให้กลับหน้าห้องรอ
         if (!data || !data.isStarted) {
@@ -903,6 +901,16 @@
                         .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
                         .join('');
                 }
+            }
+        }
+
+        // 🔍 [เพิ่มใหม่ตรงนี้] ตรวจสอบสถานะการทายคำของ Spy หลังกด F5
+        const guessSection = document.getElementById('guess-section');
+        if (guessSection) {
+            if (data.isSpyGuessing && data.spyIds && data.spyIds.includes(socket.id)) {
+                guessSection.style.display = 'block'; // ถ้าเป็น Spy และอยู่ในช่วงทายคำ ให้แสดงกล่อง
+            } else {
+                guessSection.style.display = 'none';  // ถ้าไม่ใช่ หรือหมดเวลา ให้ซ่อนไว้
             }
         }
     });
