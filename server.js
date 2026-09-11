@@ -126,10 +126,21 @@ io.on('connection', (socket) => {
     let existingPlayer = players.find(p => p.name === initialName && initialName !== 'ผู้เล่น');
 
     if (existingPlayer) {
-        // อัปเดต Socket ID ใหม่ให้กับผู้เล่นคนเดิม แต่คงคะแนนและบทบาทไว้
+        const oldSocketId = existingPlayer.id;
         existingPlayer.id = socket.id;
+
+        // 📌 ย้ายสถานะการโหวตเดิมตามมาด้วย (ป้องกันการกดโหวตซ้ำหลัง F5)
+        if (gameState && gameState.votedPlayers) {
+            if (gameState.votedPlayers.has(oldSocketId)) {
+                gameState.votedPlayers.delete(oldSocketId);
+                gameState.votedPlayers.add(socket.id);
+            }
+        }
+        if (gameState && gameState.userVotedNames && gameState.userVotedNames[oldSocketId]) {
+            gameState.userVotedNames[socket.id] = gameState.userVotedNames[oldSocketId];
+            delete gameState.userVotedNames[oldSocketId];
+        }
     } else {
-        // ถ้าเป็นผู้เล่นใหม่จริงๆ ถึงจะเพิ่มเข้าไปในอาเรย์
         players = players.filter(p => p.id !== socket.id);
         players.push({
             id: socket.id,
@@ -603,12 +614,18 @@ io.on('connection', (socket) => {
     socket.on('requestGameState', () => {
         // 1. ถ้าเกมกำลังดำเนินอยู่ ให้คืนค่าสถานะเกมและลำดับการเล่นที่ถูกต้อง
         if (gameState.isStarted) {
+            const hasAlreadyVoted = gameState.votedPlayers && gameState.votedPlayers.has(socket.id);
+            const votedName = (gameState.userVotedNames && gameState.userVotedNames[socket.id]) || '';
+
             socket.emit('restoreGameState', {
                 isStarted: true,
                 isSpyGuessing: gameState.isSpyGuessing,
                 playOrder: gameState.playOrder || players,
                 players: players,
                 spyIds: gameState.spyIds,
+                hasVoted: hasAlreadyVoted,      // 👈 สถานะการโหวต
+                votedName: votedName,           // 👈 ชื่อคนที่เคยโหวต
+                votedCount: gameState.votedPlayers ? gameState.votedPlayers.size : 0,
                 lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             });
             return;
