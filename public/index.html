@@ -855,6 +855,9 @@
             return; 
         }
 
+        // 🟢 เพิ่มบรรทัดนี้: เมื่อเกมดำเนินอยู่และรีเฟรช ให้ขอข้อมูลบทบาท/นักเตะปัจจุบันมาแสดงผลด้วยทันที
+        socket.emit('requestCurrentRole');
+        
         // 🛠️ แสดงลำดับการตั้งคำถาม
         const orderSection = document.getElementById('order-section');
         const orderOl = document.getElementById('order-ol');
