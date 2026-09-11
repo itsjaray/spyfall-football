@@ -593,20 +593,19 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์ (lastGameResult) ให้แสดงหน้าสรุปผลตามเดิม (รองรับการกด F5 ตอนหน้าสรุปผล)
-        if (lastGameResult) {
-            socket.emit('finalResult', lastGameResult);
+        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์จริงๆ (เช็คว่ามี secret อยู่จริง ไม่ใช่ null ในตาแรก)
+        if (lastGameSummary && lastGameSummary.secret) {
+            socket.emit('finalResult', lastGameSummary);
             return;
-        } 
-        
-        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (หมายถึงเพิ่งกดปุ่ม Home รีเซ็ตห้องมา) ค่อยส่งค่าเคลียร์หน้าจอ
+        }
+
+        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (เช่น ตาแรกสุดที่ยังไม่เคยเล่น หรือเพิ่งกดปุ่ม Home)
         socket.emit('restoreGameState', {
             isStarted: false,
             lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
         });
     });
-});
-
+    
 server.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
 });
