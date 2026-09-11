@@ -866,13 +866,23 @@
             const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
             const isLocalSpy = dataRole.role === 'SPY';
 
-            // ปรับดีไซน์กล่องเตือนสปายให้เรียบร้อยกลมกลืนกับเว็บ (ไม่มีกรอบเรืองแสงแปลกตา)
-           if (data.isSpyGuessing && (isServerSpy || isLocalSpy)) {
+            if (data.isSpyGuessing && (isServerSpy || isLocalSpy)) {
+                // 🕵️ กรณีเป็น SPY ในช่วงกำลังทายชื่อ
                 display.innerHTML = `
                     <div style="text-align: center; padding: 5px 0;">
                         <span class='spy' style="display: block; padding: 15px; border-radius: 8px;">
                             🎯 <strong style="color: #ff4d4d; font-size: 15px;">แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY</strong><br>
                             <span style="font-size: 12px; color: #ffcccc; margin-top: 5px; display: inline-block;">ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ!</span>
+                        </span>
+                    </div>
+                `;
+            } else if (data.isSpyGuessing && !isServerSpy && !isLocalSpy) {
+                // ⚽ 👤 กรณีเป็นคนธรรมดา (ไม่ใช่สปาย) ในช่วงที่กำลังรอ SPY ทายชื่อ
+                display.innerHTML = `
+                    <div style="text-align: center; padding: 5px 0;">
+                        <span class='player' style="display: block; padding: 15px; border-radius: 8px;">
+                            🎯 <strong style="color: #4df3ff; font-size: 15px;">ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</strong><br>
+                            <span style="font-size: 12px; color: #ccf9ff; margin-top: 5px; display: inline-block;">กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>
                         </span>
                     </div>
                 `;
