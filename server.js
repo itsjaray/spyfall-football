@@ -587,29 +587,30 @@ io.on('connection', (socket) => {
     });
 
     socket.on('requestGameState', () => {
-        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้ส่งข้อมูลนักเตะพร้อมบอกสถานะว่าเกมเริ่มแล้ว
+        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้คืนค่าสถานะเกมและลำดับการเล่นที่ถูกต้อง
         if (gameState.isStarted) {
-            const player = players.find(p => p.id === socket.id);
-            if (player) {
-                // ส่งทั้งข้อมูลบทบาท และแปะสถานะ isStarted ไปด้วย เพื่อกันหน้าเว็บรีเซ็ตกลับ
-                socket.emit('assignedRole', {
-                    role: player.role,
-                    targetPlayer: player.targetPlayer,
-                    isStarted: true
-                });
-            }
+            socket.emit('restoreGameState', {
+                isStarted: true,
+                isSpyGuessing: gameState.isSpyGuessing,
+                playOrder: gameState.playOrder || players,
+                players: players,
+                spyIds: gameState.spyIds,
+                lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            });
             return;
         }
 
-        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์จริงๆ
-        if (lastGameSummary && lastGameSummary.secret) {
-            socket.emit('finalResult', lastGameSummary);
+        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์รอบล่าสุดอยู่
+        if (lastGameResult) {
+            socket.emit('finalResult', lastGameResult);
             return;
         }
 
-        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย
+        // 3. ถ้าอยู่ในหน้าห้องรอปกติ
         socket.emit('restoreGameState', {
             isStarted: false,
+            playOrder: players,
+            players: players,
             lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
         });
     });
