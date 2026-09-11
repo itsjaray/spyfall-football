@@ -863,7 +863,6 @@
             const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
             const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
 
-            // 🚨 ถ้าอยู่ในช่วง SPY กำลังทายคำ และเราเป็น SPY ให้แสดงหน้าจอ "แย่แล้วคุณถูกจับได้"
             const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
             const isLocalSpy = dataRole.role === 'SPY';
 
@@ -898,10 +897,15 @@
             }
         }
         
-        // 🛠️ แสดงลำดับการตั้งคำถาม (เพิ่มตัวสำรองเช็ค currentPlayers เผื่อ data.playOrder มาช้า)
+        // 🛠️ แก้ไขจุดแสดงลำดับการตั้งคำถาม: บันทึกและดึงค่าสำรองจาก window.cachedPlayOrder เสมอถ้าข้อมูลมาไม่ครบ
         const orderSection = document.getElementById('order-section');
         const orderOl = document.getElementById('order-ol');
-        const activeOrder = (data.playOrder && data.playOrder.length > 0) ? data.playOrder : (window.currentPlayOrder || []);
+        
+        if (data.playOrder && data.playOrder.length > 0) {
+            window.cachedPlayOrder = data.playOrder; // บันทึกลำดับเก็บไว้ใช้ตอนกด F5
+        }
+        
+        const activeOrder = (data.playOrder && data.playOrder.length > 0) ? data.playOrder : (window.cachedPlayOrder || []);
         
         if (orderSection && orderOl) {
             orderSection.style.display = 'block';
@@ -961,7 +965,7 @@
             if (lastGameBox) lastGameBox.style.display = 'none';
         }
     });
-
+    
     function submitSpyGuess(event) {
     event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรชเอง
     const guessInput = document.getElementById('spy-guess-input');
