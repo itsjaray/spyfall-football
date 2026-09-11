@@ -843,6 +843,7 @@
     });
     
     // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
+    // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
     socket.on('restoreGameState', (data) => {
         // 📌 เช็กว่าเกมเริ่มหรือยัง ถ้ายังไม่เริ่มให้กลับหน้าห้องรอ
         if (!data || !data.isStarted) {
@@ -889,13 +890,19 @@
             if (voteCountEl) voteCountEl.innerText = data.votedCount || '0';
             if (totalVotersEl) totalVotersEl.innerText = currentPlayers.length;
 
-            // สร้างปุ่มรายชื่อผู้เล่นทั้งหมด ยกเว้นตัวเอง
+            // สร้างปุ่มรายชื่อผู้เล่นทั้งหมด ยกเว้นตัวเอง พร้อมเช็กสถานะว่าเคยโหวตไปหรือยัง
             const voteBtnsContainer = document.getElementById('vote-buttons');
             if (voteBtnsContainer && currentPlayers.length > 0) {
-                voteBtnsContainer.innerHTML = currentPlayers
-                    .filter(p => p.id !== socket.id)
-                    .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`)
-                    .join('');
+                if (data.hasVoted) {
+                    hasVoted = true;
+                    voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                } else {
+                    hasVoted = false;
+                    voteBtnsContainer.innerHTML = currentPlayers
+                        .filter(p => p.id !== socket.id)
+                        .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
+                        .join('');
+                }
             }
         }
     });
