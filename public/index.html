@@ -866,11 +866,12 @@
             const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
             const isLocalSpy = dataRole.role === 'SPY';
 
+            // ปรับดีไซน์กล่องเตือนสปายให้เรียบร้อยกลมกลืนกับเว็บ (ไม่มีกรอบเรืองแสงแปลกตา)
             if (data.isSpyGuessing && (isServerSpy || isLocalSpy)) {
                 display.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #4a0e17, #2c0b10); border: 2px solid #ff4d4d; border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);">
-                        <h3 style="color: #ff4d4d; margin-bottom: 8px;">🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY</h3>
-                        <p style="font-size: 14px; color: #ffcccc; margin-bottom: 0;">ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ!</p>
+                    <div style="background: rgba(255, 77, 77, 0.15); border: 1px solid rgba(255, 77, 77, 0.4); border-radius: 12px; padding: 15px; text-align: center;">
+                        <h3 style="color: #ff4d4d; margin-bottom: 8px; font-size: 16px;">🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY</h3>
+                        <p style="font-size: 13px; color: #ffcccc; margin-bottom: 0;">ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ!</p>
                     </div>
                 `;
             } else if (dataRole.role === 'SPY') {
@@ -897,19 +898,24 @@
             }
         }
         
-        // 🛠️ แก้ไขจุดแสดงลำดับการตั้งคำถาม: บันทึกและดึงค่าสำรองจาก window.cachedPlayOrder เสมอถ้าข้อมูลมาไม่ครบ
+        // 🛠️ แก้ไขเรื่องลำดับการตั้งคำถามหาย: เช็คจากทั้ง data.playOrder, window.cachedPlayOrder หรือดึงจากหน้าจอเดิม
         const orderSection = document.getElementById('order-section');
         const orderOl = document.getElementById('order-ol');
         
         if (data.playOrder && data.playOrder.length > 0) {
-            window.cachedPlayOrder = data.playOrder; // บันทึกลำดับเก็บไว้ใช้ตอนกด F5
+            window.cachedPlayOrder = data.playOrder;
         }
         
-        const activeOrder = (data.playOrder && data.playOrder.length > 0) ? data.playOrder : (window.cachedPlayOrder || []);
+        let activeOrder = (data.playOrder && data.playOrder.length > 0) ? data.playOrder : window.cachedPlayOrder;
         
+        // ถ้าตัวแปรแคชยังไม่มี ให้ลองดึงรายชื่อผู้เล่นหลักจากตัวแปร global (เช่น currentPlayers) มาเรียงสำรองหน้างานได้ทันที
+        if ((!activeOrder || activeOrder.length === 0) && typeof currentPlayers !== 'undefined' && currentPlayers.length > 0) {
+            activeOrder = currentPlayers;
+        }
+
         if (orderSection && orderOl) {
             orderSection.style.display = 'block';
-            if (activeOrder.length > 0) {
+            if (activeOrder && activeOrder.length > 0) {
                 orderOl.innerHTML = activeOrder.map((p, index) => {
                     const playerName = typeof p === 'string' ? p : (p.name || '');
                     return index === 0 ? `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>` : `<li>${playerName}</li>`;
@@ -920,7 +926,6 @@
         const guessSection = document.getElementById('guess-section');
         const voteSection = document.getElementById('vote-section');
 
-        // 🔍 จัดการการแสดงผลระหว่างช่วง "สปายกำลังทาย" กับ "ช่วงโหวตปกติ"
         if (data.isSpyGuessing) {
             if (guessSection) {
                 const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
@@ -929,7 +934,6 @@
             }
             if (voteSection) voteSection.style.display = 'none';
         } else {
-            // 🗳️ กรณีช่วงโหวตปกติ
             if (guessSection) guessSection.style.display = 'none';
             if (voteSection) {
                 voteSection.style.display = 'block';
