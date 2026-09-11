@@ -612,19 +612,29 @@ io.on('connection', (socket) => {
     });
 
     socket.on('requestGameState', () => {
-        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้คืนค่าสถานะเกมและลำดับการเล่นที่ถูกต้อง
+        // 1. ถ้าเกมกำลังดำเนินอยู่
         if (gameState.isStarted) {
             const hasAlreadyVoted = gameState.votedPlayers && gameState.votedPlayers.has(socket.id);
             const votedName = (gameState.userVotedNames && gameState.userVotedNames[socket.id]) || '';
 
+            // 📌 ถ้าอยู่ในช่วง Spy กำลังทายคำ ให้ส่งสัญญาณบอกหน้าจอเฉพาะของคนที่เป็น Spy และคนธรรมดาด้วย
+            if (gameState.isSpyGuessing) {
+                const isSpy = gameState.spyIds && gameState.spyIds.includes(socket.id);
+                if (isSpy) {
+                    socket.emit('spyMustGuess');
+                } else {
+                    socket.emit('waitingForSpyGuess');
+                }
+            }
+
             socket.emit('restoreGameState', {
                 isStarted: true,
-                isSpyGuessing: gameState.isSpyGuessing, // 👈 ตัวนี้สำคัญ ต้องส่งค่านี้ไปบอกหน้าเว็บ
+                isSpyGuessing: gameState.isSpyGuessing,
                 playOrder: gameState.playOrder || players,
                 players: players,
                 spyIds: gameState.spyIds,
-                hasVoted: hasAlreadyVoted,      // 👈 สถานะการโหวต
-                votedName: votedName,           // 👈 ชื่อคนที่เคยโหวต
+                hasVoted: hasAlreadyVoted,
+                votedName: votedName,
                 votedCount: gameState.votedPlayers ? gameState.votedPlayers.size : 0,
                 lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             });
@@ -633,7 +643,6 @@ io.on('connection', (socket) => {
 
         // 2. ถ้าเกมจบแล้วและมีผลลัพธ์รอบล่าสุดอยู่
         if (lastGameResult) {
-            // ✅ อัปเดตรายชื่อและคะแนนล่าสุดของผู้เล่นลงไปใน result ด้วย
             lastGameResult.players = players;
             socket.emit('finalResult', lastGameResult);
             return;
