@@ -842,7 +842,7 @@
         }
     });
     
-    socket.on('restoreGameState', (data) => {
+   socket.on('restoreGameState', (data) => {
         // 📌 ถ้าเกมยังไม่เริ่ม
         if (!data || !data.isStarted) {
             const roleDisplay = document.getElementById('role-display');
@@ -855,8 +855,41 @@
             return; 
         }
 
-        // 🟢 เพิ่มบรรทัดนี้: เมื่อเกมดำเนินอยู่และรีเฟรช ให้ขอข้อมูลบทบาท/นักเตะปัจจุบันมาแสดงผลด้วยทันที
-        socket.emit('requestCurrentRole');
+        // 🟢 เช็คว่าถ้ายังไม่มีข้อมูลบทบาทในเครื่อง ให้ขอใหม่จาก Server
+        if (!window.cachedRoleData) {
+            socket.emit('requestCurrentRole');
+        } else {
+            // ถ้ามีข้อมูลอยู่แล้ว ให้เรนเดอร์รูปและชื่อนักเตะซ้ำทันทีเพื่อไม่ให้หาย
+            const display = document.getElementById('role-display');
+            const dataRole = window.cachedRoleData;
+            if (display && dataRole) {
+                const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
+                const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
+
+                if (dataRole.role === 'SPY') {
+                    display.innerHTML = `
+                        <span class='spy'>🕵️ คุณคือ SPY!<br>
+                        ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
+                        <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small><br>
+                        <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                        <div style="margin-top: 10px;">
+                        <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
+                        </div><br>
+                        </span>
+                        <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
+                    `;
+                } else {
+                    display.innerHTML = `
+                        <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
+                        <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small>
+                        <div style="margin-top: 10px;">
+                        <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
+                        </div>
+                        </span>
+                    `;
+                }
+            }
+        }
         
         // 🛠️ แสดงลำดับการตั้งคำถาม
         const orderSection = document.getElementById('order-section');
@@ -879,7 +912,7 @@
             }
             if (voteSection) voteSection.style.display = 'none';
         } else {
-            // 🗳️ กรณีช่วงโปกติ / ช่วงโหวต
+            // 🗳️ กรณีช่วงโหวตปกติ
             if (guessSection) guessSection.style.display = 'none';
             if (voteSection) {
                 voteSection.style.display = 'block';
@@ -891,11 +924,12 @@
 
                 const voteBtnsContainer = document.getElementById('vote-buttons');
                 if (voteBtnsContainer && currentPlayers.length > 0) {
-                    if (data.hasVoted) {
+                    // 🛡️ เช็คว่าโหวตไปแล้วหรือยัง ถ้าโหวตแล้วให้แสดงข้อความล็อกไว้ ไม่วาดปุ่มซ้ำซ้อนเพื่อกันกระพริบ
+                    if (data.hasVoted || hasVoted) {
                         hasVoted = true;
                         voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
-                    } else {
-                        hasVoted = false;
+                    } else if (!voteBtnsContainer.hasChildNodes() || voteBtnsContainer.innerHTML.includes('กรุณาโหวต') || voteBtnsContainer.innerHTML === '') {
+                        // วาดปุ่มโหวตเฉพาะตอนที่ยังไม่ได้สร้างปุ่ม เพื่อป้องกันการรีเฟรชปุ่มกระพริบ
                         voteBtnsContainer.innerHTML = currentPlayers
                             .filter(p => p.id !== socket.id)
                             .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
