@@ -843,23 +843,15 @@
     });
     
     socket.on('restoreGameState', (data) => {
-        // 📌 เช็กว่าเกมเริ่มหรือยัง ถ้ายังไม่เริ่มให้กลับหน้าห้องรอ
+        // 📌 ถ้าเกมยังไม่เริ่ม
         if (!data || !data.isStarted) {
             const roleDisplay = document.getElementById('role-display');
             if (roleDisplay) roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
             
-            const orderSection = document.getElementById('order-section');
-            if (orderSection) orderSection.style.display = 'none';
-
-            const voteSection = document.getElementById('vote-section');
-            if (voteSection) voteSection.style.display = 'none';
-
-            const guessSection = document.getElementById('guess-section');
-            if (guessSection) guessSection.style.display = 'none';
-
-            const lastGameBox = document.getElementById('lastGameResultBox');
-            if (lastGameBox) lastGameBox.style.display = 'none';
-            
+            ['order-section', 'vote-section', 'guess-section', 'lastGameResultBox'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
             return; 
         }
 
@@ -870,33 +862,22 @@
             orderSection.style.display = 'block';
             orderOl.innerHTML = data.playOrder.map((p, index) => {
                 const playerName = typeof p === 'string' ? p : (p.name || '');
-                if (index === 0) {
-                    return `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>`;
-                }
-                return `<li>${playerName}</li>`;
+                return index === 0 ? `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>` : `<li>${playerName}</li>`;
             }).join('');
         }
 
-        // 🔍 [สำคัญ] เช็กสถานะการทายคำของ Spy ก่อน ถ้าอยู่ในช่วงทายคำ ให้แสดงกล่องทายคำและซ่อนกล่องโหวต
         const guessSection = document.getElementById('guess-section');
         const voteSection = document.getElementById('vote-section');
 
+        // 🔍 กรณี Spy กำลังทายคำ
         if (data.isSpyGuessing) {
-            // ช่วงกำลังทายคำ
             if (guessSection) {
-                if (data.spyIds && data.spyIds.includes(socket.id)) {
-                    guessSection.style.display = 'block'; // ถ้าเป็น Spy ให้แสดงกล่องตอบ
-                } else {
-                    guessSection.style.display = 'none';  // ถ้าไม่ใช่ Spy ให้ซ่อน
-                }
+                guessSection.style.display = (data.spyIds && data.spyIds.includes(socket.id)) ? 'block' : 'none';
             }
-            if (voteSection) {
-                voteSection.style.display = 'none'; // ซ่อนกล่องโหวตในระหว่างทายคำ
-            }
+            if (voteSection) voteSection.style.display = 'none';
         } else {
-            // ช่วงปกติ (ช่วงโหวต)
+            // 🗳️ กรณีช่วงโปกติ / ช่วงโหวต
             if (guessSection) guessSection.style.display = 'none';
-            
             if (voteSection) {
                 voteSection.style.display = 'block';
                 
