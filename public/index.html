@@ -948,6 +948,18 @@
         } else {
             if (lastGameBox) lastGameBox.style.display = 'none';
         }
+
+       // 🚨 บรรทัดบังคับพิเศษ: ถ้าอยู่ในช่วง SPY กำลังทาย ให้บังคับเปิดช่องทายสำหรับ SPY เท่านั้น
+        if (data.isSpyGuessing) {
+            const guessSec = document.getElementById('guess-section');
+            const voteSec = document.getElementById('vote-section');
+            if (guessSec) {
+                const amISpy = data.spyIds && data.spyIds.includes(socket.id);
+                guessSec.style.display = amISpy ? 'block' : 'none';
+            }
+            if (voteSec) voteSec.style.display = 'none';
+        }
+       
     });
 
     function submitSpyGuess(event) {
