@@ -905,10 +905,14 @@
         const guessSection = document.getElementById('guess-section');
         const voteSection = document.getElementById('vote-section');
 
-        // 🔍 กรณี Spy กำลังทายคำ
+        // 🔍 จัดการการแสดงผลระหว่างช่วง "สปายกำลังทาย" กับ "ช่วงโหวตปกติ"
         if (data.isSpyGuessing) {
             if (guessSection) {
-                guessSection.style.display = (data.spyIds && data.spyIds.includes(socket.id)) ? 'block' : 'none';
+                // เช็คจากทั้ง server data และ window.cachedRoleData เพื่อความชัวร์ไม่ให้หลุดตอนกด F5
+                const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
+                const isLocalSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
+                
+                guessSection.style.display = (isServerSpy || isLocalSpy) ? 'block' : 'none';
             }
             if (voteSection) voteSection.style.display = 'none';
         } else {
@@ -924,12 +928,10 @@
 
                 const voteBtnsContainer = document.getElementById('vote-buttons');
                 if (voteBtnsContainer && currentPlayers.length > 0) {
-                    // 🛡️ เช็คว่าโหวตไปแล้วหรือยัง ถ้าโหวตแล้วให้แสดงข้อความล็อกไว้ ไม่วาดปุ่มซ้ำซ้อนเพื่อกันกระพริบ
                     if (data.hasVoted || hasVoted) {
                         hasVoted = true;
                         voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
                     } else if (!voteBtnsContainer.hasChildNodes() || voteBtnsContainer.innerHTML.includes('กรุณาโหวต') || voteBtnsContainer.innerHTML === '') {
-                        // วาดปุ่มโหวตเฉพาะตอนที่ยังไม่ได้สร้างปุ่ม เพื่อป้องกันการรีเฟรชปุ่มกระพริบ
                         voteBtnsContainer.innerHTML = currentPlayers
                             .filter(p => p.id !== socket.id)
                             .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
@@ -938,6 +940,7 @@
                 }
             }
         }
+
         const lastGameBox = document.getElementById('lastGameResultBox');
         if (data.lastGame && data.lastGame.secret) {
             if (lastGameBox) lastGameBox.style.display = 'block';
@@ -948,18 +951,6 @@
         } else {
             if (lastGameBox) lastGameBox.style.display = 'none';
         }
-
-       // 🚨 บรรทัดบังคับพิเศษ: ถ้าอยู่ในช่วง SPY กำลังทาย ให้บังคับเปิดช่องทายสำหรับ SPY เท่านั้น
-        if (data.isSpyGuessing) {
-            const guessSec = document.getElementById('guess-section');
-            const voteSec = document.getElementById('vote-section');
-            if (guessSec) {
-                const amISpy = data.spyIds && data.spyIds.includes(socket.id);
-                guessSec.style.display = amISpy ? 'block' : 'none';
-            }
-            if (voteSec) voteSec.style.display = 'none';
-        }
-       
     });
 
     function submitSpyGuess(event) {
