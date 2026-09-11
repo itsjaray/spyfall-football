@@ -586,20 +586,27 @@ io.on('connection', (socket) => {
         });
     });
 
-        socket.on('requestGameState', () => {
-        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้คืนค่า Role ปัจจุบัน
+    socket.on('requestGameState', () => {
+        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้ส่งข้อมูลนักเตะกลับไปแสดงผล
         if (gameState.isStarted) {
-            socket.emit('requestCurrentRole');
+            const player = players.find(p => p.id === socket.id);
+            if (player) {
+                socket.emit('assignedRole', {
+                    role: player.role,
+                    targetPlayer: player.targetPlayer,
+                    questionOrder: questionOrder || []
+                });
+            }
             return;
         }
 
-        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์จริงๆ (เช็คว่ามี secret อยู่จริง ไม่ใช่ null ในตาแรก)
+        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์จริงๆ (ไม่ใช่ null ในตาแรก)
         if (lastGameSummary && lastGameSummary.secret) {
             socket.emit('finalResult', lastGameSummary);
             return;
         }
 
-        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (เช่น ตาแรกสุดที่ยังไม่เคยเล่น หรือเพิ่งกดปุ่ม Home)
+        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (เช่น ตาแรกสุด หรือเพิ่งกดปุ่ม Home)
         socket.emit('restoreGameState', {
             isStarted: false,
             lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
