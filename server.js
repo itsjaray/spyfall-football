@@ -587,25 +587,30 @@ io.on('connection', (socket) => {
     });
 
     socket.on('requestGameState', () => {
-        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้ส่งข้อมูลนักเตะกลับไปแสดงผล
+        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้ส่งข้อมูลนักเตะกลับไป
         if (gameState.isStarted) {
             const player = players.find(p => p.id === socket.id);
             if (player) {
-                socket.emit('assignedRole', {
+                const gameData = {
                     role: player.role,
-                    targetPlayer: player.targetPlayer,
-                });
+                    targetPlayer: player.targetPlayer
+                };
+                
+                // 🚀 ส่งข้อมูลไปเผื่อทุกชื่อ Event ที่ฝั่ง Client อาจจะใช้งานอยู่
+                socket.emit('assignedRole', gameData);
+                socket.emit('assignRole', gameData);
+                socket.emit('gameStarted', gameData);
             }
             return;
         }
 
-        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์จริงๆ (ไม่ใช่ null ในตาแรก)
+        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์จริงๆ
         if (lastGameSummary && lastGameSummary.secret) {
             socket.emit('finalResult', lastGameSummary);
             return;
         }
 
-        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (เช่น ตาแรกสุด หรือเพิ่งกดปุ่ม Home)
+        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย
         socket.emit('restoreGameState', {
             isStarted: false,
             lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
