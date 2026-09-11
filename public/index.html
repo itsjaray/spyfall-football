@@ -947,6 +947,7 @@
             if (lastDecoyText) lastDecoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy || ''} (${data.lastGame.decoyPos || ''})`;
         } else {
             if (lastGameBox) lastGameBox.style.display = 'none';
+        }
     });
 
     function submitSpyGuess(event) {
