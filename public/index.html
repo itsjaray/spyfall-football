@@ -863,7 +863,7 @@
             return; 
         }
 
-       // 🛠️ ถ้าเกมเริ่มอยู่แล้ว สั่งแสดงกล่องลำดับการตั้งคำถาม
+        // 🛠️ แสดงลำดับการตั้งคำถาม
         const orderSection = document.getElementById('order-section');
         const orderOl = document.getElementById('order-ol');
         if (orderSection && orderOl && data.playOrder) {
@@ -877,40 +877,47 @@
             }).join('');
         }
 
-        // 🗳️ เปิดกล่องโหวต และสร้างปุ่มรายชื่อผู้เล่นสำหรับโหวต
+        // 🔍 [สำคัญ] เช็กสถานะการทายคำของ Spy ก่อน ถ้าอยู่ในช่วงทายคำ ให้แสดงกล่องทายคำและซ่อนกล่องโหวต
+        const guessSection = document.getElementById('guess-section');
         const voteSection = document.getElementById('vote-section');
-        if (voteSection) {
-            voteSection.style.display = 'block';
-            
-            // อัปเดตจำนวนผู้โหวต
-            const voteCountEl = document.getElementById('vote-count');
-            const totalVotersEl = document.getElementById('total-voters');
-            if (voteCountEl) voteCountEl.innerText = data.votedCount || '0';
-            if (totalVotersEl) totalVotersEl.innerText = currentPlayers.length;
 
-            // สร้างปุ่มรายชื่อผู้เล่นทั้งหมด ยกเว้นตัวเอง พร้อมเช็กสถานะว่าเคยโหวตไปหรือยัง
-            const voteBtnsContainer = document.getElementById('vote-buttons');
-            if (voteBtnsContainer && currentPlayers.length > 0) {
-                if (data.hasVoted) {
-                    hasVoted = true;
-                    voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+        if (data.isSpyGuessing) {
+            // ช่วงกำลังทายคำ
+            if (guessSection) {
+                if (data.spyIds && data.spyIds.includes(socket.id)) {
+                    guessSection.style.display = 'block'; // ถ้าเป็น Spy ให้แสดงกล่องตอบ
                 } else {
-                    hasVoted = false;
-                    voteBtnsContainer.innerHTML = currentPlayers
-                        .filter(p => p.id !== socket.id)
-                        .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
-                        .join('');
+                    guessSection.style.display = 'none';  // ถ้าไม่ใช่ Spy ให้ซ่อน
                 }
             }
-        }
+            if (voteSection) {
+                voteSection.style.display = 'none'; // ซ่อนกล่องโหวตในระหว่างทายคำ
+            }
+        } else {
+            // ช่วงปกติ (ช่วงโหวต)
+            if (guessSection) guessSection.style.display = 'none';
+            
+            if (voteSection) {
+                voteSection.style.display = 'block';
+                
+                const voteCountEl = document.getElementById('vote-count');
+                const totalVotersEl = document.getElementById('total-voters');
+                if (voteCountEl) voteCountEl.innerText = data.votedCount || '0';
+                if (totalVotersEl) totalVotersEl.innerText = currentPlayers.length;
 
-        // 🔍 [เพิ่มใหม่ตรงนี้] ตรวจสอบสถานะการทายคำของ Spy หลังกด F5
-        const guessSection = document.getElementById('guess-section');
-        if (guessSection) {
-            if (data.isSpyGuessing && data.spyIds && data.spyIds.includes(socket.id)) {
-                guessSection.style.display = 'block'; // ถ้าเป็น Spy และอยู่ในช่วงทายคำ ให้แสดงกล่อง
-            } else {
-                guessSection.style.display = 'none';  // ถ้าไม่ใช่ หรือหมดเวลา ให้ซ่อนไว้
+                const voteBtnsContainer = document.getElementById('vote-buttons');
+                if (voteBtnsContainer && currentPlayers.length > 0) {
+                    if (data.hasVoted) {
+                        hasVoted = true;
+                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                    } else {
+                        hasVoted = false;
+                        voteBtnsContainer.innerHTML = currentPlayers
+                            .filter(p => p.id !== socket.id)
+                            .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
+                            .join('');
+                    }
+                }
             }
         }
     });
