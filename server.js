@@ -479,12 +479,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('spyGuess', (guessedName) => {
-        // 🔍 ลองใส่ console.log ตรงนี้เพื่อดูว่า Server ได้รับค่าไหม และเราเป็น SPY หรือเปล่า
         console.log("มีคนกดส่งคำตอบมา:", guessedName);
         console.log("เกมเริ่มหรือยัง (isStarted):", gameState.isStarted);
         console.log("ไอดีเราใช่ SPY ไหม:", gameState.spyIds.includes(socket.id));
         
-        // เช็กสิทธิ์แบบยืดหยุ่นเพื่อให้มั่นใจว่าจับตัว Spy ได้แน่นอน
         const player = players.find(p => p.id === socket.id);
         const isCurrentSpy = player && (
             player.role === 'SPY' || 
@@ -501,18 +499,21 @@ io.on('connection', (socket) => {
         const isCorrect = trimmedGuess !== '' && isFlexibleMatch(trimmedGuess, gameState.secretFootballer.name);
         const spyPlayer = players.find(p => gameState.spyIds.includes(p.id));
 
+        // 📌 เพิ่มคำสั่งหยุดเวลาตรงนี้ เพื่อให้เวลาหยุดเดินทันทีไม่ว่าจะตอบถูกหรือผิด
+        if (gameTimer) {
+            clearInterval(gameTimer);
+            gameTimer = null;
+        }
+
         if (isCorrect) {
             if (spyPlayer) spyPlayer.score += 2;
             
-            // ✅ 1. เก็บค่า playOrder ไว้ก่อนเคลียร์
             const savedPlayOrder = gameState.playOrder;
 
-            // ✅ 2. เคลียร์สถานะเกม
             gameState.isStarted = false;
             gameState.isSpyGuessing = false;
             gameState.playOrder = [];
 
-            // ✅ 3. สร้างชุดข้อมูลผลลัพธ์
             lastGameResult = {
                 winner: 'SPY',
                 reason: 'spyGuessedCorrect',
@@ -521,33 +522,25 @@ io.on('connection', (socket) => {
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName,
                 playOrder: savedPlayOrder,
+                players: players, // ✅ แนบข้อมูลคะแนนผู้เล่นล่าสุดไปด้วย
                 lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             };
 
             io.emit('finalResult', lastGameResult);
-            io.emit('updatePlayers', players); // อย่าลืมใส่บรรทัดอัปเดตผู้เล่นตรงนี้ด้วยครับ
-            return; // ป้องกันไม่ให้มันไปโดนชุดคำสั่งด้านล่างซ้ำซ้อน
+            io.emit('updatePlayers', players);
+            return;
             
         } else {
             players.forEach(p => {
                 if (!gameState.spyIds.includes(p.id)) p.score += 1;
             });
 
-            // 📌 เพิ่มบรรทัดนี้ เพื่อสั่งหยุดเวลาทันทีที่เกมจบ (Spy ทายผิด)
-            if (gameTimer) {
-                clearInterval(gameTimer);
-                gameTimer = null;
-            }
-
-            // ✅ 1. เก็บค่า playOrder ไว้ก่อนเคลียร์
             const savedPlayOrder = gameState.playOrder;
 
-            // ✅ 2. เคลียร์สถานะเกม
             gameState.isStarted = false;
             gameState.isSpyGuessing = false;
             gameState.playOrder = [];
 
-            // ✅ 3. สร้างชุดข้อมูลผลลัพธ์
             lastGameResult = {
                 winner: 'PLAYERS',
                 reason: 'spyGuessedWrong',
@@ -556,6 +549,7 @@ io.on('connection', (socket) => {
                 decoyFootballer: gameState.decoyFootballer.name,
                 spyGuess: guessedName,
                 playOrder: savedPlayOrder,
+                players: players, // ✅ แนบข้อมูลคะแนนผู้เล่นล่าสุดไปด้วย
                 lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             };
 
@@ -605,6 +599,8 @@ io.on('connection', (socket) => {
 
         // 2. ถ้าเกมจบแล้วและมีผลลัพธ์รอบล่าสุดอยู่
         if (lastGameResult) {
+            // ✅ อัปเดตรายชื่อและคะแนนล่าสุดของผู้เล่นลงไปใน result ด้วย
+            lastGameResult.players = players;
             socket.emit('finalResult', lastGameResult);
             return;
         }
