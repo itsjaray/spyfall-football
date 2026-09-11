@@ -412,39 +412,9 @@
     }
 
     socket.on('assignRole', (dataRole) => {
-    window.cachedRoleData = dataRole;
-    const display = document.getElementById('role-display');
-    if (!display) return;
-
-    if (dataRole) {
-        // จัดการค่าว่างหรือ undefined ให้กลายเป็นขีด (-) แทน
-        const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
-        const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
-
-        if (dataRole.role === 'SPY') {
-            display.innerHTML = `
-                <span class='spy'>🕵️ คุณคือ SPY!<br>
-                ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small><br>
-                <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                <div style="margin-top: 10px;">
-                <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
-                </div><br>
-                </span>
-                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-            `;
-        } else {
-            display.innerHTML = `
-                <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small>
-                <div style="margin-top: 10px;">
-                <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
-                </div>
-                </span>
-            `;
-        }
-    }
-});
+        // 🛡️ แค่เก็บข้อมูลบทบาทไว้ในตัวแปรก่อน ยังไม่แสดงผลทันทีเพื่อกันกระพริบ
+        window.cachedRoleData = dataRole;
+    });
     
 
     socket.on('gameStarted', (data) => {
@@ -456,7 +426,7 @@
         document.getElementById('order-section').style.display = 'none';
 
         let count = 3;
-        display.innerHTML = `<div class="countdown-overlay">⚽ เตรียมตัวสุ่ม... ${count}</div>`;
+        display.innerHTML = `<div class="countdown-overlay">🌐 เตรียมตัวสุ่ม... ${count}</div>`;
 
         const countdownInterval = setInterval(() => {
             count--;
@@ -466,6 +436,36 @@
                 display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
             } else {
                 clearInterval(countdownInterval);
+                
+                // 🎨 แสดงข้อมูลบทบาทที่ซ่อนไว้ ตอนนับถอยหลังจบพอดี
+                if (window.cachedRoleData) {
+                    const dataRole = window.cachedRoleData;
+                    if (display) {
+                        if (dataRole.role === 'SPY') {
+                            display.innerHTML = `
+                                <span class="spy">🕵️ คุณคือ SPY!<br>
+                                ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
+                                <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality})</small><br>
+                                <small style="font-size:11px; color:#ccc;">⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                                <div style="margin-top: 10px;">
+                                <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: cover;">
+                                </div><br>
+                                </span>
+                                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
+                            `;
+                        } else {
+                            display.innerHTML = `
+                                <span class="player">🌍 นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
+                                <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality})</small>
+                                <div style="margin-top: 10px;">
+                                <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: cover;">
+                                </div>
+                                </span>
+                            `;
+                        }
+                    }
+                }
+
                 applyGameStartedState(cachedGameData);
             }
         }, 1000);
