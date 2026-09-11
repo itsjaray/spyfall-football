@@ -587,14 +587,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('requestGameState', () => {
-        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้ส่งข้อมูลตัวละคร/นักเตะกลับไปแสดงผลทันที
+        // 1. ถ้าเกมกำลังดำเนินอยู่ ให้ส่งข้อมูลนักเตะพร้อมบอกสถานะว่าเกมเริ่มแล้ว
         if (gameState.isStarted) {
             const player = players.find(p => p.id === socket.id);
             if (player) {
-                // ส่งข้อมูลบทบาทและนักเตะกลับไปให้ผู้เล่นคนนี้โดยตรง
+                // ส่งทั้งข้อมูลบทบาท และแปะสถานะ isStarted ไปด้วย เพื่อกันหน้าเว็บรีเซ็ตกลับ
                 socket.emit('assignedRole', {
                     role: player.role,
-                    targetPlayer: player.targetPlayer
+                    targetPlayer: player.targetPlayer,
+                    isStarted: true
                 });
             }
             return;
@@ -606,7 +607,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย (ตาแรกสุด)
+        // 3. ถ้าไม่มีผลลัพธ์อะไรเลย
         socket.emit('restoreGameState', {
             isStarted: false,
             lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
