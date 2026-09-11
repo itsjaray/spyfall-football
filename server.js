@@ -619,6 +619,7 @@ io.on('connection', (socket) => {
 
             socket.emit('restoreGameState', {
                 isStarted: true,
+                isSpyGuessing: gameState.isSpyGuessing, // 👈 ตัวนี้สำคัญ ต้องส่งค่านี้ไปบอกหน้าเว็บ
                 isSpyGuessing: gameState.isSpyGuessing,
                 playOrder: gameState.playOrder || players,
                 players: players,
