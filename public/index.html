@@ -546,6 +546,14 @@
         document.getElementById('total-voters').innerText = total;
     });
 
+    // 📌 นำมาวางไว้แถวนี้ได้เลยครับ
+    socket.on('voteSuccess', (data) => {
+        const voteButtonsContainer = document.getElementById('vote-buttons');
+        if (voteButtonsContainer) {
+            voteButtonsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+        }
+    });
+
     socket.on('timerUpdate', (timeRemaining) => {
     const timerDisplay = document.getElementById('timer-display');
     if (!timerDisplay) return;
