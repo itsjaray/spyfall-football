@@ -836,19 +836,26 @@
     });
     
     // 🛠️ เพิ่มตัวดักรับสถานะเกมเมื่อกด F5 เพื่อบังคับเปิดหน้าจอเล่นเกมทันที
+   // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
     socket.on('restoreGameState', (data) => {
-        if (data && data.isStarted) {
-            // ซ่อนหน้าห้องรอ และแสดงหน้าจอเล่นเกม
-            const waitingRoom = document.getElementById('waiting-room'); // หรือไอดีของหน้าห้องรอที่คุณใช้
-            const gameScreen = document.getElementById('game-screen');   // หรือไอดีของหน้าจอเล่นเกมที่คุณใช้
+        // 📌 แก้ไขให้เช็กแค่ว่าเกมเริ่มหรือยัง ถ้ายังไม่เริ่มค่อยกลับหน้าห้องรอ
+        if (!data || !data.isStarted) {
+            const roleDisplay = document.getElementById('role-display');
+            if (roleDisplay) roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
             
-            if (waitingRoom) waitingRoom.style.display = 'none';
-            if (gameScreen) gameScreen.style.display = 'block';
+            const orderSection = document.getElementById('order-section');
+            if (orderSection) orderSection.style.display = 'none';
 
-            // ถ้ามีข้อมูลลำดับการเล่น ให้นำไปแสดงผลตารางด้านข้าง
-            if (data.playOrder && typeof renderPlayOrder === 'function') {
-                renderPlayOrder(data.playOrder);
-            }
+            const voteSection = document.getElementById('vote-section');
+            if (voteSection) voteSection.style.display = 'none';
+
+            const guessSection = document.getElementById('guess-section');
+            if (guessSection) guessSection.style.display = 'none';
+
+            const lastGameBox = document.getElementById('lastGameResultBox');
+            if (lastGameBox) lastGameBox.style.display = 'none';
+            
+            return; 
         }
     });
 
