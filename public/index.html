@@ -447,14 +447,16 @@
         cachedGameData = data;
         const display = document.getElementById('role-display');
         
-        // 🛡️ ซ่อนหน้าจอและกล่องต่างๆ ชั่วคราวระหว่างนับถอยหลังเพื่อกันกระพริบเห็นข้อมูลเก่า
-        if (display) display.innerHTML = `<div class="countdown-overlay">🌐 เตรียมตัวสุ่ม... 3</div>`;
+        // 🛡️ เคลียร์ค่าเนื้อหาเก่าทิ้งทันที เพื่อกันกระพริบเห็นข้อมูลเดิมเสี้ยววิ
+        if (display) display.innerHTML = '';
         
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'none';
         document.getElementById('order-section').style.display = 'none';
 
         let count = 3;
+        if (display) display.innerHTML = `<div class="countdown-overlay">⚽ เตรียมตัวสุ่ม... ${count}</div>`;
+
         const countdownInterval = setInterval(() => {
             count--;
             if (count > 0) {
@@ -463,12 +465,6 @@
                 if (display) display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
             } else {
                 clearInterval(countdownInterval);
-                
-                // พอนับถอยหลังเสร็จ ถ้าระบบมีข้อมูลบทบาทที่แคชไว้ ให้เรนเดอร์ทับอีกรอบให้สวยงาม
-                if (window.cachedRoleData) {
-                    // เรียกใช้ฟังก์ชันแสดงผลบทบาทเดิมที่คุณมีอยู่แล้วได้เลย
-                }
-                
                 applyGameStartedState(cachedGameData);
             }
         }, 1000);
