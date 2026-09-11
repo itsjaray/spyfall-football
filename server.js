@@ -171,6 +171,8 @@ io.on('connection', (socket) => {
             return;
         }
 
+        gameState.isSpyGuessing = false;
+
         // 📌 1. บันทึกข้อมูลของรอบปัจจุบันเก็บไว้เป็น "ประวัติการเล่นตาที่แล้ว" ก่อนเริ่มรอบใหม่ทุกครั้ง
         if (gameState.secretFootballer && gameState.secretFootballer.name) {
             previousRoundSecret = gameState.secretFootballer;
