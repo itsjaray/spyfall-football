@@ -122,13 +122,22 @@ io.on('connection', (socket) => {
     const clientName = socket.handshake.query.name;
     const initialName = (clientName && clientName.trim() !== '') ? clientName.trim() : 'ผู้เล่น';
 
-    players = players.filter(p => p.id !== socket.id);
-    players.push({
-        id: socket.id,
-        name: initialName,
-        role: null,
-        score: 0
-    });
+    // 📌 เช็กว่ามีผู้เล่นชื่อนี้อยู่ในห้องอยู่แล้วหรือไม่ (ป้องกันกรณี F5 แล้วโดนสร้าง Object ใหม่ทับตัวเก่าทำให้คะแนนหาย)
+    let existingPlayer = players.find(p => p.name === initialName && initialName !== 'ผู้เล่น');
+
+    if (existingPlayer) {
+        // อัปเดต Socket ID ใหม่ให้กับผู้เล่นคนเดิม แต่คงคะแนนและบทบาทไว้
+        existingPlayer.id = socket.id;
+    } else {
+        // ถ้าเป็นผู้เล่นใหม่จริงๆ ถึงจะเพิ่มเข้าไปในอาเรย์
+        players = players.filter(p => p.id !== socket.id);
+        players.push({
+            id: socket.id,
+            name: initialName,
+            role: null,
+            score: 0
+        });
+    }
 
     io.emit('updatePlayers', players);
 
