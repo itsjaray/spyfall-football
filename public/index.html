@@ -855,51 +855,62 @@
             return; 
         }
 
-        // 🟢 เช็คว่าถ้ายังไม่มีข้อมูลบทบาทในเครื่อง ให้ขอใหม่จาก Server
-        if (!window.cachedRoleData) {
-            socket.emit('requestCurrentRole');
-        } else {
-            // ถ้ามีข้อมูลอยู่แล้ว ให้เรนเดอร์รูปและชื่อนักเตะซ้ำทันทีเพื่อไม่ให้หาย
-            const display = document.getElementById('role-display');
-            const dataRole = window.cachedRoleData;
-            if (display && dataRole) {
-                const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
-                const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
+        // 🟢 เช็คบทบาทและการแสดงผลหน้าจอ
+        const display = document.getElementById('role-display');
+        const dataRole = window.cachedRoleData;
 
-                if (dataRole.role === 'SPY') {
-                    display.innerHTML = `
-                        <span class='spy'>🕵️ คุณคือ SPY!<br>
-                        ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                        <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small><br>
-                        <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                        <div style="margin-top: 10px;">
-                        <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
-                        </div><br>
-                        </span>
-                        <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-                    `;
-                } else {
-                    display.innerHTML = `
-                        <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                        <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small>
-                        <div style="margin-top: 10px;">
-                        <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
-                        </div>
-                        </span>
-                    `;
-                }
+        if (display && dataRole) {
+            const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
+            const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
+
+            // 🚨 ถ้าอยู่ในช่วง SPY กำลังทายคำ และเราเป็น SPY ให้แสดงหน้าจอ "แย่แล้วคุณถูกจับได้"
+            const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
+            const isLocalSpy = dataRole.role === 'SPY';
+
+            if (data.isSpyGuessing && (isServerSpy || isLocalSpy)) {
+                display.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #4a0e17, #2c0b10); border: 2px solid #ff4d4d; border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);">
+                        <h3 style="color: #ff4d4d; margin-bottom: 8px;">🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY</h3>
+                        <p style="font-size: 14px; color: #ffcccc; margin-bottom: 0;">ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ!</p>
+                    </div>
+                `;
+            } else if (dataRole.role === 'SPY') {
+                display.innerHTML = `
+                    <span class='spy'>🕵️ คุณคือ SPY!<br>
+                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
+                    <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small><br>
+                    <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                    <div style="margin-top: 10px;">
+                    <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
+                    </div><br>
+                    </span>
+                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
+                `;
+            } else {
+                display.innerHTML = `
+                    <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
+                    <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small>
+                    <div style="margin-top: 10px;">
+                    <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
+                    </div>
+                    </span>
+                `;
             }
         }
         
-        // 🛠️ แสดงลำดับการตั้งคำถาม
+        // 🛠️ แสดงลำดับการตั้งคำถาม (เพิ่มตัวสำรองเช็ค currentPlayers เผื่อ data.playOrder มาช้า)
         const orderSection = document.getElementById('order-section');
         const orderOl = document.getElementById('order-ol');
-        if (orderSection && orderOl && data.playOrder) {
+        const activeOrder = (data.playOrder && data.playOrder.length > 0) ? data.playOrder : (window.currentPlayOrder || []);
+        
+        if (orderSection && orderOl) {
             orderSection.style.display = 'block';
-            orderOl.innerHTML = data.playOrder.map((p, index) => {
-                const playerName = typeof p === 'string' ? p : (p.name || '');
-                return index === 0 ? `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>` : `<li>${playerName}</li>`;
-            }).join('');
+            if (activeOrder.length > 0) {
+                orderOl.innerHTML = activeOrder.map((p, index) => {
+                    const playerName = typeof p === 'string' ? p : (p.name || '');
+                    return index === 0 ? `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>` : `<li>${playerName}</li>`;
+                }).join('');
+            }
         }
 
         const guessSection = document.getElementById('guess-section');
@@ -908,10 +919,8 @@
         // 🔍 จัดการการแสดงผลระหว่างช่วง "สปายกำลังทาย" กับ "ช่วงโหวตปกติ"
         if (data.isSpyGuessing) {
             if (guessSection) {
-                // เช็คจากทั้ง server data และ window.cachedRoleData เพื่อความชัวร์ไม่ให้หลุดตอนกด F5
                 const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
-                const isLocalSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
-                
+                const isLocalSpy = dataRole && dataRole.role === 'SPY';
                 guessSection.style.display = (isServerSpy || isLocalSpy) ? 'block' : 'none';
             }
             if (voteSection) voteSection.style.display = 'none';
