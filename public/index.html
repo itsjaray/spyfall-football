@@ -835,10 +835,9 @@
         }
     });
     
-    // 🛠️ เพิ่มตัวดักรับสถานะเกมเมื่อกด F5 เพื่อบังคับเปิดหน้าจอเล่นเกมทันที
-   // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
+    // รับข้อมูลสถานะเกมเพื่อคืนค่าหน้าจอหลังกด F5
     socket.on('restoreGameState', (data) => {
-        // 📌 แก้ไขให้เช็กแค่ว่าเกมเริ่มหรือยัง ถ้ายังไม่เริ่มค่อยกลับหน้าห้องรอ
+        // 📌 เช็กว่าเกมเริ่มหรือยัง ถ้ายังไม่เริ่มให้กลับหน้าห้องรอ
         if (!data || !data.isStarted) {
             const roleDisplay = document.getElementById('role-display');
             if (roleDisplay) roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
@@ -857,6 +856,24 @@
             
             return; 
         }
+
+        // 🛠️ ถ้าเกมเริ่มอยู่แล้ว (รวมถึงหลังกด F5 ตอนตาใหม่) ให้สั่งแสดงกล่องลำดับการตั้งคำถาม
+        const orderSection = document.getElementById('order-section');
+        const orderOl = document.getElementById('order-ol');
+        if (orderSection && orderOl && data.playOrder) {
+            orderSection.style.display = 'block';
+            orderOl.innerHTML = data.playOrder.map((p, index) => {
+                const playerName = typeof p === 'string' ? p : (p.name || '');
+                if (index === 0) {
+                    return `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>`;
+                }
+                return `<li>${playerName}</li>`;
+            }).join('');
+        }
+
+        // เปิดกล่องโหวตหรือสถานะอื่นๆ ตามความเหมาะสม
+        const voteSection = document.getElementById('vote-section');
+        if (voteSection) voteSection.style.display = 'block';
     });
 
     function submitSpyGuess(event) {
