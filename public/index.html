@@ -877,12 +877,12 @@
                     </div>
                 `;
             } else if (data.isSpyGuessing && !isServerSpy && !isLocalSpy) {
-                // ⚽ 👤 กรณีเป็นคนธรรมดา (ไม่ใช่สปาย) ในช่วงที่กำลังรอ SPY ทายชื่อ
+                // ⚽ 👤 กรณีเป็นคนธรรมดา (ไม่ใช่สปาย) ในช่วงที่กำลังรอ SPY ทายชื่อ (ปรับสีเขียวและช่องว่างให้ตรงกับรูปที่ 1)
                 display.innerHTML = `
                     <div style="text-align: center; padding: 5px 0;">
                         <span class='player' style="display: block; padding: 15px; border-radius: 8px;">
-                            🎯 <strong style="color: #4df3ff; font-size: 15px;">ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</strong><br>
-                            <span style="font-size: 12px; color: #ccf9ff; margin-top: 5px; display: inline-block;">กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>
+                            🎯 <strong style="color: #2ed573; font-size: 15px;">ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</strong><br>
+                            <span style="font-size: 12px; color: #dcdde1; margin-top: 5px; display: inline-block;">กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>
                         </span>
                     </div>
                 `;
