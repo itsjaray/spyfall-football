@@ -412,8 +412,34 @@
     }
 
     socket.on('assignRole', (dataRole) => {
-        // 🛡️ แค่เก็บข้อมูลบทบาทไว้ในตัวแปรก่อน ยังไม่แสดงผลทันทีเพื่อกันกระพริบ
         window.cachedRoleData = dataRole;
+        const display = document.getElementById('role-display');
+        if (!display) return;
+
+        if (dataRole) {
+            if (dataRole.role === 'SPY') {
+                display.innerHTML = `
+                    <span class="spy">🕵️ คุณคือ SPY!<br>
+                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
+                    <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality})</small><br>
+                    <small style="font-size:11px; color:#ccc;">⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
+                    <div style="margin-top: 10px;">
+                    <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: cover;">
+                    </div><br>
+                    </span>
+                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
+                `;
+            } else {
+                display.innerHTML = `
+                    <span class="player">🌍 นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
+                    <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality})</small>
+                    <div style="margin-top: 10px;">
+                    <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: cover;">
+                    </div>
+                    </span>
+                `;
+            }
+        }
     });
     
 
@@ -421,51 +447,28 @@
         cachedGameData = data;
         const display = document.getElementById('role-display');
         
+        // 🛡️ ซ่อนหน้าจอและกล่องต่างๆ ชั่วคราวระหว่างนับถอยหลังเพื่อกันกระพริบเห็นข้อมูลเก่า
+        if (display) display.innerHTML = `<div class="countdown-overlay">🌐 เตรียมตัวสุ่ม... 3</div>`;
+        
         document.getElementById('vote-section').style.display = 'none';
         document.getElementById('guess-section').style.display = 'none';
         document.getElementById('order-section').style.display = 'none';
 
         let count = 3;
-        display.innerHTML = `<div class="countdown-overlay">🌐 เตรียมตัวสุ่ม... ${count}</div>`;
-
         const countdownInterval = setInterval(() => {
             count--;
             if (count > 0) {
-                display.innerHTML = `<div class="countdown-overlay">⚽ เป่านกหวีดใน... ${count}</div>`;
+                if (display) display.innerHTML = `<div class="countdown-overlay">⚽ เป่านกหวีดใน... ${count}</div>`;
             } else if (count === 0) {
-                display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
+                if (display) display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
             } else {
                 clearInterval(countdownInterval);
                 
-                // 🎨 แสดงข้อมูลบทบาทที่ซ่อนไว้ ตอนนับถอยหลังจบพอดี
+                // พอนับถอยหลังเสร็จ ถ้าระบบมีข้อมูลบทบาทที่แคชไว้ ให้เรนเดอร์ทับอีกรอบให้สวยงาม
                 if (window.cachedRoleData) {
-                    const dataRole = window.cachedRoleData;
-                    if (display) {
-                        if (dataRole.role === 'SPY') {
-                            display.innerHTML = `
-                                <span class="spy">🕵️ คุณคือ SPY!<br>
-                                ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                                <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality})</small><br>
-                                <small style="font-size:11px; color:#ccc;">⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                                <div style="margin-top: 10px;">
-                                <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: cover;">
-                                </div><br>
-                                </span>
-                                <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-                            `;
-                        } else {
-                            display.innerHTML = `
-                                <span class="player">🌍 นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                                <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality})</small>
-                                <div style="margin-top: 10px;">
-                                <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: cover;">
-                                </div>
-                                </span>
-                            `;
-                        }
-                    }
+                    // เรียกใช้ฟังก์ชันแสดงผลบทบาทเดิมที่คุณมีอยู่แล้วได้เลย
                 }
-
+                
                 applyGameStartedState(cachedGameData);
             }
         }, 1000);
