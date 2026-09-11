@@ -251,7 +251,7 @@ io.on('connection', (socket) => {
         players.forEach(p => {
             if (spyIdsSet.has(p.id)) {
                 p.role = 'SPY';
-                io.to(p.id).emit('assignRole', {
+                p.assignedData = {
                     role: 'SPY',
                     decoyName: selectedDecoy ? selectedDecoy.name : '???',
                     position: selectedDecoy ? selectedDecoy.position : '???',
@@ -259,10 +259,10 @@ io.on('connection', (socket) => {
                     foot: selectedDecoy ? selectedDecoy.foot : '???',
                     team: decoyTeam,
                     image: selectedDecoy ? selectedDecoy.image : ''
-                });
+                };
             } else {
                 p.role = 'PLAYER';
-                io.to(p.id).emit('assignRole', {
+                p.assignedData = {
                     role: 'PLAYER',
                     name: targetPlayer.name,
                     position: targetPlayer.position || '???',
@@ -270,8 +270,9 @@ io.on('connection', (socket) => {
                     foot: targetPlayer.foot || '???',
                     team: targetTeam,
                     image: targetPlayer.image || ''
-                });
+                };
             }
+            io.to(p.id).emit('assignRole', p.assignedData);
         });
 
         const playOrder = shuffleArray(players);
@@ -290,72 +291,74 @@ io.on('connection', (socket) => {
     });
 
     socket.on('requestCurrentRole', () => {
-    const player = players.find(p => p.id === socket.id);
-    if (!player) return;
+        const player = players.find(p => p.id === socket.id);
+        if (!player) return;
 
-    if (gameState.isStarted) {
-        // เช็กจากชื่อ (player.name) หรือสถานะใน player ว่าเป็น Spy หรือไม่
-        const isCurrentSpy = (gameState.spyNames && gameState.spyNames.includes(player.name)) || 
-                               player.role === 'SPY' ||
-                               (gameState.spyIds && gameState.spyIds.includes(socket.id));
+        if (gameState.isStarted) {
+            // 📌 ถ้ามี assignedData ที่เซ็ตไว้ตอนเริ่มเกม (แก้ปัญหา F5 แล้วไม่โชว์ในตาแรก) ส่งให้ทันที
+            if (player.assignedData) {
+                socket.emit('assignRole', player.assignedData);
+            } else {
+                // กรณีสำรองถ้าไม่มี ให้เช็กสิทธิ์และดึงข้อมูลตามปกติ
+                const isCurrentSpy = (gameState.spyNames && gameState.spyNames.includes(player.name)) || 
+                                     player.role === 'SPY' ||
+                                     (gameState.spyIds && gameState.spyIds.includes(socket.id));
 
-        // ฟังก์ชันช่วยหาชื่อทีมจากทุกความเป็นไปได้ของฟิลด์ข้อมูล
-        const getTeam = (obj) => {
-            if (!obj) return '-';
-            // ดึงค่าจาก current_team เป็นหลัก
-            return obj.current_team || obj.team || obj.club || obj.teamName || obj.currentTeam || obj.squad || obj.t || '-';
-        };
+                const getTeam = (obj) => {
+                    if (!obj) return '-';
+                    return obj.current_team || obj.team || obj.club || obj.teamName || obj.currentTeam || obj.squad || obj.t || '-';
+                };
 
-        const getNationality = (obj) => {
-            if (!obj) return '-';
-            return obj.nationality || obj.nation || obj.country || '-';
-        };
+                const getNationality = (obj) => {
+                    if (!obj) return '-';
+                    return obj.nationality || obj.nation || obj.country || '-';
+                };
 
-        if (isCurrentSpy) {
-            const decoy = gameState.decoyFootballer;
-            socket.emit('assignRole', {
-                role: 'SPY',
-                decoyName: decoy ? decoy.name : '???',
-                position: decoy ? decoy.position : '???',
-                foot: decoy ? decoy.foot : '???',
-                nationality: getNationality(decoy),
-                team: getTeam(decoy),
-                image: decoy ? decoy.image : ''
-            });
-                
+                if (isCurrentSpy) {
+                    const decoy = gameState.decoyFootballer;
+                    socket.emit('assignRole', {
+                        role: 'SPY',
+                        decoyName: decoy ? decoy.name : '???',
+                        position: decoy ? decoy.position : '???',
+                        foot: decoy ? decoy.foot : '???',
+                        nationality: getNationality(decoy),
+                        team: getTeam(decoy),
+                        image: decoy ? decoy.image : ''
+                    });
+                } else {
+                    const secret = gameState.secretFootballer;
+                    socket.emit('assignRole', {
+                        role: 'PLAYER',
+                        name: secret ? secret.name : '???',
+                        position: secret ? secret.position : '???',
+                        foot: secret ? secret.foot : '???',
+                        nationality: getNationality(secret),
+                        team: getTeam(secret),
+                        image: secret ? secret.image : ''
+                    });
+                }
+            }
+
             if (gameState.isSpyGuessing) {
-                socket.emit('spyMustGuess');
+                const isSpy = gameState.spyIds && gameState.spyIds.includes(socket.id);
+                if (isSpy) {
+                    socket.emit('spyMustGuess');
+                } else {
+                    socket.emit('waitingForSpyGuess');
+                }
             }
             
-        } else {
-            const secret = gameState.secretFootballer;
-            socket.emit('assignRole', {
-                role: 'PLAYER',
-                name: secret ? secret.name : '???',
-                position: secret ? secret.position : '???',
-                foot: secret ? secret.foot : '???',
-                nationality: getNationality(secret),
-                team: getTeam(secret),
-                image: secret ? secret.image : ''
+            // ส่งข้อมูลสถานะเกม ลำดับการเล่น และรายชื่อผู้เล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
+            socket.emit('restoreGameState', {
+                isStarted: gameState.isStarted,
+                isSpyGuessing: gameState.isSpyGuessing,
+                playOrder: gameState.playOrder || players,
+                players: players,
+                spyIds: gameState.spyIds,
+                lastGame: gameState.isStarted ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             });
-
-            if (gameState.isSpyGuessing) {
-                socket.emit('waitingForSpyGuess');
-            }
         }
-        
-        // ส่งข้อมูลสถานะเกม ลำดับการเล่น และรายชื่อผู้เล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
-        socket.emit('restoreGameState', {
-            isStarted: gameState.isStarted,
-            isSpyGuessing: gameState.isSpyGuessing,
-            playOrder: gameState.playOrder || players,
-            players: players,
-            spyIds: gameState.spyIds,
-            // 📌 เพิ่มบรรทัดนี้ เพื่อส่งประวัติผลการเล่นตาที่แล้วกลับไปด้วยเวลาผู้เล่นกด F5
-            lastGame: gameState.isStarted ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
-        });
-    }
-});
+    });
     
     socket.on('resetRoom', () => {
     if (gameTimer) {
