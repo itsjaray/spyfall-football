@@ -536,7 +536,25 @@ io.on('connection', (socket) => {
         }
 
         if (isCorrect) {
-            if (spyPlayer) spyPlayer.score += 2;
+            // 🛠️ แก้ไขตรงนี้: วนลูปบวกคะแนน +2 เฉพาะคนที่เป็น Spy เท่านั้น (ป้องกันหาตัวไม่เจอ)
+            players.forEach(p => {
+                const isThisPlayerSpy = (
+                    p.role === 'SPY' || 
+                    (gameState.spyIds && gameState.spyIds.includes(p.id)) ||
+                    (gameState.spyNames && gameState.spyNames.includes(p.name))
+                );
+
+                if (isThisPlayerSpy) {
+                    p.score = (p.score || 0) + 2; // บวก 2 คะแนนให้ Spy ที่ตอบถูก
+                }
+            });
+
+            // ดึงชื่อ Spy มาแสดงผล
+            const spyPlayer = players.find(p => {
+                return p.role === 'SPY' || 
+                       (gameState.spyIds && gameState.spyIds.includes(p.id)) ||
+                       (gameState.spyNames && gameState.spyNames.includes(p.name));
+            });
             
             const savedPlayOrder = gameState.playOrder;
 
