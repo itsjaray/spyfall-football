@@ -843,16 +843,10 @@
     });
     
    socket.on('restoreGameState', (data) => {
-        // 🛑 เคลียร์กล่องปุ่มโหวตทิ้งทันทีตั้งแต่เริ่มต้นรับข้อมูล เพื่อป้องกันปุ่มค้างซ้อนกันตอน F5
         const voteBtnsContainer = document.getElementById('vote-buttons');
-        if (voteBtnsContainer) {
-            voteBtnsContainer.innerHTML = ''; 
-        }
-
-        // 📌 1. ถ้าหมดเวลาโหวต หรือ ผู้เล่นเคยโหวตไปแล้ว
-        if ((data && data.isTimeUpVoting) || (data && data.hasVoted) || hasVoted) {
-            if (data && data.hasVoted) hasVoted = true;
-            
+        
+        // 📌 1. ถ้าหมดเวลาโหวต
+        if (data && data.isTimeUpVoting) {
             const roleDisplay = document.getElementById('role-display');
             if (roleDisplay) {
                 roleDisplay.innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
@@ -864,15 +858,25 @@
             const voteSection = document.getElementById('vote-section');
             if (voteSection) voteSection.style.display = 'block';
 
-            // แสดงข้อความยืนยันการโหวตแบบเดี่ยวๆ ไปเลย
+            // เช็กสถานะโหวตจาก Server (data.hasVoted) เท่านั้น
             if (voteBtnsContainer) {
-                voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                if (data.hasVoted) {
+                    hasVoted = true;
+                    voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                } else {
+                    hasVoted = false;
+                    // ถ้ายังไม่ได้โหวต ให้แสดงปุ่มรายชื่อปกติ
+                    voteBtnsContainer.innerHTML = currentPlayers
+                        .filter(p => p.id !== socket.id)
+                        .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
+                        .join('');
+                }
             }
             
             const orderSection = document.getElementById('order-section');
             if (orderSection) orderSection.style.display = 'none';
             
-            return; // ตัดจบ ไม่ให้รันโค้ดสร้างปุ่มรายชื่อด้านล่างทับอีก
+            return; 
         }
        
         // 📌 ถ้าเกมยังไม่เริ่ม
