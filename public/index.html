@@ -844,18 +844,25 @@
     
    socket.on('restoreGameState', (data) => {
 
-        // 📌 1. วางเช็กสถานะหมดเวลาโหวตไว้ตรงนี้เป็นอันดับแรกสุดเลยครับ!
+        // 📌 1. เช็กสถานะหมดเวลาโหวตเป็นอันดับแรกสุดเด็ดขาด!
         if (data && data.isTimeUpVoting) {
-            document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+            // เคลียร์ข้อมูลรูปนักเตะหรือบทบาทเดิมทิ้งทันทีเพื่อไม่ให้กระพริบโผล่มาแวบหนึ่ง
+            const roleDisplay = document.getElementById('role-display');
+            if (roleDisplay) {
+                roleDisplay.innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+            }
             
-            // ซ่อนหรือแสดงส่วนที่จำเป็นสำหรับการโหวต
+            // จัดการซ่อน/แสดงส่วนที่เกี่ยวข้องกับการโหวตทันที
             const guessSection = document.getElementById('guess-section');
             if (guessSection) guessSection.style.display = 'none';
             
             const voteSection = document.getElementById('vote-section');
             if (voteSection) voteSection.style.display = 'block';
+
+            const orderSection = document.getElementById('order-section');
+            if (orderSection) orderSection.style.display = 'none';
             
-            return; // ตัดจบ ไม่ให้รันโค้ดวาดหน้าจอปกติทับ
+            return; // ตัดจบการทำงานทันที ไม่ให้โค้ดวาดรูปนักเตะด้านล่างทำงานเด็ดขาด!
         }
        
         // 📌 ถ้าเกมยังไม่เริ่ม
