@@ -328,17 +328,11 @@
         }
     }
 
-    function sendVote(targetId, targetName) {
+    function sendVote(targetId) {
         if (hasVoted) return;
         hasVoted = true;
-        
-        // 🟢 บันทึกชื่อเก็บไว้ในเบราว์เซอร์กันเหนียวสำหรับ Safari บนมือถือ
-        localStorage.setItem('spyfall_voted_name', targetName);
-        
-        // 🟢 ส่งทั้ง targetId และ targetName ไปให้ Server
-        socket.emit('castVote', { targetId, targetName });
-        
-        document.getElementById('vote-buttons').innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${targetName} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+        socket.emit('castVote', targetId);
+        document.getElementById('vote-buttons').innerHTML = "<p style='color:var(--pl-green);'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
     }
 
     function toggleGuessBox() {
@@ -517,7 +511,7 @@
         voteBtnsContainer.innerHTML = currentPlayers
             .filter(p => p.id !== socket.id) // 🛑 กรองไอดีตัวเองออก ไม่ให้มีปุ่มโหวตตัวเอง
             .map(p => 
-                `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`
+                `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
             ).join('');
 
         const display = document.getElementById('role-display');
@@ -558,9 +552,8 @@
     socket.on('voteSuccess', (data) => {
         const voteButtonsContainer = document.getElementById('vote-buttons');
         if (voteButtonsContainer) {
-            // 🟢 ดึงชื่อจาก Server ถ้าไม่มีให้ดึงจากที่จำไว้ในเครื่อง
-            const votedNameToShow = (data && data.votedName) ? data.votedName : (localStorage.getItem('spyfall_voted_name') || "");
-            voteButtonsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${votedNameToShow} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+            voteButtonsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+        }
     });
 
     socket.on('timerUpdate', (timeRemaining) => {
@@ -877,9 +870,7 @@
             if (voteBtnsContainer) {
                 if (data.hasVoted) {
                     hasVoted = true;
-                    // 🟢 ดึงชื่อจาก Server หรือจาก localStorage สำรองไว้
-                    const votedNameToShow = (data && data.votedName) ? data.votedName : (localStorage.getItem('spyfall_voted_name') || "");
-                    voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${votedNameToShow} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                    voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
                 } else {
                     hasVoted = false;
                     // ถ้ายังไม่ได้โหวต ให้แสดงปุ่มรายชื่อปกติ
@@ -1011,9 +1002,7 @@
                 if (voteBtnsContainer && currentPlayers.length > 0) {
                     if (data.hasVoted || hasVoted) {
                         hasVoted = true;
-                        // 🟢 ดึงชื่อจาก Server หรือจาก localStorage สำรองไว้
-                        const votedNameToShow = (data && data.votedName) ? data.votedName : (localStorage.getItem('spyfall_voted_name') || "");
-                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${votedNameToShow} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
                     } else {
                         voteBtnsContainer.innerHTML = currentPlayers
                             .filter(p => p.id !== socket.id)
