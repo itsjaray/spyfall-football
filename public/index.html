@@ -328,11 +328,17 @@
         }
     }
 
-    function sendVote(targetId) {
+    function sendVote(targetId, targetName) {
         if (hasVoted) return;
         hasVoted = true;
-        socket.emit('castVote', targetId);
-        document.getElementById('vote-buttons').innerHTML = "<p style='color:var(--pl-green);'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
+        
+        // 🟢 บันทึกชื่อเก็บไว้ในเบราว์เซอร์กันเหนียวสำหรับ Safari บนมือถือ
+        localStorage.setItem('spyfall_voted_name', targetName);
+        
+        // 🟢 ส่งทั้ง targetId และ targetName ไปให้ Server
+        socket.emit('castVote', { targetId, targetName });
+        
+        document.getElementById('vote-buttons').innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${targetName} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
     }
 
     function toggleGuessBox() {
@@ -511,7 +517,7 @@
         voteBtnsContainer.innerHTML = currentPlayers
             .filter(p => p.id !== socket.id) // 🛑 กรองไอดีตัวเองออก ไม่ให้มีปุ่มโหวตตัวเอง
             .map(p => 
-                `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
+                `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`
             ).join('');
 
         const display = document.getElementById('role-display');
