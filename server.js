@@ -447,19 +447,27 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('hideTyping');
     });
 
-    socket.on('castVote', (targetId) => {
+    socket.on('castVote', (data) => {
+        // 🟢 รองรับทั้งส่งมาแบบ Object { targetId, targetName } หรือส่งมาเดี่ยวๆ
+        let targetId = typeof data === 'object' ? data.targetId : data;
+        let targetName = typeof data === 'object' ? data.targetName : null;
+
         if (!gameState.isStarted || gameState.votedPlayers.has(socket.id) || targetId === socket.id) return;
 
         gameState.votedPlayers.add(socket.id);
         gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
 
-        // 📌 บันทึกว่า socket.id นี้โหวตให้ใคร (เก็บชื่อไว้แสดงผล)
-        const targetPlayer = players.find(p => p.id === targetId);
+        // 📌 ถ้าไม่ได้ส่งชื่อมา ให้หาจาก array players หรือใช้ค่าสำรอง
+        if (!targetName) {
+            const targetPlayer = players.find(p => p.id === targetId);
+            targetName = targetPlayer ? targetPlayer.name : 'ผู้เล่น';
+        }
+
         if (!gameState.userVotedNames) gameState.userVotedNames = {};
-        gameState.userVotedNames[socket.id] = targetPlayer ? targetPlayer.name : 'ใครบางคน';
+        gameState.userVotedNames[socket.id] = targetName;
 
         // ส่งข้อมูลอัปเดตการโหวต พร้อมชื่อคนที่ตัวเองโหวตกลับไปหา Client คนนั้นๆ
-        socket.emit('voteSuccess', { votedName: gameState.userVotedNames[socket.id] });
+        socket.emit('voteSuccess', { votedName: targetName });
 
         io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
