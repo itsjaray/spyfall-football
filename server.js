@@ -58,7 +58,7 @@ let gameState = {
 let lastGameResult = null; // เก็บข้อมูลผลลัพธ์เกมรอบล่าสุดไว้
 
 let gameTimer = null;
-let timeRemaining = 10;
+let timeRemaining = 180;
 
 function shuffleArray(array) {
     const arr = [...array];
@@ -105,7 +105,7 @@ function isFlexibleMatch(input, target) {
 
 function startTimer() {
     if (gameTimer) clearInterval(gameTimer);
-    timeRemaining = 10;
+    timeRemaining = 180;
     io.emit('timerUpdate', timeRemaining);
 
     gameTimer = setInterval(() => {
