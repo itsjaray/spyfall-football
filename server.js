@@ -46,6 +46,7 @@ let players = [];
 let gameState = {
     isStarted: false,
     isSpyGuessing: false,
+    isTimeUpVoting: false, // 📌 เพิ่มตัวแปรนี้
     secretFootballer: null,
     decoyFootballer: null,
     spyIds: [],
@@ -113,6 +114,9 @@ function startTimer() {
 
         if (timeRemaining <= 0) {
             clearInterval(gameTimer);
+            
+            // 📌 ตั้งค่าสถานะว่าหมดเวลาและกำลังอยู่ในช่วงเร่งโหวต
+            gameState.isTimeUpVoting = true;
             io.emit('timeUp');
         }
     }, 1000);
@@ -391,6 +395,7 @@ io.on('connection', (socket) => {
     // 📌 เพิ่มบรรทัดเหล่านี้เพื่อเคลียร์สถานะเกมฝั่ง Server ให้กลับเป็นค่าเริ่มต้น
     gameState.isStarted = false;
     gameState.isSpyGuessing = false;
+    gameState.isTimeUpVoting = false; // 📌 ล้างสถานะตรงนี้ด้วย
     gameState.spyIds = [];
     
     lastGameResult = null;
@@ -453,6 +458,7 @@ io.on('connection', (socket) => {
 
         if (gameState.votedPlayers.size === players.length) {
             if (gameTimer) clearInterval(gameTimer);
+            gameState.isTimeUpVoting = false; // 📌 ล้างสถานะหมดเวลา
             let maxVotes = -1;
             let suspectedId = null;
 
@@ -646,6 +652,11 @@ io.on('connection', (socket) => {
         if (gameState.isStarted) {
             const hasAlreadyVoted = gameState.votedPlayers && gameState.votedPlayers.has(socket.id);
             const votedName = (gameState.userVotedNames && gameState.userVotedNames[socket.id]) || '';
+
+            // 📌 ถ้ากำลังอยู่ในช่วงหมดเวลาแล้วให้รีบโหวต ให้ส่งสัญญาณ 'timeUp' กลับไปบอก Client ด้วย
+            if (gameState.isTimeUpVoting) {
+                socket.emit('timeUp');
+            }
 
             // 📌 ถ้าอยู่ในช่วง Spy กำลังทายคำ ให้ส่งสัญญาณบอกหน้าจอเฉพาะของคนที่เป็น Spy และคนธรรมดาด้วย
             if (gameState.isSpyGuessing) {
