@@ -1,1111 +1,705 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spyfall - นักเตะปริศนา Online</title>
-    <!-- นำเข้าฟอนต์ Prompt -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="/socket.io/socket.io.js"></script>
-    <style>
-        :root {
-            --pl-purple: #37003c;
-            --pl-purple-dark: #200024;
-            --pl-pink: #ff2882;
-            --pl-green: #00ff87;
-            --pl-cyan: #00e5ff;
-            --pl-yellow: #e7ff00;
-            --card-bg: rgba(55, 0, 60, 0.65);
-            --border-color: rgba(255, 255, 255, 0.12);
-        }
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const fs = require('fs');
+const path = require('path');
 
-        body { 
-            font-family: 'Prompt', sans-serif; 
-            background: linear-gradient(135deg, var(--pl-purple-dark) 0%, var(--pl-purple) 100%); 
-            color: #ffffff; 
-            text-align: center; 
-            padding: 15px; 
-            margin: 0; 
-            min-height: 100vh;
-        }
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-        .container { 
-            max-width: 480px; 
-            margin: 10px auto; 
-            background: var(--card-bg); 
-            backdrop-filter: blur(16px);
-            padding: 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
-            border: 1px solid var(--border-color);
-        }
+let userVotes = {};
 
-        h1 { 
-            background: linear-gradient(90deg, var(--pl-pink), var(--pl-green));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-top: 0; 
-            font-size: 24px; 
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        h1 b {
-            -webkit-text-fill-color: #ffffff;
-            font-size: 11px;
-            display: block;
-            margin-top: 3px;
-            font-weight: 400;
-            letter-spacing: 3px;
-            opacity: 0.7;
-        }
+let previousRoundSecret = null;
+let previousRoundDecoy = null;
+let roundCount = 0;
 
-        .timer-box { 
-            font-size: 32px; 
-            font-weight: 700; 
-            color: var(--pl-yellow); 
-            background: rgba(0, 0, 0, 0.3); 
-            padding: 10px; 
-            border-radius: 12px; 
-            margin: 15px 0; 
-            border: 1px solid rgba(231, 255, 0, 0.3);
-            letter-spacing: 2px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
-        }
+let lastGameSummary = {
+    secret: null,
+    secretPos: null,
+    decoy: null,
+    decoyPos: null
+};
 
-        .role-box { 
-            background: rgba(20, 0, 25, 0.7); 
-            padding: 18px; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            margin: 15px 0; 
-            min-height: 70px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            border-left: 4px solid var(--pl-pink);
-            border-top: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .spy { color: var(--pl-pink); text-shadow: 0 0 10px rgba(255,40,130,0.4); }
-        .player { color: var(--pl-cyan); text-shadow: 0 0 10px rgba(0,229,255,0.4); }
+app.use(express.static('public'));
 
-        .input-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
-        
-        input[type="text"] { 
-            flex: 1; 
-            padding: 11px 14px; 
-            border-radius: 8px; 
-            border: 1px solid var(--border-color); 
-            background: rgba(10, 0, 15, 0.6);
-            color: #fff;
-            font-size: 14px; 
-            font-family: 'Prompt', sans-serif;
-            outline: none;
-            transition: 0.2s;
-        }
-        input[type="text"]:focus { border-color: var(--pl-green); box-shadow: 0 0 8px rgba(0, 255, 135, 0.3); }
-
-        button { 
-            background: var(--pl-pink); 
-            color: white; 
-            border: none; 
-            padding: 10px 16px; 
-            font-size: 14px; 
-            font-weight: 600; 
-            font-family: 'Prompt', sans-serif;
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            box-shadow: 0 4px 10px rgba(255, 40, 130, 0.3);
-        }
-        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-        .btn-start { 
-            width: 100%; 
-            font-size: 16px; 
-            padding: 13px; 
-            margin-top: 10px; 
-            background: var(--pl-green); 
-            color: var(--pl-purple-dark);
-            font-weight: 700;
-            box-shadow: 0 4px 15px rgba(0, 255, 135, 0.3);
-        }
-        .btn-start:hover { background: #1aff94; }
-        
-        .order-section { margin-top: 15px; background: rgba(20, 0, 25, 0.6); padding: 14px; border-radius: 12px; border-left: 4px solid var(--pl-green); display: none; text-align: left; }
-        .order-list { text-align: left; margin-top: 6px; padding-left: 20px; margin-bottom: 0; }
-        .order-list li { margin: 3px 0; color: #cbd5e1; font-size: 13px; }
-        .order-first { color: var(--pl-green) !important; font-weight: bold; }
-
-        .vote-section, .guess-section { margin-top: 15px; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; display: none; border: 1px solid var(--border-color); }
-        .vote-btn { width: 100%; margin: 4px 0; background: rgba(40, 0, 50, 0.8); border: 1px solid var(--border-color); color: #fff; text-align: left; padding: 10px 14px; border-radius: 8px; }
-        .vote-btn:hover { background: var(--pl-cyan); color: var(--pl-purple-dark); font-weight: bold; border-color: var(--pl-cyan); }
-        
-        .btn-toggle-guess { background: var(--pl-yellow); color: var(--pl-purple-dark); font-weight: bold; font-size: 13px; padding: 8px 12px; margin-top: 10px; border-radius: 8px; }
-        .btn-toggle-guess:hover { filter: brightness(1.05); }
-
-        .chat-section { text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; margin-top: 15px; border: 1px solid var(--border-color); }
-        .chat-box { height: 130px; overflow-y: auto; background: rgba(10, 0, 15, 0.7); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
-        .chat-msg { word-break: break-word; }
-        .chat-msg b { color: var(--pl-yellow); }
-
-        .player-list { text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; margin-top: 15px; border: 1px solid var(--border-color); }
-        .player-list table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        .player-list th, .player-list td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 13px; }
-        .player-list th:last-child, .player-list td:last-child { text-align: right; }
-        .score-badge { background: var(--pl-yellow); color: var(--pl-purple-dark); padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px; }
-        
-        .btn-kick { background: rgba(255, 40, 130, 0.15); color: var(--pl-pink); border: 1px solid rgba(255, 40, 130, 0.4); padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer; margin-left: 6px; transition: 0.2s; }
-        .btn-kick:hover { background: var(--pl-pink); color: white; }
-
-        .btn-reset-score { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 6px; font-size: 11px; margin-top: 10px; width: 100%; border-radius: 8px; }
-        .btn-reset-score:hover { background: rgba(255,255,255,0.08); color: white; }
-
-        .countdown-overlay {
-            font-size: 48px;
-            font-weight: 700;
-            color: var(--pl-yellow);
-            animation: pulseCount 0.8s infinite alternate;
-        }
-        @keyframes pulseCount {
-            from { transform: scale(1); text-shadow: 0 0 10px rgba(231,255,0,0.4); }
-            to { transform: scale(1.1); text-shadow: 0 0 20px rgba(231,255,0,0.8); }
-        }
-
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <button onclick="resetGameRoom()" title="รีเซ็ตเกมกลับหน้าหลัก" style="position: absolute; left: 15px; top: 15px; background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; z-index: 99;">🏠</button>
-    <h1>SPYFALL FOOTBALL <br><b>MADE BY JARAY</b></h1>
-    
-    <form id="name-form" onsubmit="handleNameSubmit(event)">
-        <div class="input-group">
-            <input type="text" id="username" placeholder="พิมพ์ชื่อผู้เล่นของคุณ..." required />
-            <button type="submit">บันทึก</button>
-        </div>
-    </form>
-
-    <div class="timer-box" id="timer-display">⏱️ 03:00</div>
-
-    <div class="role-box" id="role-display">
-        กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)
-    </div>
-
-    <div class="order-section" id="order-section">
-        <strong style="color: var(--pl-green);">🎲 ลำดับการตั้งคำถามรอบนี้:</strong>
-        <ol class="order-list" id="order-ol"></ol>
-    </div>
-
-    <div class="guess-section" id="guess-section">
-        <h3 style="color:var(--pl-yellow); margin-top:0; font-size:15px;">🕵️ ทายชื่อนักเตะปริศนาจริง</h3>
-        <p style="font-size:13px; color:#cbd5e1;">พิมพ์ชื่อนักเตะของฝั่งคนธรรมดาเพื่อพลิกกลับมาชนะ:</p>
-        <form id="spy-guess-form" onsubmit="handleFormGuess(event)">
-        <div class="input-group">
-            <input type="text" id="spy-guess-input" placeholder="พิมพ์ชื่อนักเตะจริง..." required />
-            <button type="submit" id="submit-guess-btn">ส่งคำตอบ</button>
-        </div>
-    </form>
-    </div>
-
-    <div class="vote-section" id="vote-section">
-        <h3 style="font-size:15px;">🗳️ โหวตชี้ตัว SPY (<span id="vote-count">0</span>/<span id="total-voters">0</span>)</h3>
-        <div id="vote-buttons"></div>
-    </div>
-
-    <!-- กล่องแสดงสรุปผลนักเตะตาที่แล้ว -->
-    <div id="lastGameResultBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border-radius: 8px; text-align: left; font-size: 13px; border: 1px solid var(--border-color);">
-        <b>📊 ผลการเล่นตาที่แล้ว:</b>
-        <div id="lastSecretText" style="color: var(--pl-cyan); margin-top: 4px;">- ยังไม่มีประวัติการเล่น -</div>
-        <div id="lastDecoyText" style="color: var(--pl-pink); margin-top: 2px;"></div>
-    </div>
-    
-    <button class="btn-start" onclick="startGame()">▶️ เริ่มเกม / สุ่มรอบใหม่</button>
-
-    <div class="chat-section">
-        <strong>💬 ช่องแชตสด:</strong>
-        <div id="typingIndicator" style="font-size: 11px; color: #94a3b8; font-style: italic; height: 16px; margin-bottom: 2px;"></div>
-        <div class="chat-box" id="chat-box"></div>
-        <form onsubmit="handleChatSubmit(event)">
-            <div class="input-group" style="margin-bottom:0;">
-                <input type="text" id="chat-input" placeholder="พิมพ์ข้อความ..." required />
-                <button type="submit">ส่ง</button>
-            </div>
-        </form>
-    </div>
-    
-    <div class="player-list">
-        <strong>🏆 ตารางคะแนน (<span id="count">0</span> คน):</strong>
-        <table>
-            <thead>
-                <tr>
-                    <th>ผู้เล่น</th>
-                    <th>คะแนน</th>
-                </tr>
-            </thead>
-            <tbody id="players-tbody"></tbody>
-        </table>
-        <button class="btn-reset-score" onclick="resetScores()">🔄 รีเซ็ตคะแนนทั้งหมด</button>
-    </div>
-
-    <!-- ปุ่มสำหรับกดดูผลเกมตาที่แล้ว -->
-    <button id="btnLastGame" onclick="requestLastGameResult()" style="display:none;">ดูผลการเล่นตาที่แล้ว</button>
-</div>
-
-<script>
-    const savedName = localStorage.getItem('spyfall_player_name') || '';
-    
-    window.addEventListener('DOMContentLoaded', () => {
-        const nameInput = document.getElementById('username');
-        if (nameInput && savedName) {
-            nameInput.value = savedName;
-        }
-    });
-
-    const socket = io({
-        query: { name: savedName }
-    });
-    
-    let currentPlayers = [];
-    let hasVoted = false;
-    let cachedGameData = null; 
-
-    function handleNameSubmit(e) {
-    e.preventDefault();
-    const nameInput = document.getElementById('username');
-    if (nameInput) {
-        const name = nameInput.value.trim();
-        if (name !== '') {
-            localStorage.setItem('spyfall_player_name', name); // บันทึกชื่อลงในเครื่อง
-            socket.emit('setName', name);                    // ส่งชื่อไปบอกเซิร์ฟเวอร์
-            alert('ตั้งชื่อเรียบร้อยแล้ว!');
-        }
-    }
+let footballers = [];
+try {
+    const rawData = fs.readFileSync(path.join(__dirname, 'players.json'), 'utf8');
+    footballers = JSON.parse(rawData);
+    console.log(`โหลดรายชื่อนักเตะสำเร็จทั้งหมด: ${footballers.length} คน`);
+} catch (error) {
+    console.error("ไม่สามารถโหลดไฟล์ players.json ได้:", error);
+    footballers = [
+        { name: "Lionel Messi", position: "RW/AM", nationality: "Argentina", foot: "Left", current_team: "Inter Miami", image: "" },
+        { name: "Mohamed Salah", position: "RW", nationality: "Egypt", foot: "Left", current_team: "Liverpool", image: "" }
+    ];
 }
 
-    function handleChatSubmit(e) {
-        e.preventDefault();
-        const input = document.getElementById('chat-input');
-        if (input.value.trim() !== '') {
-            socket.emit('sendChatMessage', input.value.trim());
-            socket.emit('stopTyping'); // 👈 สั่งเคลียร์สถานะกำลังพิมพ์ทันทีที่กดส่ง
-            input.value = '';
+let recentSpies = new Set(); // เก็บรายชื่อ ID ของคนที่เพิ่งเป็น Spy ในตาก่อนหน้า
+
+// เพิ่มตัวแปรเก็บประวัตินักเตะที่เพิ่งออกไป (ใส่ไว้บนสุดของไฟล์หรือแถวที่มีตัวแปร gameState)
+let recentTargets = [];
+let recentDecoys = [];
+
+let players = [];
+let gameState = {
+    isStarted: false,
+    isSpyGuessing: false,
+    isTimeUpVoting: false, // 📌 เพิ่มตัวแปรนี้
+    secretFootballer: null,
+    decoyFootballer: null,
+    spyIds: [],
+    spyNames: [],
+    votes: {},
+    votedPlayers: new Set()
+};
+
+let lastGameResult = null; // เก็บข้อมูลผลลัพธ์เกมรอบล่าสุดไว้
+
+let gameTimer = null;
+let timeRemaining = 180;
+
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function levenshteinDistance(a, b) {
+    const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + cost
+            );
         }
     }
+    return matrix[a.length][b.length];
+}
 
-    function handleGuessSubmit(e) {
-        e.preventDefault();
-        const guessInput = document.getElementById('spy-guess-input');
-        if (guessInput.value.trim() !== '') {
-            socket.emit('spyGuess', guessInput.value.trim());
-            guessInput.value = '';
+function isFlexibleMatch(input, target) {
+    const cleanInput = input.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanTarget = target.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (!cleanInput) return false;
+
+    const targetParts = target.toLowerCase().split(' ').map(p => p.replace(/[^a-z0-9]/g, ''));
+    if (cleanTarget.includes(cleanInput) || targetParts.some(part => part.length >= 3 && cleanInput.includes(part))) {
+        return true;
+    }
+
+    const distance = levenshteinDistance(cleanInput, cleanTarget);
+    const maxAllowedDiff = Math.max(2, Math.floor(cleanTarget.length * 0.35));
+    return distance <= maxAllowedDiff;
+}
+
+function startTimer() {
+    if (gameTimer) clearInterval(gameTimer);
+    timeRemaining = 180;
+    io.emit('timerUpdate', timeRemaining);
+
+    gameTimer = setInterval(() => {
+        timeRemaining--;
+        io.emit('timerUpdate', timeRemaining);
+
+        if (timeRemaining <= 0) {
+            clearInterval(gameTimer);
+            
+            // 📌 ตั้งค่าสถานะว่าหมดเวลาและกำลังอยู่ในช่วงเร่งโหวต
+            gameState.isTimeUpVoting = true;
+            io.emit('timeUp');
         }
-    }
+    }, 1000);
+}
 
-    function startGame() {
-        // 🛑 ซ่อนกล่องโหวตและกล่องทายผลทันทีเมื่อกดเริ่มเกมใหม่
-    document.getElementById('vote-section').style.display = 'none';
-    document.getElementById('guess-section').style.display = 'none';
-        
-    const spyCountInput = document.getElementById('spy-count');
-    const spyCount = spyCountInput ? parseInt(spyCountInput.value) : 1;
-    
-    // ส่งจำนวน Spy ไปกับ Event startGame
-    socket.emit('startGame', { spyCount: spyCount });
-    }
+io.on('connection', (socket) => {
+    const clientName = socket.handshake.query.name;
+    const initialName = (clientName && clientName.trim() !== '') ? clientName.trim() : 'ผู้เล่น';
 
-    function resetScores() {
-        if (confirm('คุณต้องการรีเซ็ตคะแนนผู้เล่นทุกคนเป็น 0 ใช่หรือไม่?')) {
-            socket.emit('resetScores');
-        }
-    }
+    // 📌 เช็กว่ามีผู้เล่นชื่อนี้อยู่ในห้องอยู่แล้วหรือไม่ (ป้องกันกรณี F5 แล้วโดนสร้าง Object ใหม่ทับตัวเก่าทำให้คะแนนหาย)
+    let existingPlayer = players.find(p => p.name === initialName && initialName !== 'ผู้เล่น');
 
-    function sendVote(targetId) {
-        if (hasVoted) return;
-        hasVoted = true;
-        socket.emit('castVote', targetId);
-        document.getElementById('vote-buttons').innerHTML = "<p style='color:var(--pl-green);'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
-    }
+    if (existingPlayer) {
+        const oldSocketId = existingPlayer.id;
+        existingPlayer.id = socket.id;
 
-    function toggleGuessBox() {
-        const guessSection = document.getElementById('guess-section');
-        guessSection.style.display = guessSection.style.display === 'none' || guessSection.style.display === '' ? 'block' : 'none';
-    }
-
-    function kickPlayer(targetId, playerName) {
-        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการเตะ "${playerName}" ออกจากห้อง?`)) {
-            socket.emit('kickPlayer', targetId);
-        }
-    }
-
-    socket.on('newChatMessage', (data) => {
-    const chatBox = document.getElementById('chat-box');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'chat-msg';
-    
-    // เพิ่ม ${data.timestamp} เข้าไปตรงนี้
-    msgDiv.innerHTML = `<b>${data.sender}:</b> ${data.message} <span style="font-size: 0.75rem; color: #888; float: right;">${data.timestamp}</span>`;
-    
-    chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    socket.on('updatePlayers', (players) => {
-        currentPlayers = players;
-        
-        // 1. อัปเดตจำนวนผู้เล่นตรงหัวข้อตารางคะแนน (อันนี้แหละที่ทำให้ (0 คน) หายไป)
-        const countEl = document.getElementById('count');
-        if (countEl) countEl.innerText = players.length;
-
-        // 2. อัปเดต Dropdown เลือกจำนวน Spy
-        updateSpyDropdown(players.length);
-
-        // 3. จัดเรียงคะแนนและใส่เหรียญรางวัล (🥇, 🥈, 🥉)
-        const sortedPlayers = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
-        const tbody = document.getElementById('players-tbody');
-
-        if (tbody) {
-            tbody.innerHTML = sortedPlayers.map((p, index) => {
-                const isSelf = p.id === socket.id;
-                const kickBtn = isSelf ? '' : `<button class="btn-kick" onclick="kickPlayer('${p.id}', '${p.name || 'ผู้เล่น'}')">❌ เตะ</button>`;
-                
-                let medal = '';
-                if (index === 0) medal = ' 🥇';
-                else if (index === 1) medal = ' 🥈';
-                else if (index === 2) medal = ' 🥉';
-
-                return `<tr>
-                    <td>${p.name || 'ผู้เล่น'}${medal} ${kickBtn}</td>
-                    <td><span class="score-badge">${p.score || 0} pt</span></td>
-                </tr>`;
-            }).join('');
-        }
-    });
-
-    function updateSpyDropdown(playersCount) {
-    const select = document.getElementById('spy-count');
-    if (!select) return;
-    
-    const currentValue = select.value;
-    select.innerHTML = '';
-
-    const maxSpies = Math.max(1, playersCount - 2);
-
-    for (let i = 1; i <= maxSpies; i++) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = `${i} คน`;
-        select.appendChild(option);
-    }
-
-    if (currentValue <= maxSpies) {
-        select.value = currentValue;
-    }
-    }
-
-    socket.on('assignRole', (dataRole) => {
-        window.cachedRoleData = dataRole;
-        const display = document.getElementById('role-display');
-        if (!display) return;
-
-        if (dataRole) {
-            if (dataRole.role === 'SPY') {
-                display.innerHTML = `
-                    <span class="spy">🕵️ คุณคือ SPY!<br>
-                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                    <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality} | ทีม: ${data.team}))</small><br>
-                    <small style="font-size:11px; color:#ccc;">⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
-                    </div><br>
-                    </span>
-                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-                `;
-            } else {
-                display.innerHTML = `
-                    <span class="player">🌍 นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                    <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality} | ทีม: ${data.team}))</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
-                    </div>
-                    </span>
-                `;
+        // 📌 ย้ายสถานะการโหวตเดิมตามมาด้วย (ป้องกันการกดโหวตซ้ำหลัง F5)
+        if (gameState && gameState.votedPlayers) {
+            if (gameState.votedPlayers.has(oldSocketId)) {
+                gameState.votedPlayers.delete(oldSocketId);
+                gameState.votedPlayers.add(socket.id);
             }
         }
-    });
-    
-
-    socket.on('gameStarted', (data) => {
-        cachedGameData = data;
-        const display = document.getElementById('role-display');
-        
-        // 🛡️ เคลียร์ค่าเนื้อหาเก่าทิ้งทันที เพื่อกันกระพริบเห็นข้อมูลเดิมเสี้ยววิ
-        if (display) display.innerHTML = '';
-        
-        document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('guess-section').style.display = 'none';
-        document.getElementById('order-section').style.display = 'none';
-
-        let count = 3;
-        if (display) display.innerHTML = `<div class="countdown-overlay">⚽ เตรียมตัวสุ่ม... ${count}</div>`;
-
-        const countdownInterval = setInterval(() => {
-            count--;
-            if (count > 0) {
-                if (display) display.innerHTML = `<div class="countdown-overlay">⚽ เป่านกหวีดใน... ${count}</div>`;
-            } else if (count === 0) {
-                if (display) display.innerHTML = `<div class="countdown-overlay" style="color: var(--pl-green);">🔥 เริ่มเกม!</div>`;
-            } else {
-                clearInterval(countdownInterval);
-                applyGameStartedState(cachedGameData);
-            }
-        }, 1000);
-    });
-
-    function applyGameStartedState(data) {
-        const lastGameBox = document.getElementById('lastGameResultBox');
-    
-        // 🛠️ ปรับแก้ตรงนี้: ลองเช็คจาก data.lastGame หรือถ้าไม่มี ให้ลองดึงค่าสำรองจากตัวแปรกลาง (ถ้ามี)
-        const gameDataToUse = (data && data.lastGame && data.lastGame.secret) ? data.lastGame : window.lastGameCache;
-
-        if (gameDataToUse && gameDataToUse.secret) {
-            if (lastGameBox) lastGameBox.style.display = 'block';
-        
-            const secretEl = document.getElementById('lastSecretText');
-            const decoyEl = document.getElementById('lastDecoyText');
-        
-            if (secretEl) secretEl.innerHTML = `⚽ <b>ตัวจริง:</b> ${gameDataToUse.secret} (${gameDataToUse.secretPos || ''})`;
-            if (decoyEl) decoyEl.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${gameDataToUse.decoy || ''} (${gameDataToUse.decoyPos || ''})`;
-        } else {
-            // ถ้าไม่มีข้อมูลตาที่แล้วจริงๆ ถึงค่อยซ่อน
-            if (lastGameBox) lastGameBox.style.display = 'none';
+        if (gameState && gameState.userVotedNames && gameState.userVotedNames[oldSocketId]) {
+            gameState.userVotedNames[socket.id] = gameState.userVotedNames[oldSocketId];
+            delete gameState.userVotedNames[oldSocketId];
         }
-        
-        hasVoted = false;
-        document.getElementById('vote-section').style.display = 'block';
-        document.getElementById('guess-section').style.display = 'none';
-        document.getElementById('vote-count').innerText = '0';
-        document.getElementById('total-voters').innerText = currentPlayers.length;
-        
-        const orderSection = document.getElementById('order-section');
-        const orderOl = document.getElementById('order-ol');
-        orderSection.style.display = 'block';
-        orderOl.innerHTML = data.playOrder.map((p, index) => {
-            if (index === 0) {
-                return `<li class="order-first">${p.name} 👈 (เริ่มถามคนแรก)</li>`;
-            }
-            return `<li>${p.name}</li>`;
-        }).join('');
-
-        const voteBtnsContainer = document.getElementById('vote-buttons');
-        voteBtnsContainer.innerHTML = currentPlayers
-            .filter(p => p.id !== socket.id) // 🛑 กรองไอดีตัวเองออก ไม่ให้มีปุ่มโหวตตัวเอง
-            .map(p => 
-                `<button class="vote-btn" onclick="sendVote('${p.id}')">🎯 โหวต ${p.name}</button>`
-            ).join('');
-
-        const display = document.getElementById('role-display');
-        const dataRole = window.cachedRoleData;
-        if (dataRole) {
-            if (dataRole.role === 'SPY') {
-                display.innerHTML = `
-                    <span class='spy'>🕵️ คุณคือ SPY!<br>
-                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                    <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality} | ทีม: ${dataRole.team})</small><br>
-                    <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
-                    </div><br>
-                    </span>
-                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-                `;
-            } else {
-                // อัปเดตฝั่งคนธรรมดาให้แสดง ตำแหน่ง และ ถนัดเท้า ด้วย
-                display.innerHTML = `
-                    <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                    <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${dataRole.nationality} | ทีม: ${dataRole.team})</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
-                    </div>
-                    </span>
-                `;
-            }
-        }
+    } else {
+        players = players.filter(p => p.id !== socket.id);
+        players.push({
+            id: socket.id,
+            name: initialName,
+            role: null,
+            score: 0
+        });
     }
 
-    socket.on('voteUpdated', (votedCount, total) => {
-        document.getElementById('vote-count').innerText = votedCount;
-        document.getElementById('total-voters').innerText = total;
+    io.emit('updatePlayers', players);
+
+    socket.on('disconnect', () => {
+        players = players.filter(p => p.id !== socket.id);
+        io.emit('updatePlayers', players);
     });
 
-    // 📌 นำมาวางไว้แถวนี้ได้เลยครับ
-    socket.on('voteSuccess', (data) => {
-        const voteButtonsContainer = document.getElementById('vote-buttons');
-        if (voteButtonsContainer) {
-            voteButtonsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+    socket.on('setName', (name) => {
+        const player = players.find(p => p.id === socket.id);
+        if (player && name) {
+            player.name = name.trim() || 'ผู้เล่น';
+            io.emit('updatePlayers', players);
         }
     });
 
-    socket.on('timerUpdate', (timeRemaining) => {
-    const timerDisplay = document.getElementById('timer-display');
-    if (!timerDisplay) return;
+    socket.on('startGame', (data) => {
+        if (players.length < 3) {
+            socket.emit('errorMsg', 'ไม่สามารถเริ่มเกมได้ ต้องมีผู้เล่นขั้นต่ำ 3 คนขึ้นไป');
+            return;
+        }
 
-    // ถ้า Server ส่งมาเป็น String อยู่แล้ว (เช่น '03:00') ให้แสดงผลทันที
-    if (typeof timeRemaining === 'string') {
-        timerDisplay.innerText = `⏱️ ${timeRemaining}`;
-        return;
-    }
+        gameState.isSpyGuessing = false;
 
-    // ถ้า Server ส่งมาเป็นตัวเลขวินาที ให้แปลงเป็น MM:SS
-    const mins = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
-    const secs = String(timeRemaining % 60).padStart(2, '0');
-    timerDisplay.innerText = `⏱️ ${mins}:${secs}`;
-});
-
-    socket.on('timeUp', () => {
-        document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
-    });
-
-    socket.on('spyMustGuess', () => {
-        document.getElementById('vote-section').style.display = 'none';
-        const guessSection = document.getElementById('guess-section');
-        guessSection.style.display = 'block';
-        
-        document.getElementById('role-display').innerHTML = `
-            <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
-                🎯 แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY
-            </span><br>
-            <span style="color: #ff9999; font-size: 13px;">
-                ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
-            </span>
-        `;
-
-        // สั่งค้นหาช่องพิมพ์ (<input>) และปุ่มกด (<button>) ที่อยู่ข้างใน guess-section อัตโนมัติทันที
-        const guessInput = guessSection.querySelector('input');
-        const submitBtn = guessSection.querySelector('button');
-
-        if (submitBtn && guessInput) {
-            submitBtn.onclick = function() {
-                const guessedName = guessInput.value.trim();
-                if (guessedName) {
-                    socket.emit('spyGuess', guessedName);
-                } else {
-                    alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
-                }
+        // 📌 1. บันทึกข้อมูลของรอบปัจจุบันเก็บไว้เป็น "ประวัติการเล่นตาที่แล้ว" ก่อนเริ่มรอบใหม่ทุกครั้ง
+        if (gameState.secretFootballer && gameState.secretFootballer.name) {
+            previousRoundSecret = gameState.secretFootballer;
+            previousRoundDecoy = gameState.decoyFootballer;
+            lastGameSummary = {
+                secret: previousRoundSecret.name,
+                secretPos: previousRoundSecret.position || "",
+                decoy: previousRoundDecoy ? previousRoundDecoy.name : "",
+                decoyPos: previousRoundDecoy ? previousRoundDecoy.position : "",
+                winner: lastGameResult ? lastGameResult.winner : null,
+                spyName: lastGameResult ? lastGameResult.spyName : null
             };
         }
-    });
 
-    socket.on('waitingForSpyGuess', () => {
-        document.getElementById('vote-section').style.display = 'none';
+        roundCount++;
+        gameState.isStarted = true;
         
-        // เช็คว่าถ้าเราเป็น SPY ให้แสดงข้อความเตือนสีแดง, แต่ถ้าไม่ใช่ให้แสดงข้อความปกติ
-        const isSpy = window.cachedRoleData && window.cachedRoleData.role === 'SPY';
+        gameState.votes = {};
+        gameState.votedPlayers.clear();
+
+        const playerPool = Array.isArray(footballers) ? footballers : [];
+        if (playerPool.length === 0) return;
+
+        // 2. สุ่มนักเตะหลัก (Target) โดยพยายามไม่ให้ซ้ำกับ 3ตาล่าสุด
+        let availableTargets = playerPool.filter(f => f && !recentTargets.includes(f.id));
+        if (availableTargets.length === 0) {
+            recentTargets = []; 
+            availableTargets = playerPool;
+        }
+        const targetPlayer = availableTargets[Math.floor(Math.random() * availableTargets.length)];
+        gameState.secretFootballer = targetPlayer;
+
+        recentTargets.push(targetPlayer.id);
+        if (recentTargets.length > 3) recentTargets.shift();
+
+        // 3. สุ่มเลือก Spy
+        const spyCountInput = data && data.spyCount ? parseInt(data.spyCount) : 1;
+        let availablePlayersForSpy = players.filter(p => !recentSpies.has(p.id));
         
-        if (isSpy) {
-            document.getElementById('role-display').innerHTML = `
-                <span style="color: #ff4d4d; font-weight: bold; font-size: 15px;">
-                    🎯 แย่แล้ว คุณถูกจับได้ว่าเป็น SPY
-                </span><br>
-                <span style="color: #ff9999; font-size: 13px;">
-                    ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ
-                </span>
-            `;
-        } else {
-            document.getElementById('role-display').innerHTML = `
-                <span style="color:var(--pl-green);">&#127919; ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</span><br>
-                <span style="font-size: 13px; color: #ccc;">กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>
-            `;
-        }
-    });
-
-    // ตัวรับสัญญาณอัปเดตเวลาจาก Server
-    socket.on('updateTimer', (timeString) => {
-        const timerDisplay = document.getElementById('timer-display');
-        if (timerDisplay) {
-            timerDisplay.innerText = `🕒 ${timeString}`;
-        }
-    });
-
-    socket.on('hideGameUI', () => {
-        // 1. ซ่อนกล่องโหวตและกล่องทายผล
-        const voteSection = document.getElementById('vote-section');
-        if (voteSection) voteSection.style.display = 'none';
-
-        const guessSection = document.getElementById('guess-section');
-        if (guessSection) guessSection.style.display = 'none';
-
-        // 2. ซ่อนผลการเล่นตาที่แล้ว
-        const lastGameBox = document.getElementById('lastGameResultBox');
-        if (lastGameBox) lastGameBox.style.display = 'none';
-
-        // 🛑 3. เพิ่มการซ่อนกล่องบทบาท (Role) และกล่องลำดับการตั้งคำถามตรงนี้ครับ
-        const roleDisplay = document.getElementById('role-display');
-        if (roleDisplay) {
-            roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
+        if (availablePlayersForSpy.length < spyCountInput) {
+            recentSpies.clear();
+            availablePlayersForSpy = [...players];
         }
 
-        const orderSection = document.getElementById('order-section');
-        if (orderSection) {
-            orderSection.style.display = 'none';
-        }
-    });
-    
-    socket.on('finalResult', (result) => {
-        // 🛑 รีเซ็ตเวลาเป็น 03:00 และหยุด Timer ทันทีที่เกมจบ
-        const timerDisplay = document.getElementById('timer-display');
-        if (timerDisplay) {
-            timerDisplay.innerText = '🕒 03:00';
-        }
-        if (typeof timerInterval !== 'undefined' && timerInterval) {
-            clearInterval(timerInterval);
-        }
+        const shuffledPlayers = [...availablePlayersForSpy].sort(() => 0.5 - Math.random());
+        const spies = shuffledPlayers.slice(0, spyCountInput);
+        const spyIdsSet = new Set(spies.map(p => p.id));
+        gameState.spyIds = Array.from(spyIdsSet);
+        gameState.spyNames = spies.map(p => p.name);
 
-        document.getElementById('vote-section').style.display = 'none';
-        document.getElementById('guess-section').style.display = 'none';
-        const display = document.getElementById('role-display');
+        recentSpies.clear();
+        spyIdsSet.forEach(id => recentSpies.add(id));
 
-        if (result.winner === 'PLAYERS') {
-            display.innerHTML = `<span style="color:var(--pl-green);">&#127919; ฝั่งคนธรรมดาชนะ (+1 คะแนนทุกคน)!</span><br>
-            <small style="color:#ff6b81;">(SPY พิมพ์ทายว่า "${result.spyGuess}" ซึ่งยังไม่ถูกต้อง)</small><br>
-            <b>SPY คือ:</b> <span style="color:var(--pl-pink); font-size: 1.1em;">${result.spyName}</span><br> <!-- 👈 ปรับตรงนี้ให้เด่นและแสดงชื่อ -->
-            <small style="color:var(--pl-cyan);">นักเตะจริง: <b>${result.secretFootballer}</b></small><br>
-            <small style="color:#aaa;">นักเตะหลอกของ SPY: ${result.decoyFootballer}</small>`;
-        } else {
-            let reasonText = result.reason === 'voteWrong' 
-                ? `คนธรรมดาโหวตผิดตัว!`
-                : `SPY ใช้โอกาสสุดท้ายพิมพ์ทายถูกต้อง! ("${result.spyGuess}")`;
+        // 4. สุ่มตัวหลอก (Decoy)
+        let validDecoys = playerPool.filter(f => {
+            if (!f || f.id === targetPlayer.id || recentDecoys.includes(f.id)) return false;
+            let match = 0;
 
-            display.innerHTML = `<span style="color:var(--pl-pink);">&#127942; SPY ชนะ (+2 คะแนน)!</span><br>
-            <small style="color:#ffb8b8;">(${reasonText})</small><br>
-            <b>SPY คือ:</b> <span style="color:var(--pl-pink); font-size: 1.1em;">${result.spyName}</span><br> <!-- 👈 และปรับตรงนี้ด้วยเช่นกัน -->
-            <small style="color:var(--pl-cyan);">นักเตะจริงคือ: <b>${result.secretFootballer}</b></small><br>
-            <small style="color:#aaa;">นักเตะหลอกที่ SPY ได้รับตอนแรก: ${result.decoyFootballer}</small>`;
-        }
+            if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
+            if (f.nationality && targetPlayer.nationality && f.nationality === targetPlayer.nationality) match++;
+            if (f.foot && targetPlayer.foot && f.foot === targetPlayer.foot) match++;
 
-        // 📌 เพิ่มส่วนแสดงผล "ลำดับการตั้งคำถาม" ตอนกด F5 หลังจบเกม
-        if (result.playOrder && result.playOrder.length > 0) {
-            const orderSection = document.getElementById('order-section');
-            const orderOl = document.getElementById('order-ol');
-            if (orderSection && orderOl) {
-                orderSection.style.display = 'block';
-                orderOl.innerHTML = result.playOrder.map((p, index) => {
-                    const playerName = typeof p === 'string' ? p : (p.name || '');
-                    if (index === 0) {
-                        return `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>`;
-                    }
-                    return `<li>${playerName}</li>`;
-                }).join('');
-            }
-        }
+            const targetTeam = targetPlayer.current_team || targetPlayer.team;
+            const fTeam = f.current_team || f.team;
+            if (fTeam && targetTeam && fTeam === targetTeam) match++;
 
-        // 📌 เพิ่มส่วนแสดงผล "ผลการเล่นตาที่แล้ว" (ถ้ามีข้อมูล)
-        if (result.lastGame && result.lastGame.secret) {
-            const lastGameBox = document.getElementById('lastGameResultBox');
-            if (lastGameBox) {
-                lastGameBox.style.display = 'block';
-                const lastSecretText = document.getElementById('lastSecretText');
-                const lastDecoyText = document.getElementById('lastDecoyText');
-                if (lastSecretText) lastSecretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${result.lastGame.secret} (${result.lastGame.secretPos || ''})`;
-                if (lastDecoyText) lastDecoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${result.lastGame.decoy || ''} (${result.lastGame.decoyPos || ''})`;
-            }
-        }
-    });
+            return match >= 3;
+        });
 
-    socket.on('kicked', () => {
-        alert('🚫 คุณถูกเตะออกจากห้องแล้ว!');
-        location.reload();
-    });
-
-    socket.on('errorMsg', (msg) => {
-        alert(msg);
-    });
-
-    const messageInput = document.getElementById('chat-input');
-    const typingIndicator = document.getElementById('typingIndicator');
-    let typingTimeout = null;
-
-    if (messageInput) {
-    messageInput.addEventListener('input', () => {
-        const nameInput = document.getElementById('username');
-        const currentName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : 'ผู้เล่น';
-
-        clearTimeout(typingTimeout);
-
-        if (messageInput.value.trim() === '') {
-            // ถ้าลบข้อความจนเกลี้ยง ให้ส่งสัญญาณหยุดพิมพ์ทันที
-            socket.emit('stopTyping');
-        } else {
-            // ถ้ายังมีตัวอักษรอยู่ ให้ส่งสัญญาณว่ากำลังพิมพ์ (และจะค้างไว้ตลอดไม่ตัดเวลา)
-            socket.emit('typing', { senderName: currentName });
-        }
-    });
-}
-
-    socket.on('displayTyping', (data) => {
-        if (typingIndicator) {
-            typingIndicator.innerText = `✍️ ${data.senderName} กำลังพิมพ์...`;
-        }
-    });
-
-    socket.on('hideTyping', () => {
-        if (typingIndicator) {
-            typingIndicator.innerText = '';
-        }
-    });
-
-    function saveName() {
-    const nameInput = document.getElementById('username');
-    if (nameInput) {
-        const name = nameInput.value.trim();
-        if (name) {
-            localStorage.setItem('spyfall_player_name', name); // บันทึกเก็บไว้ในเครื่อง
-            socket.emit('setName', name);                    // ส่งชื่อไปบอกเซิร์ฟเวอร์
-        }
-    }
-}
-
-    socket.on('connect', () => {
-        const savedName = localStorage.getItem('spyfall_player_name');
-        if (savedName) {
-            const nameInput = document.getElementById('username');
-            if (nameInput) {
-                nameInput.value = savedName;
-            }
-            socket.emit('setName', savedName);
-        }
-        
-        // ขอข้อมูลบทบาทและสถานะเกมปัจจุบันจากเซิร์ฟเวอร์ทันทีที่เชื่อมต่อใหม่ (หลัง F5)
-        socket.emit('requestCurrentRole');
-        setTimeout(() => {
-            socket.emit('requestGameState');
-        }, 300);
-    });
-
-    // 🛠️ เพิ่มตัวดักรับข้อมูลบทบาทตอนรีเฟรชหน้านี้เข้าไปด้วย เพื่อให้หน้านักเตะไม่หาย
-    socket.on('assignedRole', (dataRole) => {
-        if (dataRole) {
-            window.cachedRoleData = dataRole;
-            const display = document.getElementById('role-display');
-            if (!display) return;
-
-            const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
-            const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
-
-            if (dataRole.role === 'SPY') {
-                display.innerHTML = `
-                    <span class='spy'>🕵️ คุณคือ SPY!<br>
-                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                    <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small><br>
-                    <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
-                    </div><br>
-                    </span>
-                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-                `;
-            } else {
-                display.innerHTML = `
-                    <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                    <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
-                    </div>
-                    </span>
-                `;
-            }
-        }
-    });
-
-    // รับข้อมูลสรุปผลเกม (รวมถึงตอนกด F5 แล้วเซิร์ฟเวอร์ส่งค่า lastGameResult กลับมา)
-    socket.on('finalResult', (data) => {
-        // 📌 เรียกฟังก์ชันหรือเขียนโค้ดวาดหน้าจอสรุปผลตรงนี้โดยตรง
-        console.log("ได้รับผลลัพธ์เกม:", data);
-
-        // ตัวอย่างการเรียกใช้ฟังก์ชันแสดงผลหลักที่คุณใช้ตอนจบเกมปกติ 
-        // (ถ้าปกติคุณใช้ชื่อฟังก์ชันอื่นสำหรับการแสดงหน้าจอสรุปผล สามารถเปลี่ยนชื่อตรงนี้ได้ครับ เช่น showResultScreen(data))
-        if (typeof showResultScreen === 'function') {
-            showResultScreen(data);
-        } else {
-            // หรือถ้าไม่มีฟังก์ชันแยก ให้เขียนโค้ดแสดงผลผลลัพธ์/เปิดหน้าจอสรุปผลที่นี่ได้เลยครับ
-            // เช่น การดึง element หน้าจอสรุปผลมาแสดง (display = 'block')
-            const resultSection = document.getElementById('result-section'); // เปลี่ยน ID ตามโครงสร้าง HTML ของคุณ
-            if (resultSection) resultSection.style.display = 'block';
-        }
-    });
-    
-   socket.on('restoreGameState', (data) => {
-
-        // 📌 1. เช็กสถานะหมดเวลาโหวตเป็นอันดับแรกสุดเด็ดขาด!
-        if (data && data.isTimeUpVoting) {
-            // เคลียร์ข้อมูลรูปนักเตะหรือบทบาทเดิมทิ้งทันทีเพื่อไม่ให้กระพริบโผล่มาแวบหนึ่ง
-            const roleDisplay = document.getElementById('role-display');
-            if (roleDisplay) {
-                roleDisplay.innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
-            }
-            
-            // จัดการซ่อน/แสดงส่วนที่เกี่ยวข้องกับการโหวตทันที
-            const guessSection = document.getElementById('guess-section');
-            if (guessSection) guessSection.style.display = 'none';
-            
-            const voteSection = document.getElementById('vote-section');
-            if (voteSection) voteSection.style.display = 'block';
-
-            const orderSection = document.getElementById('order-section');
-            if (orderSection) orderSection.style.display = 'none';
-            
-            return; // ตัดจบการทำงานทันที ไม่ให้โค้ดวาดรูปนักเตะด้านล่างทำงานเด็ดขาด!
-        }
-       
-        // 📌 ถ้าเกมยังไม่เริ่ม
-        if (!data || !data.isStarted) {
-            const roleDisplay = document.getElementById('role-display');
-            if (roleDisplay) roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
-            
-            ['order-section', 'vote-section', 'guess-section', 'lastGameResultBox'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
+        if (validDecoys.length === 0) {
+            validDecoys = playerPool.filter(f => {
+                if (!f || f.id === targetPlayer.id) return false;
+                let match = 0;
+                if (f.position && targetPlayer.position && f.position === targetPlayer.position) match++;
+                if (f.nationality && targetPlayer.nationality && f.nationality === targetPlayer.nationality) match++;
+                if (f.foot && targetPlayer.foot && f.foot === targetPlayer.foot) match++;
+                const targetTeam = targetPlayer.current_team || targetPlayer.team;
+                const fTeam = f.current_team || f.team;
+                if (fTeam && targetTeam && fTeam === targetTeam) match++;
+                return match >= 2;
             });
-            return; 
         }
 
-        // 🟢 เช็คบทบาทและการแสดงผลหน้าจอ
-        const display = document.getElementById('role-display');
-        const dataRole = window.cachedRoleData;
+        if (validDecoys.length === 0) {
+            validDecoys = playerPool.filter(f => f && f.id !== targetPlayer.id);
+        }
 
-        if (display && dataRole) {
-            const nation = (dataRole.nationality && dataRole.nationality !== 'undefined') ? dataRole.nationality : '-';
-            const teamName = (dataRole.team && dataRole.team !== 'undefined') ? dataRole.team : '-';
+        const selectedDecoy = validDecoys[Math.floor(Math.random() * validDecoys.length)];
+        gameState.decoyFootballer = selectedDecoy;
 
-            const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
-            const isLocalSpy = dataRole.role === 'SPY';
+        recentDecoys.push(selectedDecoy.id);
+        if (recentDecoys.length > 2) recentDecoys.shift();
+        
+        const targetTeam = targetPlayer.current_team || targetPlayer.team || '???';
+        const decoyTeam = selectedDecoy ? (selectedDecoy.current_team || selectedDecoy.team || '???') : '???';
 
-            if (data.isSpyGuessing && (isServerSpy || isLocalSpy)) {
-                // 🕵️ กรณีเป็น SPY ในช่วงกำลังทายชื่อ
-                display.innerHTML = `
-                    <div style="text-align: center; padding: 5px 0;">
-                        <span class='spy' style="display: block; padding: 15px; border-radius: 8px;">
-                            🎯 <strong style="color: #ff4d4d; font-size: 15px;">แย่แล้ว!!! คุณถูกจับได้ว่าเป็น SPY</strong><br>
-                            <span style="font-size: 12px; color: #ffcccc; margin-top: 5px; display: inline-block;">ตอบชื่อนักเตะให้ถูกเพื่อใช้โอกาสสุดท้าย พลิกกลับมาชนะ!</span>
-                        </span>
-                    </div>
-                `;
-            } else if (data.isSpyGuessing && !isServerSpy && !isLocalSpy) {
-                // ⚽ 👤 กรณีเป็นคนธรรมดา (ไม่ใช่สปาย) ในช่วงที่กำลังรอ SPY ทายชื่อ (ปรับขนาดกรอบให้เท่ากับต้นฉบับ)
-                display.innerHTML = `
-                    <div class="player" style="text-align: center; padding: 15px; border-radius: 12px; display: block;">
-                        🎯 <strong style="color: #2ed573; font-size: 15px;">ยินดีด้วย! โหวตจับ SPY ถูกตัวแล้ว</strong><br>
-                        <span style="font-size: 12px; color: #dcdde1; margin-top: 8px; display: inline-block;">กำลังรอ SPY พิมพ์ตอบชื่อนักเตะเพื่อใช้โอกาสสุดท้าย...</span>
-                    </div>
-                `;
-            } else if (dataRole.role === 'SPY') {
-                display.innerHTML = `
-                    <span class='spy'>🕵️ คุณคือ SPY!<br>
-                    ชื่อหลอกของคุณ: <u style="color:#fff;">${dataRole.decoyName}</u><br>
-                    <small style="font-size:12px; color:#ffb8b8;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small><br>
-                    <small style='font-size:11px; color:#ccc;'>⚠️ ระวัง! ชื่อนี้ไม่ใช่ชื่อเดียวกับคนอื่น แต่มีคุณสมบัติเหมือนกัน</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.decoyName}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,0,0,0.6); display: inline-block;">
-                    </div><br>
-                    </span>
-                    <button class="btn-toggle-guess" onclick="toggleGuessBox()">💡 ฉันรู้ชื่อจริงแล้ว! (พิมพ์ทายเลย)</button>
-                `;
+        // แจ้งบทบาทให้ผู้เล่นแต่ละคน
+        players.forEach(p => {
+            if (spyIdsSet.has(p.id)) {
+                p.role = 'SPY';
+                p.assignedData = {
+                    role: 'SPY',
+                    decoyName: selectedDecoy ? selectedDecoy.name : '???',
+                    position: selectedDecoy ? selectedDecoy.position : '???',
+                    nationality: selectedDecoy ? (selectedDecoy.nationality || '???') : '???',
+                    foot: selectedDecoy ? selectedDecoy.foot : '???',
+                    team: decoyTeam,
+                    image: selectedDecoy ? selectedDecoy.image : ''
+                };
             } else {
-                display.innerHTML = `
-                    <span class='player'>⚽ นักเตะของคุณคือ:<br><u style="color:#fff;">${dataRole.name}</u><br>
-                    <small style="font-size:12px; color:#b8f2ff;">(ตำแหน่ง: ${dataRole.position} | ถนัดเท้า: ${dataRole.foot} | สัญชาติ: ${nation} | ทีม: ${teamName})</small>
-                    <div style="margin-top: 10px;">
-                    <img src="${dataRole.image}" alt="${dataRole.name}" style="width: 200px; height: 200px; border-radius: 12px; object-fit: contain; border: 2px solid rgba(255,255,255,0.4); display: inline-block;">
-                    </div>
-                    </span>
-                `;
+                p.role = 'PLAYER';
+                p.assignedData = {
+                    role: 'PLAYER',
+                    name: targetPlayer.name,
+                    position: targetPlayer.position || '???',
+                    nationality: targetPlayer.nationality || '???',
+                    foot: targetPlayer.foot || '???',
+                    team: targetTeam,
+                    image: targetPlayer.image || ''
+                };
             }
-        }
-        
-        // 🛠️ แก้ไขเรื่องลำดับการตั้งคำถามหาย: เช็คจากทั้ง data.playOrder, window.cachedPlayOrder หรือดึงจากหน้าจอเดิม
-        const orderSection = document.getElementById('order-section');
-        const orderOl = document.getElementById('order-ol');
-        
-        if (data.playOrder && data.playOrder.length > 0) {
-            window.cachedPlayOrder = data.playOrder;
-        }
-        
-        let activeOrder = (data.playOrder && data.playOrder.length > 0) ? data.playOrder : window.cachedPlayOrder;
-        
-        // ถ้าตัวแปรแคชยังไม่มี ให้ลองดึงรายชื่อผู้เล่นหลักจากตัวแปร global (เช่น currentPlayers) มาเรียงสำรองหน้างานได้ทันที
-        if ((!activeOrder || activeOrder.length === 0) && typeof currentPlayers !== 'undefined' && currentPlayers.length > 0) {
-            activeOrder = currentPlayers;
-        }
+            io.to(p.id).emit('assignRole', p.assignedData);
+        });
 
-        if (orderSection && orderOl) {
-            orderSection.style.display = 'block';
-            if (activeOrder && activeOrder.length > 0) {
-                orderOl.innerHTML = activeOrder.map((p, index) => {
-                    const playerName = typeof p === 'string' ? p : (p.name || '');
-                    return index === 0 ? `<li class="order-first">${playerName} 👈 (เริ่มถามคนแรก)</li>` : `<li>${playerName}</li>`;
-                }).join('');
-            }
-        }
+        const playOrder = shuffleArray(players);
+        gameState.playOrder = playOrder;
 
-        const guessSection = document.getElementById('guess-section');
-        const voteSection = document.getElementById('vote-section');
+        // 📌 2. ส่งข้อมูล lastGameSummary ที่ถูกต้องไปยัง Client เสมอ
+        io.emit('gameStarted', { 
+            playOrder: playOrder,
+            lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" },
+            roundCount: roundCount
+        });
 
-        if (data.isSpyGuessing) {
-            if (guessSection) {
-                const isServerSpy = data.spyIds && data.spyIds.includes(socket.id);
-                const isLocalSpy = dataRole && dataRole.role === 'SPY';
-                guessSection.style.display = (isServerSpy || isLocalSpy) ? 'block' : 'none';
-            }
-            if (voteSection) voteSection.style.display = 'none';
-        } else {
-            if (guessSection) guessSection.style.display = 'none';
-            if (voteSection) {
-                voteSection.style.display = 'block';
-                
-                const voteCountEl = document.getElementById('vote-count');
-                const totalVotersEl = document.getElementById('total-voters');
-                if (voteCountEl) voteCountEl.innerText = data.votedCount || '0';
-                if (totalVotersEl) totalVotersEl.innerText = currentPlayers.length;
+        setTimeout(() => {
+            startTimer();
+        }, 3000);
+    });
 
-                const voteBtnsContainer = document.getElementById('vote-buttons');
-                if (voteBtnsContainer && currentPlayers.length > 0) {
-                    if (data.hasVoted || hasVoted) {
-                        hasVoted = true;
-                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
-                    } else if (!voteBtnsContainer.hasChildNodes() || voteBtnsContainer.innerHTML.includes('กรุณาโหวต') || voteBtnsContainer.innerHTML === '') {
-                        voteBtnsContainer.innerHTML = currentPlayers
-                            .filter(p => p.id !== socket.id)
-                            .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
-                            .join('');
-                    }
+    socket.on('requestCurrentRole', () => {
+        const player = players.find(p => p.id === socket.id);
+        if (!player) return;
+
+        if (gameState.isStarted) {
+            // 📌 ถ้ามี assignedData ที่เซ็ตไว้ตอนเริ่มเกม (แก้ปัญหา F5 แล้วไม่โชว์ในตาแรก) ส่งให้ทันที
+            if (player.assignedData) {
+                socket.emit('assignRole', player.assignedData);
+            } else {
+                // กรณีสำรองถ้าไม่มี ให้เช็กสิทธิ์และดึงข้อมูลตามปกติ
+                const isCurrentSpy = (gameState.spyNames && gameState.spyNames.includes(player.name)) || 
+                                     player.role === 'SPY' ||
+                                     (gameState.spyIds && gameState.spyIds.includes(socket.id));
+
+                const getTeam = (obj) => {
+                    if (!obj) return '-';
+                    return obj.current_team || obj.team || obj.club || obj.teamName || obj.currentTeam || obj.squad || obj.t || '-';
+                };
+
+                const getNationality = (obj) => {
+                    if (!obj) return '-';
+                    return obj.nationality || obj.nation || obj.country || '-';
+                };
+
+                if (isCurrentSpy) {
+                    const decoy = gameState.decoyFootballer;
+                    socket.emit('assignRole', {
+                        role: 'SPY',
+                        decoyName: decoy ? decoy.name : '???',
+                        position: decoy ? decoy.position : '???',
+                        foot: decoy ? decoy.foot : '???',
+                        nationality: getNationality(decoy),
+                        team: getTeam(decoy),
+                        image: decoy ? decoy.image : ''
+                    });
+                } else {
+                    const secret = gameState.secretFootballer;
+                    socket.emit('assignRole', {
+                        role: 'PLAYER',
+                        name: secret ? secret.name : '???',
+                        position: secret ? secret.position : '???',
+                        foot: secret ? secret.foot : '???',
+                        nationality: getNationality(secret),
+                        team: getTeam(secret),
+                        image: secret ? secret.image : ''
+                    });
                 }
             }
-        }
 
-        const lastGameBox = document.getElementById('lastGameResultBox');
-        if (data.lastGame && data.lastGame.secret) {
-            if (lastGameBox) lastGameBox.style.display = 'block';
-            const lastSecretText = document.getElementById('lastSecretText');
-            const lastDecoyText = document.getElementById('lastDecoyText');
-            if (lastSecretText) lastSecretText.innerHTML = `⚽ <b>ตัวจริง:</b> ${data.lastGame.secret} (${data.lastGame.secretPos || ''})`;
-            if (lastDecoyText) lastDecoyText.innerHTML = `🕵️ <b>ตัวหลอก (สปาย):</b> ${data.lastGame.decoy || ''} (${data.lastGame.decoyPos || ''})`;
-        } else {
-            if (lastGameBox) lastGameBox.style.display = 'none';
+            if (gameState.isSpyGuessing) {
+                const isSpy = gameState.spyIds && gameState.spyIds.includes(socket.id);
+                if (isSpy) {
+                    socket.emit('spyMustGuess');
+                } else {
+                    socket.emit('waitingForSpyGuess');
+                }
+            }
+            
+            // ส่งข้อมูลสถานะเกม ลำดับการเล่น และรายชื่อผู้เล่นกลับไปเพื่อให้ Client แสดงกล่องที่หายไป
+            socket.emit('restoreGameState', {
+                isStarted: gameState.isStarted,
+                isSpyGuessing: gameState.isSpyGuessing,
+                playOrder: gameState.playOrder || players,
+                players: players,
+                spyIds: gameState.spyIds,
+                lastGame: gameState.isStarted ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            });
         }
     });
     
-    function submitSpyGuess(event) {
-    event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรชเอง
-    const guessInput = document.getElementById('spy-guess-input');
-    if (guessInput) {
-        const guessedName = guessInput.value.trim();
-        if (guessedName) {
-            socket.emit('spyGuess', guessedName);
-            guessInput.value = ''; // เคลียร์ช่องพิมพ์หลังจากส่ง
-        } else {
-            alert('กรุณาพิมพ์ชื่อนักเตะก่อนส่งคำตอบครับ');
-        }
+    socket.on('resetRoom', () => {
+    if (gameTimer) {
+        clearInterval(gameTimer);
+        gameTimer = null;
     }
-}
+
+    // 📌 เพิ่มบรรทัดเหล่านี้เพื่อเคลียร์สถานะเกมฝั่ง Server ให้กลับเป็นค่าเริ่มต้น
+    gameState.isStarted = false;
+    gameState.isSpyGuessing = false;
+    gameState.isTimeUpVoting = false; // 📌 ล้างสถานะตรงนี้ด้วย
+    gameState.spyIds = [];
     
-    function resetGameRoom() {
-    if (confirm('คุณต้องการรีเซ็ตเกมกลับหน้าหลัก (คะแนนยังคงอยู่) ใช่หรือไม่?')) {
-        // 1. ส่งสัญญาณไปบอกเซิร์ฟเวอร์และเพื่อนคนอื่นด้วย
-        socket.emit('resetRoom');
+    lastGameResult = null;
+        
+    lastGameSummary = { secret: "", secretPos: "", decoy: "", decoyPos: "" };
 
-        // 1. เคลียร์ตัวจับเวลาทั้งหมดที่มีอยู่ฝั่ง Client ทันที
-        if (typeof timerInterval !== 'undefined' && timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        }
-        // เผื่อกรณีมีการประกาศตัวแปรเก็บ interval ไว้ชื่ออื่น
-        if (window.intervalId) {
-        clearInterval(window.intervalId);
-        }
+    io.emit('timerUpdate', '03:00');
+    io.emit('hideGameUI');
 
-        // 2. บังคับเปลี่ยนตัวเลขเวลาให้กลับเป็น 03:00 ทันทีแบบเด็ดขาด
-        const timerDisplay = document.getElementById('timer-display');
-        if (timerDisplay) {
-        timerDisplay.innerText = '🕒 03:00';
-        }
-
-        // 4. บังคับเปลี่ยนข้อความตรงกลางกลับเป็นสถานะรอห้อง
-        const roleDisplay = document.getElementById('role-display');
-        if (roleDisplay) {
-            roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
-        }
-
-        // 5. ซ่อนส่วนอื่นๆ ของเกม (เช่น ลำดับคำถาม, ช่องทายสปาย, ผลการเล่น)
-        const orderSection = document.getElementById('order-section');
-        if (orderSection) orderSection.style.display = 'none';
-
-        const guessSection = document.getElementById('guess-section');
-        if (guessSection) guessSection.style.display = 'none';
-
-        // 6. ซ่อนกล่องโหวตชี้ตัว และกล่องผลการเล่นตาที่แล้ว
-        const voteSection = document.getElementById('vote-section');
-        if (voteSection) voteSection.style.display = 'none';
-
-        const lastGameBox = document.getElementById('lastGameResultBox');
-        if (lastGameBox) lastGameBox.style.display = 'none';
-
-        // 6. ล้างค่าแคชเกมฝั่ง Client ทิ้งด้วย
-        cachedGameData = null;
-        window.cachedRoleData = null;
-        }
-    }
-
-    socket.on('gameReset', (serverPlayers) => {
-    // 1. อัปเดตตารางคะแนน (คะแนนยังอยู่เท่าเดิม)
-    currentPlayers = serverPlayers;
-    updatePlayerTable(currentPlayers);
+    players.forEach(player => {
+        player.role = null;
+    });
     
-    // 2. หยุดเวลาที่กำลังเดินอยู่
-    if (typeof timerInterval !== 'undefined') {
-        clearInterval(timerInterval);
-    }
-
-    // 3. บังคับเปลี่ยนตัวเลขเวลากลับเป็น 03:00
-    const timerDisplay = document.getElementById('timer-display');
-    if (timerDisplay) {
-        timerDisplay.innerHTML = '⏱️ 03:00';
-    }
-
-    // 4. บังคับเปลี่ยนข้อความในกล่องตรงกลางให้กลับมาเป็นสถานะรอห้อง
-    const roleDisplay = document.getElementById('role-display');
-    if (roleDisplay) {
-        roleDisplay.innerHTML = 'กรุณาตั้งชื่อ และรอเพื่อนเข้าห้อง (ขั้นต่ำ 3 คน)';
-    }
-
-    // 5. ซ่อนส่วนอื่นๆ ของเกม (เช่น ลำดับคำถาม หรือช่องทายสปาย ถ้ามี ID ควบคุม)
-    const orderSection = document.getElementById('order-section');
-    if (orderSection) orderSection.style.display = 'none';
-
-    const guessSection = document.getElementById('guess-section');
-    if (guessSection) guessSection.style.display = 'none';
+    io.emit('gameReset', players);
 });
 
-    function handleFormGuess(event) {
-    event.preventDefault();
-    const guessInput = document.getElementById('spy-guess-input');
-    if (guessInput) {
-        const guessedName = guessInput.value.trim();
-        if (guessedName !== '') {
-            socket.emit('spyGuess', guessedName);
-        } else {
-            alert('กรุณาพิมพ์ชื่อนักเตะก่อนนะครับ');
-        }
-    }
-}
+    socket.on('sendChatMessage', (message) => {
+    const player = players.find(p => p.id === socket.id);
+    const senderName = player ? player.name : 'Unknown';
 
-</script>
-</body>
-</html>
+    const timestamp = new Date().toLocaleTimeString('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }) + ' น.';
+
+    const chatData = {
+        sender: senderName,
+        message: message,
+        timestamp: timestamp
+    };
+
+        io.emit('newChatMessage', chatData);
+    });
+
+    socket.on('typing', (data) => {
+        socket.broadcast.emit('displayTyping', { senderName: data.senderName });
+    });
+
+    socket.on('stopTyping', () => {
+        socket.broadcast.emit('hideTyping');
+    });
+
+    socket.on('castVote', (targetId) => {
+        if (!gameState.isStarted || gameState.votedPlayers.has(socket.id) || targetId === socket.id) return;
+
+        gameState.votedPlayers.add(socket.id);
+        gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
+
+        // 📌 บันทึกว่า socket.id นี้โหวตให้ใคร (เก็บชื่อไว้แสดงผล)
+        const targetPlayer = players.find(p => p.id === targetId);
+        if (!gameState.userVotedNames) gameState.userVotedNames = {};
+        gameState.userVotedNames[socket.id] = targetPlayer ? targetPlayer.name : 'ใครบางคน';
+
+        // ส่งข้อมูลอัปเดตการโหวต พร้อมชื่อคนที่ตัวเองโหวตกลับไปหา Client คนนั้นๆ
+        socket.emit('voteSuccess', { votedName: gameState.userVotedNames[socket.id] });
+
+        io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
+
+        if (gameState.votedPlayers.size === players.length) {
+            if (gameTimer) clearInterval(gameTimer);
+            gameState.isTimeUpVoting = false; // 📌 ล้างสถานะหมดเวลา
+            let maxVotes = -1;
+            let suspectedId = null;
+
+            for (const [pid, count] of Object.entries(gameState.votes)) {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    suspectedId = pid;
+                }
+            }
+
+            if (gameState.spyIds && gameState.spyIds.includes(suspectedId)) {
+                gameState.isSpyGuessing = true;
+                lastGameResult = null;
+                if (gameState.spyIds.length > 0) {
+                    io.to(gameState.spyIds[0]).emit('spyMustGuess');
+                }
+                players.forEach(p => {
+                    if (!gameState.spyIds.includes(p.id)) {
+                        io.to(p.id).emit('waitingForSpyGuess');
+                    }
+                });
+
+                gameState.playOrder = [];
+                
+            } else {
+                const spyPlayers = players.filter(p => gameState.spyIds && gameState.spyIds.includes(p.id));
+                spyPlayers.forEach(sp => sp.score += 2);
+                const spyNamesStr = spyPlayers.map(p => p.name).join(', ');
+                const suspectedPlayer = players.find(p => suspectedId && p.id === suspectedId);
+
+                // ✅ 1. เก็บค่า playOrder ไว้ในตัวแปรก่อนเคลียร์
+                const savedPlayOrder = gameState.playOrder;
+
+                // ✅ 2. เคลียร์ค่าสถานะเกมก่อน
+                gameState.isStarted = false;
+                gameState.playOrder = [];
+
+                // ✅ 3. เอาตัวแปรที่เก็บไว้มาใส่ใน lastGameResult
+                lastGameResult = {
+                    winner: 'SPY',
+                    reason: 'voteWrong',
+                    suspectedName: suspectedPlayer ? suspectedPlayer.name : 'ไม่มี',
+                    spyName: spyNamesStr,
+                    secretFootballer: gameState.secretFootballer.name,
+                    decoyFootballer: gameState.decoyFootballer.name,
+                    playOrder: savedPlayOrder, 
+                    lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+                };
+
+                io.emit('finalResult', lastGameResult);
+                io.emit('updatePlayers', players);
+            }
+        }
+    });
+
+    socket.on('spyGuess', (guessedName) => {
+        console.log("มีคนกดส่งคำตอบมา:", guessedName);
+        console.log("เกมเริ่มหรือยัง (isStarted):", gameState.isStarted);
+        console.log("ไอดีเราใช่ SPY ไหม:", gameState.spyIds.includes(socket.id));
+        
+        const player = players.find(p => p.id === socket.id);
+        const isCurrentSpy = player && (
+            player.role === 'SPY' || 
+            (gameState.spyIds && gameState.spyIds.includes(socket.id)) ||
+            (gameState.spyNames && gameState.spyNames.includes(player.name))
+        );
+
+        if (!gameState.isStarted || !isCurrentSpy) {
+            console.log("⚠️ ตัดจบ: ไม่ใช่ Spy หรือเกมยังไม่เริ่ม");
+            return;
+        }
+
+        const trimmedGuess = guessedName ? guessedName.trim() : '';
+        const isCorrect = trimmedGuess !== '' && isFlexibleMatch(trimmedGuess, gameState.secretFootballer.name);
+        const spyPlayer = players.find(p => gameState.spyIds.includes(p.id));
+
+        // 📌 เพิ่มคำสั่งหยุดเวลาตรงนี้ เพื่อให้เวลาหยุดเดินทันทีไม่ว่าจะตอบถูกหรือผิด
+        if (gameTimer) {
+            clearInterval(gameTimer);
+            gameTimer = null;
+        }
+
+        if (isCorrect) {
+            // 🛠️ แก้ไขตรงนี้: วนลูปบวกคะแนน +2 เฉพาะคนที่เป็น Spy เท่านั้น (ป้องกันหาตัวไม่เจอ)
+            players.forEach(p => {
+                const isThisPlayerSpy = (
+                    p.role === 'SPY' || 
+                    (gameState.spyIds && gameState.spyIds.includes(p.id)) ||
+                    (gameState.spyNames && gameState.spyNames.includes(p.name))
+                );
+
+                if (isThisPlayerSpy) {
+                    p.score = (p.score || 0) + 2; // บวก 2 คะแนนให้ Spy ที่ตอบถูก
+                }
+            });
+
+            // ดึงชื่อ Spy มาแสดงผล
+            const spyPlayer = players.find(p => {
+                return p.role === 'SPY' || 
+                       (gameState.spyIds && gameState.spyIds.includes(p.id)) ||
+                       (gameState.spyNames && gameState.spyNames.includes(p.name));
+            });
+            
+            const savedPlayOrder = gameState.playOrder;
+
+            gameState.isStarted = false;
+            gameState.isSpyGuessing = false;
+            gameState.playOrder = [];
+
+            lastGameResult = {
+                winner: 'SPY',
+                reason: 'spyGuessedCorrect',
+                spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
+                secretFootballer: gameState.secretFootballer.name,
+                decoyFootballer: gameState.decoyFootballer.name,
+                spyGuess: guessedName,
+                playOrder: savedPlayOrder,
+                players: players, // ✅ แนบข้อมูลคะแนนผู้เล่นล่าสุดไปด้วย
+                lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            };
+
+            io.emit('finalResult', lastGameResult);
+            io.emit('updatePlayers', players);
+            return;
+            
+        } else {
+            // 🛠️ แก้ไขตรงนี้: วนลูปบวกคะแนนเฉพาะคนที่ไม่ใช่ Spy คนที่กำลังทายอยู่
+            players.forEach(p => {
+                const isThisPlayerSpy = (
+                    p.role === 'SPY' || 
+                    (gameState.spyIds && gameState.spyIds.includes(p.id)) ||
+                    (gameState.spyNames && gameState.spyNames.includes(p.name))
+                );
+
+                // ถ้าไม่ใช่ Spy ถึงจะบวกคะแนน +1
+                if (!isThisPlayerSpy) {
+                    p.score += 1;
+                }
+            });
+
+            const savedPlayOrder = gameState.playOrder;
+
+            gameState.isStarted = false;
+            gameState.isSpyGuessing = false;
+            gameState.playOrder = [];
+
+            lastGameResult = {
+                winner: 'PLAYERS',
+                reason: 'spyGuessedWrong',
+                spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
+                secretFootballer: gameState.secretFootballer.name,
+                decoyFootballer: gameState.decoyFootballer.name,
+                spyGuess: guessedName,
+                playOrder: savedPlayOrder,
+                players: players, // ✅ แนบข้อมูลคะแนนผู้เล่นล่าสุดไปด้วย
+                lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            };
+
+            io.emit('finalResult', lastGameResult);
+            io.emit('updatePlayers', players);
+        }
+    });
+
+    socket.on('resetScores', () => {
+        players.forEach(p => p.score = 0);
+        io.emit('updatePlayers', players);
+    });
+
+    socket.on('kickPlayer', (targetId) => {
+        players = players.filter(p => p.id !== targetId);
+        io.to(targetId).emit('kicked');
+        io.emit('updatePlayers', players);
+    });
+
+    socket.on('getLastGameResult', () => {
+        if (!lastGameSummary.secret) {
+            socket.emit('errorMsg', 'ยังไม่มีประวัติการเล่นในรอบนี้');
+            return;
+        }
+        
+        socket.emit('lastGameResultResponse', {
+            secret: lastGameSummary.secret,
+            secretPos: lastGameSummary.secretPos,
+            decoy: lastGameSummary.decoy,
+            decoyPos: lastGameSummary.decoyPos
+        });
+    });
+
+    socket.on('requestGameState', () => {
+        // 1. ถ้าเกมกำลังดำเนินอยู่
+        if (gameState.isStarted) {
+            const hasAlreadyVoted = gameState.votedPlayers && gameState.votedPlayers.has(socket.id);
+            const votedName = (gameState.userVotedNames && gameState.userVotedNames[socket.id]) || '';
+
+            // 📌 ถ้ากำลังอยู่ในช่วงหมดเวลาแล้วให้รีบโหวต ให้ส่งสัญญาณ 'timeUp' กลับไปบอก Client ด้วย
+            if (gameState.isTimeUpVoting) {
+                socket.emit('timeUp');
+            }
+
+            // 📌 ถ้าอยู่ในช่วง Spy กำลังทายคำ ให้ส่งสัญญาณบอกหน้าจอเฉพาะของคนที่เป็น Spy และคนธรรมดาด้วย
+            if (gameState.isSpyGuessing) {
+                const isSpy = gameState.spyIds && gameState.spyIds.includes(socket.id);
+                if (isSpy) {
+                    socket.emit('spyMustGuess');
+                } else {
+                    socket.emit('waitingForSpyGuess');
+                }
+            }
+
+            socket.emit('restoreGameState', {
+                isStarted: true,
+                isSpyGuessing: gameState.isSpyGuessing,
+                isTimeUpVoting: gameState.isTimeUpVoting, // ✅ เพิ่มตรงนี้
+                playOrder: gameState.playOrder || players,
+                players: players,
+                spyIds: gameState.spyIds,
+                hasVoted: hasAlreadyVoted,
+                votedName: votedName,
+                votedCount: gameState.votedPlayers ? gameState.votedPlayers.size : 0,
+                lastGame: lastGameSummary.secret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            });
+            return;
+        }
+
+        // 2. ถ้าเกมจบแล้วและมีผลลัพธ์รอบล่าสุดอยู่
+        if (lastGameResult) {
+            lastGameResult.players = players;
+            socket.emit('finalResult', lastGameResult);
+            return;
+        }
+
+        // 3. ถ้าอยู่ในหน้าห้องรอปกติ
+        socket.emit('restoreGameState', {
+            isStarted: false,
+            playOrder: players,
+            players: players,
+            lastGame: { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+        });
+    });
+});
+    
+server.listen(3000, () => {
+    console.log('Server is running on http://localhost:3000');
+});
