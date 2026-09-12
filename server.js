@@ -105,7 +105,7 @@ function isFlexibleMatch(input, target) {
 
 function startTimer() {
     if (gameTimer) clearInterval(gameTimer);
-    timeRemaining = 180;
+    timeRemaining = 10;
     io.emit('timerUpdate', timeRemaining);
 
     gameTimer = setInterval(() => {
