@@ -359,6 +359,8 @@
     });
 
     socket.on('updatePlayers', (players) => {
+        // 🟢 เพิ่มบรรทัดนี้: ป้องกันค่า score เป็น undefined หรือ null ตั้งแต่รับข้อมูลเข้ามา
+        players.forEach(p => { if (p.score === undefined) p.score = 0; });
         currentPlayers = players;
         
         // 1. อัปเดตจำนวนผู้เล่นตรงหัวข้อตารางคะแนน (อันนี้แหละที่ทำให้ (0 คน) หายไป)
