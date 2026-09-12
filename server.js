@@ -561,8 +561,18 @@ io.on('connection', (socket) => {
             return;
             
         } else {
+            // 🛠️ แก้ไขตรงนี้: วนลูปบวกคะแนนเฉพาะคนที่ไม่ใช่ Spy คนที่กำลังทายอยู่
             players.forEach(p => {
-                if (!gameState.spyIds.includes(p.id)) p.score += 1;
+                const isThisPlayerSpy = (
+                    p.role === 'SPY' || 
+                    (gameState.spyIds && gameState.spyIds.includes(p.id)) ||
+                    (gameState.spyNames && gameState.spyNames.includes(p.name))
+                );
+
+                // ถ้าไม่ใช่ Spy ถึงจะบวกคะแนน +1
+                if (!isThisPlayerSpy) {
+                    p.score += 1;
+                }
             });
 
             const savedPlayOrder = gameState.playOrder;
