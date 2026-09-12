@@ -165,12 +165,6 @@ io.on('connection', (socket) => {
         const player = players.find(p => p.id === socket.id);
         if (player && name) {
             player.name = name.trim() || 'ผู้เล่น';
-            
-            // 🟢 ป้องกันไม่ให้คะแนนถูกรีเซ็ตเป็น 0 เวลาส่งชื่อซ้ำหรือรีเฟรช (F5)
-            if (player.score === undefined) {
-                player.score = 0;
-            }
-            
             io.emit('updatePlayers', players);
         }
     });
@@ -281,7 +275,6 @@ io.on('connection', (socket) => {
 
         // แจ้งบทบาทให้ผู้เล่นแต่ละคน
         players.forEach(p => {
-            p.score = p.score || 0; // 🟢 เพิ่มบรรทัดนี้เพื่อให้แน่ใจว่าคะแนนมีค่าเริ่มต้นเสมอ
             if (spyIdsSet.has(p.id)) {
                 p.role = 'SPY';
                 p.assignedData = {
@@ -447,27 +440,19 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('hideTyping');
     });
 
-    socket.on('castVote', (data) => {
-        // 🟢 รองรับทั้งส่งมาแบบ Object { targetId, targetName } หรือส่งมาเดี่ยวๆ
-        let targetId = typeof data === 'object' ? data.targetId : data;
-        let targetName = typeof data === 'object' ? data.targetName : null;
-
+    socket.on('castVote', (targetId) => {
         if (!gameState.isStarted || gameState.votedPlayers.has(socket.id) || targetId === socket.id) return;
 
         gameState.votedPlayers.add(socket.id);
         gameState.votes[targetId] = (gameState.votes[targetId] || 0) + 1;
 
-        // 📌 ถ้าไม่ได้ส่งชื่อมา ให้หาจาก array players หรือใช้ค่าสำรอง
-        if (!targetName) {
-            const targetPlayer = players.find(p => p.id === targetId);
-            targetName = targetPlayer ? targetPlayer.name : 'ผู้เล่น';
-        }
-
+        // 📌 บันทึกว่า socket.id นี้โหวตให้ใคร (เก็บชื่อไว้แสดงผล)
+        const targetPlayer = players.find(p => p.id === targetId);
         if (!gameState.userVotedNames) gameState.userVotedNames = {};
-        gameState.userVotedNames[socket.id] = targetName;
+        gameState.userVotedNames[socket.id] = targetPlayer ? targetPlayer.name : 'ใครบางคน';
 
         // ส่งข้อมูลอัปเดตการโหวต พร้อมชื่อคนที่ตัวเองโหวตกลับไปหา Client คนนั้นๆ
-        socket.emit('voteSuccess', { votedName: targetName });
+        socket.emit('voteSuccess', { votedName: gameState.userVotedNames[socket.id] });
 
         io.emit('voteUpdated', gameState.votedPlayers.size, players.length);
 
