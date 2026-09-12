@@ -660,12 +660,6 @@
     });
     
     socket.on('finalResult', (result) => {
-
-        // 📌 เพิ่มตรงนี้: ถ้ารับผลลัพธ์เกมมาพร้อมกับอาเรย์ผู้เล่น (ที่มีคะแนนล่าสุด) ให้สั่งอัปเดตตารางคะแนนทันที
-        if (result.players) {
-            updatePlayerTable(result.players); // หรือฟังก์ชันที่คุณใช้เรนเดอร์ตารางคะแนน
-        }
-        
         // 🛑 รีเซ็ตเวลาเป็น 03:00 และหยุด Timer ทันทีที่เกมจบ
         const timerDisplay = document.getElementById('timer-display');
         if (timerDisplay) {
@@ -833,33 +827,22 @@
 
     // รับข้อมูลสรุปผลเกม (รวมถึงตอนกด F5 แล้วเซิร์ฟเวอร์ส่งค่า lastGameResult กลับมา)
     socket.on('finalResult', (data) => {
+        // 📌 เรียกฟังก์ชันหรือเขียนโค้ดวาดหน้าจอสรุปผลตรงนี้โดยตรง
         console.log("ได้รับผลลัพธ์เกม:", data);
 
-        // 📌 อัปเดตตารางคะแนนตรงนี้ด้วยเช่นกัน
-        if (data.players) {
-            updatePlayerTable(data.players);
-        }
-
+        // ตัวอย่างการเรียกใช้ฟังก์ชันแสดงผลหลักที่คุณใช้ตอนจบเกมปกติ 
+        // (ถ้าปกติคุณใช้ชื่อฟังก์ชันอื่นสำหรับการแสดงหน้าจอสรุปผล สามารถเปลี่ยนชื่อตรงนี้ได้ครับ เช่น showResultScreen(data))
         if (typeof showResultScreen === 'function') {
             showResultScreen(data);
         } else {
-            const resultSection = document.getElementById('result-section');
+            // หรือถ้าไม่มีฟังก์ชันแยก ให้เขียนโค้ดแสดงผลผลลัพธ์/เปิดหน้าจอสรุปผลที่นี่ได้เลยครับ
+            // เช่น การดึง element หน้าจอสรุปผลมาแสดง (display = 'block')
+            const resultSection = document.getElementById('result-section'); // เปลี่ยน ID ตามโครงสร้าง HTML ของคุณ
             if (resultSection) resultSection.style.display = 'block';
         }
     });
     
    socket.on('restoreGameState', (data) => {
-
-        // 📌 เพิ่มตรงนี้: อัปเดตตารางคะแนนทันทีเมื่อได้ข้อมูลผู้เล่นกลับมาตอน F5
-        if (data.players && typeof updateScoreboard === 'function') {
-        updateScoreboard(data.players);
-        } else if (data.players) {
-            // เผื่อกรณีที่คุณไม่ได้ใช้ฟังก์ชันชื่อ updateScoreboard ให้เขียนโค้ดอัปเดตตรงนี้ได้เลย
-            // เช่น อัปเดตตัวแปรเก็บรายชื่อผู้เล่นหลัก
-            currentPlayers = data.players; 
-        }
-
-       
         // 📌 ถ้าเกมยังไม่เริ่ม
         if (!data || !data.isStarted) {
             const roleDisplay = document.getElementById('role-display');
