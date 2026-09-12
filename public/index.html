@@ -359,8 +359,23 @@
     });
 
     socket.on('updatePlayers', (players) => {
-        // 🟢 เพิ่มบรรทัดนี้: ป้องกันค่า score เป็น undefined หรือ null ตั้งแต่รับข้อมูลเข้ามา
-        players.forEach(p => { if (p.score === undefined) p.score = 0; });
+        // 🟢 1. เช็กถ้าเป็นตัวเราเอง แล้วคะแนนจาก Server ส่งมาเป็น 0 แต่ในเครื่องเราเคยมีคะแนนเก็บไว้ ให้ดึงจาก localStorage มาใช้สำรองกันเหนียว (แก้ปัญหา Safari F5 คะแนนหาย)
+        players.forEach(p => { 
+            if (p.id === socket.id) {
+                if (p.score > 0) {
+                    // ถ้า server มีคะแนน ให้บันทึกลงเครื่องอัปเดตล่าสุดไว้ด้วย
+                    localStorage.setItem('spyfall_my_score', p.score);
+                } else if (p.score === 0 || p.score === undefined) {
+                    // ถ้า server ส่งมาเป็น 0 แต่เครื่องเคยจำคะแนนเก่าไว้ ให้ดึงค่าเก่ามาใส่คืน
+                    const savedScore = localStorage.getItem('spyfall_my_score');
+                    if (savedScore !== null) {
+                        p.score = parseInt(savedScore, 10);
+                    }
+                }
+            }
+            if (p.score === undefined) p.score = 0; 
+        });
+
         currentPlayers = players;
         
         // 1. อัปเดตจำนวนผู้เล่นตรงหัวข้อตารางคะแนน (อันนี้แหละที่ทำให้ (0 คน) หายไป)
