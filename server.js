@@ -275,6 +275,7 @@ io.on('connection', (socket) => {
 
         // แจ้งบทบาทให้ผู้เล่นแต่ละคน
         players.forEach(p => {
+            p.score = p.score || 0; // 🟢 เพิ่มบรรทัดนี้เพื่อให้แน่ใจว่าคะแนนมีค่าเริ่มต้นเสมอ
             if (spyIdsSet.has(p.id)) {
                 p.role = 'SPY';
                 p.assignedData = {
