@@ -511,6 +511,7 @@ io.on('connection', (socket) => {
                     secretFootballer: gameState.secretFootballer.name,
                     decoyFootballer: gameState.decoyFootballer.name,
                     playOrder: savedPlayOrder, 
+                    players: players, // 🟢 เพิ่มบรรทัดนี้เพื่อให้ส่งคะแนนล่าสุดกลับไปอัปเดตที่หน้าจอ
                     lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
                 };
 
