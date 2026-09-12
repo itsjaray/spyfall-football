@@ -858,6 +858,12 @@
             const voteSection = document.getElementById('vote-section');
             if (voteSection) voteSection.style.display = 'block';
 
+            // 🟢 เพิ่มโค้ดส่วนนี้เพื่ออัปเดตตัวเลขจำนวนคนโหวตให้ตรงกับความเป็นจริงหลัง F5
+            const voteCountEl = document.getElementById('vote-count');
+            const totalVotersEl = document.getElementById('total-voters');
+            if (voteCountEl) voteCountEl.innerText = data.votedCount !== undefined ? data.votedCount : '0';
+            if (totalVotersEl) totalVotersEl.innerText = currentPlayers.length;
+
             // เช็กสถานะโหวตจาก Server (data.hasVoted) เท่านั้น
             if (voteBtnsContainer) {
                 if (data.hasVoted) {
