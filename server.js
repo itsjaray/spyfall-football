@@ -381,6 +381,12 @@ io.on('connection', (socket) => {
                 playOrder: gameState.playOrder || players,
                 players: players,
                 spyIds: gameState.spyIds,
+
+                // 🟢 เพิ่ม 3 บรรทัดนี้เข้าไปตรงนี้ครับ
+            hasVoted: gameState.votedPlayers ? gameState.votedPlayers.has(socket.id) : false,
+            votedName: (gameState.userVotedNames && gameState.userVotedNames[socket.id]) ? gameState.userVotedNames[socket.id] : null,
+            votedCount: gameState.votedPlayers ? gameState.votedPlayers.size : 0,
+                
                 lastGame: gameState.isStarted ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             });
         }
