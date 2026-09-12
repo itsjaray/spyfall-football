@@ -843,6 +843,21 @@
     });
     
    socket.on('restoreGameState', (data) => {
+
+        // 📌 1. วางเช็กสถานะหมดเวลาโหวตไว้ตรงนี้เป็นอันดับแรกสุดเลยครับ!
+        if (data && data.isTimeUpVoting) {
+            document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+            
+            // ซ่อนหรือแสดงส่วนที่จำเป็นสำหรับการโหวต
+            const guessSection = document.getElementById('guess-section');
+            if (guessSection) guessSection.style.display = 'none';
+            
+            const voteSection = document.getElementById('vote-section');
+            if (voteSection) voteSection.style.display = 'block';
+            
+            return; // ตัดจบ ไม่ให้รันโค้ดวาดหน้าจอปกติทับ
+        }
+       
         // 📌 ถ้าเกมยังไม่เริ่ม
         if (!data || !data.isStarted) {
             const roleDisplay = document.getElementById('role-display');
