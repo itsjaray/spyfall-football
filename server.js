@@ -510,6 +510,7 @@ io.on('connection', (socket) => {
 
                 io.emit('finalResult', lastGameResult);
                 io.emit('updatePlayers', players);
+                
             }
         }
     });
@@ -675,6 +676,11 @@ io.on('connection', (socket) => {
                 playOrder: gameState.playOrder || players,
                 players: players,
                 spyIds: gameState.spyIds,
+
+                // 🟢 แก้ไขตรงนี้ให้ดึงจากตัวแปรจริงของ Server ครับ
+                hasVoted: gameState.votedPlayers ? gameState.votedPlayers.has(socket.id) : false,
+                votedName: (gameState.userVotedNames && gameState.userVotedNames[socket.id]) ? gameState.userVotedNames[socket.id] : null,
+                
                 hasVoted: hasAlreadyVoted,
                 votedName: votedName,
                 votedCount: gameState.votedPlayers ? gameState.votedPlayers.size : 0,
