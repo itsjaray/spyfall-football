@@ -843,19 +843,36 @@
     });
     
    socket.on('restoreGameState', (data) => {
+        // 🛑 เคลียร์กล่องปุ่มโหวตทิ้งทันทีตั้งแต่เริ่มต้นรับข้อมูล เพื่อป้องกันปุ่มค้างซ้อนกันตอน F5
+        const voteBtnsContainer = document.getElementById('vote-buttons');
+        if (voteBtnsContainer) {
+            voteBtnsContainer.innerHTML = ''; 
+        }
 
-        // 📌 1. วางเช็กสถานะหมดเวลาโหวตไว้ตรงนี้เป็นอันดับแรกสุดเลยครับ!
-        if (data && data.isTimeUpVoting) {
-            document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+        // 📌 1. ถ้าหมดเวลาโหวต หรือ ผู้เล่นเคยโหวตไปแล้ว
+        if ((data && data.isTimeUpVoting) || (data && data.hasVoted) || hasVoted) {
+            if (data && data.hasVoted) hasVoted = true;
             
-            // ซ่อนหรือแสดงส่วนที่จำเป็นสำหรับการโหวต
+            const roleDisplay = document.getElementById('role-display');
+            if (roleDisplay) {
+                roleDisplay.innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
+            }
+            
             const guessSection = document.getElementById('guess-section');
             if (guessSection) guessSection.style.display = 'none';
             
             const voteSection = document.getElementById('vote-section');
             if (voteSection) voteSection.style.display = 'block';
+
+            // แสดงข้อความยืนยันการโหวตแบบเดี่ยวๆ ไปเลย
+            if (voteBtnsContainer) {
+                voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+            }
             
-            return; // ตัดจบ ไม่ให้รันโค้ดวาดหน้าจอปกติทับ
+            const orderSection = document.getElementById('order-section');
+            if (orderSection) orderSection.style.display = 'none';
+            
+            return; // ตัดจบ ไม่ให้รันโค้ดสร้างปุ่มรายชื่อด้านล่างทับอีก
         }
        
         // 📌 ถ้าเกมยังไม่เริ่ม
