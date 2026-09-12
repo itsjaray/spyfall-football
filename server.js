@@ -165,6 +165,12 @@ io.on('connection', (socket) => {
         const player = players.find(p => p.id === socket.id);
         if (player && name) {
             player.name = name.trim() || 'ผู้เล่น';
+            
+            // 🟢 ป้องกันไม่ให้คะแนนถูกรีเซ็ตเป็น 0 เวลาส่งชื่อซ้ำหรือรีเฟรช (F5)
+            if (player.score === undefined) {
+                player.score = 0;
+            }
+            
             io.emit('updatePlayers', players);
         }
     });
