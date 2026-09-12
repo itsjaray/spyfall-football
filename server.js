@@ -58,7 +58,7 @@ let gameState = {
 let lastGameResult = null; // เก็บข้อมูลผลลัพธ์เกมรอบล่าสุดไว้
 
 let gameTimer = null;
-let timeRemaining = 180;
+let timeRemaining = 10;
 
 function shuffleArray(array) {
     const arr = [...array];
