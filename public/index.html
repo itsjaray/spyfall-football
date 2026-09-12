@@ -972,8 +972,8 @@
                 if (voteBtnsContainer && currentPlayers.length > 0) {
                     if (data.hasVoted || hasVoted) {
                         hasVoted = true;
-                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
-                    } else if (!voteBtnsContainer.hasChildNodes() || voteBtnsContainer.innerHTML.includes('กรุณาโหวต') || voteBtnsContainer.innerHTML === '') {
+                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                    } else {
                         voteBtnsContainer.innerHTML = currentPlayers
                             .filter(p => p.id !== socket.id)
                             .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
