@@ -374,8 +374,8 @@ io.on('connection', (socket) => {
             socket.emit('restoreGameState', {
                 isStarted: gameState.isStarted,
                 isSpyGuessing: gameState.isSpyGuessing,
-                playOrder: gameState.playOrder || players,
-                players: players,
+                playOrder: gameState.playOrder || [], // ✅ แก้ให้เป็นอาเรย์ว่างเผื่อไว้ ถ้าไม่มีข้อมูล
+                players: players,                     // ✅ ส่งรายชื่อและคะแนนล่าสุดไปให้ Client อัปเดตตาราง
                 spyIds: gameState.spyIds,
                 lastGame: gameState.isStarted ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             });
