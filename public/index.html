@@ -843,6 +843,17 @@
     });
     
    socket.on('restoreGameState', (data) => {
+
+        // 📌 เพิ่มตรงนี้: อัปเดตตารางคะแนนทันทีเมื่อได้ข้อมูลผู้เล่นกลับมาตอน F5
+        if (data.players && typeof updateScoreboard === 'function') {
+        updateScoreboard(data.players);
+        } else if (data.players) {
+            // เผื่อกรณีที่คุณไม่ได้ใช้ฟังก์ชันชื่อ updateScoreboard ให้เขียนโค้ดอัปเดตตรงนี้ได้เลย
+            // เช่น อัปเดตตัวแปรเก็บรายชื่อผู้เล่นหลัก
+            currentPlayers = data.players; 
+        }
+
+       
         // 📌 ถ้าเกมยังไม่เริ่ม
         if (!data || !data.isStarted) {
             const roleDisplay = document.getElementById('role-display');
