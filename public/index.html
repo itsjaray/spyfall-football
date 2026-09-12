@@ -317,11 +317,6 @@
         
     const spyCountInput = document.getElementById('spy-count');
     const spyCount = spyCountInput ? parseInt(spyCountInput.value) : 1;
-
-    // 🟢 เคลียร์สถานะโหวตเดิมเมื่อกดเริ่มเกมรอบใหม่
-    localStorage.removeItem('spyfall_has_voted');
-    localStorage.removeItem('spyfall_voted_name');
-    hasVoted = false;
     
     // ส่งจำนวน Spy ไปกับ Event startGame
     socket.emit('startGame', { spyCount: spyCount });
@@ -333,19 +328,12 @@
         }
     }
 
-   function sendVote(targetId, targetName) {
-    if (hasVoted) return;
-    hasVoted = true;
-    
-    // 🟢 บันทึกสถานะว่าโหวตแล้ว และจำชื่อไว้ในเบราว์เซอร์กันเหนียวตอน F5
-    localStorage.setItem('spyfall_has_voted', 'true');
-    localStorage.setItem('spyfall_voted_name', targetName);
-    
-    // 🟢 ส่งทั้ง targetId และ targetName ไปให้ Server
-    socket.emit('castVote', { targetId, targetName });
-    
-    document.getElementById('vote-buttons').innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${targetName} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
-}
+    function sendVote(targetId) {
+        if (hasVoted) return;
+        hasVoted = true;
+        socket.emit('castVote', targetId);
+        document.getElementById('vote-buttons').innerHTML = "<p style='color:var(--pl-green);'>✅ คุณส่งผลโหวตแล้ว รอเพื่อนคนอื่นโหวต...</p>";
+    }
 
     function toggleGuessBox() {
         const guessSection = document.getElementById('guess-section');
@@ -371,23 +359,6 @@
     });
 
     socket.on('updatePlayers', (players) => {
-        // 🟢 1. เช็กถ้าเป็นตัวเราเอง แล้วคะแนนจาก Server ส่งมาเป็น 0 แต่ในเครื่องเราเคยมีคะแนนเก็บไว้ ให้ดึงจาก localStorage มาใช้สำรองกันเหนียว (แก้ปัญหา Safari F5 คะแนนหาย)
-        players.forEach(p => { 
-            if (p.id === socket.id) {
-                if (p.score > 0) {
-                    // ถ้า server มีคะแนน ให้บันทึกลงเครื่องอัปเดตล่าสุดไว้ด้วย
-                    localStorage.setItem('spyfall_my_score', p.score);
-                } else if (p.score === 0 || p.score === undefined) {
-                    // ถ้า server ส่งมาเป็น 0 แต่เครื่องเคยจำคะแนนเก่าไว้ ให้ดึงค่าเก่ามาใส่คืน
-                    const savedScore = localStorage.getItem('spyfall_my_score');
-                    if (savedScore !== null) {
-                        p.score = parseInt(savedScore, 10);
-                    }
-                }
-            }
-            if (p.score === undefined) p.score = 0; 
-        });
-
         currentPlayers = players;
         
         // 1. อัปเดตจำนวนผู้เล่นตรงหัวข้อตารางคะแนน (อันนี้แหละที่ทำให้ (0 คน) หายไป)
@@ -872,50 +843,19 @@
     });
     
    socket.on('restoreGameState', (data) => {
-        const voteBtnsContainer = document.getElementById('vote-buttons');
-        
-        // 📌 1. ถ้าหมดเวลาโหวต
+
+        // 📌 1. วางเช็กสถานะหมดเวลาโหวตไว้ตรงนี้เป็นอันดับแรกสุดเลยครับ!
         if (data && data.isTimeUpVoting) {
-            const roleDisplay = document.getElementById('role-display');
-            if (roleDisplay) {
-                roleDisplay.innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
-            }
+            document.getElementById('role-display').innerHTML = "<span style='color: var(--pl-yellow);'>⏰ หมดเวลาแล้ว!<br>รีบกดโหวตชี้ตัว Spy ด้านล่างเลย!</span>";
             
+            // ซ่อนหรือแสดงส่วนที่จำเป็นสำหรับการโหวต
             const guessSection = document.getElementById('guess-section');
             if (guessSection) guessSection.style.display = 'none';
             
             const voteSection = document.getElementById('vote-section');
             if (voteSection) voteSection.style.display = 'block';
-
-            // 🟢 เพิ่มโค้ดส่วนนี้เพื่ออัปเดตตัวเลขจำนวนคนโหวตให้ตรงกับความเป็นจริงหลัง F5
-            const voteCountEl = document.getElementById('vote-count');
-            const totalVotersEl = document.getElementById('total-voters');
-            if (voteCountEl) voteCountEl.innerText = data.votedCount !== undefined ? data.votedCount : '0';
-            if (totalVotersEl) totalVotersEl.innerText = currentPlayers.length;
-
-            // 🟢 เช็กสถานะโหวตจาก Server และจาก localStorage กันเหนียวสำหรับ Safari
-        if (voteButtonsContainer) {
-            const localHasVoted = localStorage.getItem('spyfall_has_voted') === 'true';
-
-            if (data.hasVoted || localHasVoted) {
-                hasVoted = true;
-                const votedNameToShow = (data && data.votedName) ? data.votedName : (localStorage.getItem('spyfall_voted_name') || "ผู้เล่น");
-                voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${votedNameToShow} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
-            } else {
-                hasVoted = false;
-                // ถ้ายังไม่ได้โหวต ให้แสดงปุ่มรายชื่อตามปกติ
-                voteBtnsContainer.innerHTML = currentPlayers
-                    .filter(p => p.id !== socket.id)
-                    .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
-                    .join('');
-            }
-        }
-
-            /*
-            const orderSection = document.getElementById('order-section');
-            if (orderSection) orderSection.style.display = 'none';
-            */
-            return; 
+            
+            return; // ตัดจบ ไม่ให้รันโค้ดวาดหน้าจอปกติทับ
         }
        
         // 📌 ถ้าเกมยังไม่เริ่ม
@@ -1032,8 +972,8 @@
                 if (voteBtnsContainer && currentPlayers.length > 0) {
                     if (data.hasVoted || hasVoted) {
                         hasVoted = true;
-                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green); text-align:center; padding: 10px;'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
-                    } else {
+                        voteBtnsContainer.innerHTML = `<p style='color:var(--pl-green);'>✅ คุณโหวต ${data.votedName || ''} แล้ว รอเพื่อนคนอื่นโหวต...</p>`;
+                    } else if (!voteBtnsContainer.hasChildNodes() || voteBtnsContainer.innerHTML.includes('กรุณาโหวต') || voteBtnsContainer.innerHTML === '') {
                         voteBtnsContainer.innerHTML = currentPlayers
                             .filter(p => p.id !== socket.id)
                             .map(p => `<button class="vote-btn" onclick="sendVote('${p.id}', '${p.name}')">🎯 โหวต ${p.name}</button>`)
