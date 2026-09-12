@@ -671,6 +671,7 @@ io.on('connection', (socket) => {
             socket.emit('restoreGameState', {
                 isStarted: true,
                 isSpyGuessing: gameState.isSpyGuessing,
+                isTimeUpVoting: gameState.isTimeUpVoting, // ✅ เพิ่มตรงนี้
                 playOrder: gameState.playOrder || players,
                 players: players,
                 spyIds: gameState.spyIds,
