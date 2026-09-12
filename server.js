@@ -374,8 +374,8 @@ io.on('connection', (socket) => {
             socket.emit('restoreGameState', {
                 isStarted: gameState.isStarted,
                 isSpyGuessing: gameState.isSpyGuessing,
-                playOrder: gameState.playOrder || [], // ✅ แก้ให้เป็นอาเรย์ว่างเผื่อไว้ ถ้าไม่มีข้อมูล
-                players: players,                     // ✅ ส่งรายชื่อและคะแนนล่าสุดไปให้ Client อัปเดตตาราง
+                playOrder: gameState.playOrder || players,
+                players: players,
                 spyIds: gameState.spyIds,
                 lastGame: gameState.isStarted ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
             });
@@ -536,69 +536,56 @@ io.on('connection', (socket) => {
         }
 
         if (isCorrect) {
-    // ✅ 1. เช็คและบวกคะแนนให้สปายแบบชัวร์ๆ (แปลงเป็นตัวเลขเสมอ)
-    if (spyPlayer) {
-        spyPlayer.score = Number(spyPlayer.score || 0) + 2;
-    } else if (gameState.spyIds && gameState.spyIds.length > 0) {
-        // เผื่อกรณีหาตัว spyPlayer เดี่ยวไม่เจอ ให้วนบวกตาม spyIds แทน
-        players.forEach(p => {
-            if (gameState.spyIds.includes(p.id)) {
-                p.score = Number(p.score || 0) + 2;
-            }
-        });
-    }
-    
-    const savedPlayOrder = gameState.playOrder;
+            if (spyPlayer) spyPlayer.score += 2;
+            
+            const savedPlayOrder = gameState.playOrder;
 
-    gameState.isStarted = false;
-    gameState.isSpyGuessing = false;
-    gameState.playOrder = [];
+            gameState.isStarted = false;
+            gameState.isSpyGuessing = false;
+            gameState.playOrder = [];
 
-    lastGameResult = {
-        winner: 'SPY',
-        reason: 'spyGuessedCorrect',
-        spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
-        secretFootballer: gameState.secretFootballer.name,
-        decoyFootballer: gameState.decoyFootballer.name,
-        spyGuess: guessedName,
-        playOrder: savedPlayOrder,
-        players: players, 
-        lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
-    };
+            lastGameResult = {
+                winner: 'SPY',
+                reason: 'spyGuessedCorrect',
+                spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
+                secretFootballer: gameState.secretFootballer.name,
+                decoyFootballer: gameState.decoyFootballer.name,
+                spyGuess: guessedName,
+                playOrder: savedPlayOrder,
+                players: players, // ✅ แนบข้อมูลคะแนนผู้เล่นล่าสุดไปด้วย
+                lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            };
 
-    io.emit('finalResult', lastGameResult);
-    io.emit('updatePlayers', players);
-    return;
-    
-} else {
-    // ✅ 2. เช็คและบวกคะแนนให้คนธรรมดาแบบชัวร์ๆ
-    players.forEach(p => {
-        if (!gameState.spyIds.includes(p.id)) {
-            p.score = Number(p.score || 0) + 1;
+            io.emit('finalResult', lastGameResult);
+            io.emit('updatePlayers', players);
+            return;
+            
+        } else {
+            players.forEach(p => {
+                if (!gameState.spyIds.includes(p.id)) p.score += 1;
+            });
+
+            const savedPlayOrder = gameState.playOrder;
+
+            gameState.isStarted = false;
+            gameState.isSpyGuessing = false;
+            gameState.playOrder = [];
+
+            lastGameResult = {
+                winner: 'PLAYERS',
+                reason: 'spyGuessedWrong',
+                spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
+                secretFootballer: gameState.secretFootballer.name,
+                decoyFootballer: gameState.decoyFootballer.name,
+                spyGuess: guessedName,
+                playOrder: savedPlayOrder,
+                players: players, // ✅ แนบข้อมูลคะแนนผู้เล่นล่าสุดไปด้วย
+                lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
+            };
+
+            io.emit('finalResult', lastGameResult);
+            io.emit('updatePlayers', players);
         }
-    });
-
-    const savedPlayOrder = gameState.playOrder;
-
-    gameState.isStarted = false;
-    gameState.isSpyGuessing = false;
-    gameState.playOrder = [];
-
-    lastGameResult = {
-        winner: 'PLAYERS',
-        reason: 'spyGuessedWrong',
-        spyName: spyPlayer ? spyPlayer.name : (gameState.spyNames ? gameState.spyNames.join(', ') : 'SPY'),
-        secretFootballer: gameState.secretFootballer.name,
-        decoyFootballer: gameState.decoyFootballer.name,
-        spyGuess: guessedName,
-        playOrder: savedPlayOrder,
-        players: players, 
-        lastGame: previousRoundSecret ? lastGameSummary : { secret: "", secretPos: "", decoy: "", decoyPos: "" }
-    };
-
-    io.emit('finalResult', lastGameResult);
-    io.emit('updatePlayers', players);
-}
     });
 
     socket.on('resetScores', () => {
