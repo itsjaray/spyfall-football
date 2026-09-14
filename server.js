@@ -131,8 +131,16 @@ io.on('connection', (socket) => {
 
     if (existingPlayer) {
         const oldSocketId = existingPlayer.id;
+        // 🟢 เพิ่มการเก็บคะแนนและบทบาทเดิมไว้ก่อนเปลี่ยน Socket ID
+        const savedScore = existingPlayer.score || 0;
+        const savedRole = existingPlayer.role || null;
+        const savedAssignedData = existingPlayer.assignedData || null;
+        
         existingPlayer.id = socket.id;
-
+        existingPlayer.score = savedScore;   // 🟢 คืนค่าคะแนนเดิมให้ไม่หาย
+        existingPlayer.role = savedRole;     // 🟢 คืนค่าบทบาทเดิม
+        existingPlayer.assignedData = savedAssignedData; // 🟢 คืนข้อมูลตัวละครเดิม
+        
         // 📌 ย้ายสถานะการโหวตเดิมตามมาด้วย (ป้องกันการกดโหวตซ้ำหลัง F5)
         if (gameState && gameState.votedPlayers) {
             if (gameState.votedPlayers.has(oldSocketId)) {
