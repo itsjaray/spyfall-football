@@ -176,9 +176,27 @@ io.on('connection', (socket) => {
     });
 
     socket.on('setName', (name) => {
+        const cleanName = name ? name.trim() : '';
+        if (!cleanName || cleanName === 'ผู้เล่น') return;
+
+        // ตรวจสอบว่ามีผู้เล่นชื่อนี้ค้างอยู่ในระบบอยู่แล้วหรือไม่ (กรณี Reconnect หลังล็อกหน้าจอ)
+        let existingPlayer = players.find(p => p.name === cleanName && p.id !== socket.id);
+
+        if (existingPlayer) {
+            // ดึงคะแนนและบทบาทเดิมมาใส่ซ็อกเก็ตใหม่
+            const currentPlayer = players.find(p => p.id === socket.id);
+            if (currentPlayer) {
+                currentPlayer.score = existingPlayer.score || 0;
+                currentPlayer.role = existingPlayer.role || null;
+                currentPlayer.assignedData = existingPlayer.assignedData || null;
+            }
+            // ลบข้อมูลซ็อกเก็ตเก่าทิ้ง
+            players = players.filter(p => p.id !== existingPlayer.id);
+        }
+
         const player = players.find(p => p.id === socket.id);
-        if (player && name) {
-            player.name = name.trim() || 'ผู้เล่น';
+        if (player) {
+            player.name = cleanName;
             io.emit('updatePlayers', players);
         }
     });
