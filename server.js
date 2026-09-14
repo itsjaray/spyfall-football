@@ -183,7 +183,7 @@ io.on('connection', (socket) => {
             };
             setTimeout(() => {
                 delete disconnectedPlayers[disconnectedPlayer.name];
-            }, 60000); // 1 นาที
+            }, 180000); // 1 นาที
         }
         
         players = players.filter(p => p.id !== socket.id);
