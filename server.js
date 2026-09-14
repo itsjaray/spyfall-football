@@ -156,6 +156,12 @@ io.on('connection', (socket) => {
 
     io.emit('updatePlayers', players);
 
+    // 🟢 บรรทัดสำคัญ: ทันทีที่เชื่อมต่อสำเร็จ (รวมถึงตอนเปิดจอ iPhone กลับมาแล้วต่อ Socket ใหม่) 
+    // ให้เรียกฟังก์ชันกู้คืนสถานะเกมส่งให้ผู้เล่นคนนี้ทันทีโดยไม่ต้องรอกดปุ่ม
+    setTimeout(() => {
+        socket.emit('requestGameState');
+    }, 500);
+
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
         io.emit('updatePlayers', players);
