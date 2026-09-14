@@ -14,6 +14,8 @@ let previousRoundSecret = null;
 let previousRoundDecoy = null;
 let roundCount = 0;
 
+let disconnectedPlayers = {}; // สำหรับเก็บคะแนนและข้อมูลผู้เล่นชั่วคราวตอนหลุด
+
 let lastGameSummary = {
     secret: null,
     secretPos: null,
@@ -171,34 +173,47 @@ io.on('connection', (socket) => {
     }, 500);
 
     socket.on('disconnect', () => {
+        const disconnectedPlayer = players.find(p => p.id === socket.id);
+        if (disconnectedPlayer && disconnectedPlayer.name && disconnectedPlayer.name !== 'ผู้เล่น') {
+            // เก็บข้อมูลสำรองไว้ 60 วินาที
+            disconnectedPlayers[disconnectedPlayer.name] = {
+                score: disconnectedPlayer.score || 0,
+                role: disconnectedPlayer.role || null,
+                assignedData: disconnectedPlayer.assignedData || null
+            };
+            setTimeout(() => {
+                delete disconnectedPlayers[disconnectedPlayer.name];
+            }, 60000); // 1 นาที
+        }
+        
         players = players.filter(p => p.id !== socket.id);
         io.emit('updatePlayers', players);
     });
 
-    socket.on('setName', (name) => {
+   socket.on('setName', (name) => {
         const cleanName = name ? name.trim() : '';
         if (!cleanName || cleanName === 'ผู้เล่น') return;
 
-        // ตรวจสอบว่ามีผู้เล่นชื่อนี้ค้างอยู่ในระบบอยู่แล้วหรือไม่ (กรณี Reconnect หลังล็อกหน้าจอ)
-        let existingPlayer = players.find(p => p.name === cleanName && p.id !== socket.id);
-
-        if (existingPlayer) {
-            // ดึงคะแนนและบทบาทเดิมมาใส่ซ็อกเก็ตใหม่
-            const currentPlayer = players.find(p => p.id === socket.id);
-            if (currentPlayer) {
-                currentPlayer.score = existingPlayer.score || 0;
-                currentPlayer.role = existingPlayer.role || null;
-                currentPlayer.assignedData = existingPlayer.assignedData || null;
-            }
-            // ลบข้อมูลซ็อกเก็ตเก่าทิ้ง
-            players = players.filter(p => p.id !== existingPlayer.id);
+        let currentPlayer = players.find(p => p.id === socket.id);
+        if (!currentPlayer) {
+            currentPlayer = { id: socket.id, name: cleanName, role: null, score: 0 };
+            players.push(currentPlayer);
+        } else {
+            currentPlayer.name = cleanName;
         }
 
-        const player = players.find(p => p.id === socket.id);
-        if (player) {
-            player.name = cleanName;
-            io.emit('updatePlayers', players);
+        // ถ้าชื่อนี้อยู่ในรายการที่เพิ่งหลุดการเชื่อมต่อ ให้ดึงคะแนนและบทบาทเดิมคืนมาทันที
+        if (disconnectedPlayers && disconnectedPlayers[cleanName]) {
+            currentPlayer.score = disconnectedPlayers[cleanName].score;
+            currentPlayer.role = disconnectedPlayers[cleanName].role;
+            currentPlayer.assignedData = disconnectedPlayers[cleanName].assignedData;
+            delete disconnectedPlayers[cleanName];
         }
+
+        // เคลียร์ชื่อซ้ำซ้อนในห้อง
+        players = players.filter((p, index) => players.findIndex(x => x.name === p.name) === index);
+
+        io.emit('updatePlayers', players);
     });
 
     socket.on('startGame', (data) => {
