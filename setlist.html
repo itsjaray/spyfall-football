@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARAY Setlist Categories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary-color: #6366f1;
+            --border-color: #334155;
+        }
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto 30px auto;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .back-btn {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-btn:hover { background: var(--primary-color); }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .category-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .category-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+        }
+        .song-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .song-item:last-child { border-bottom: none; }
+        .song-name { color: var(--text-color); }
+        .song-key {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h2>🎵 หมวดหมู่เซ็ตลิสต์เพลง</h2>
+        <a href="index.html" class="back-btn">⬅️ กลับหน้าหลัก</a>
+    </div>
+
+    <div class="container" id="categoryContainer">
+        <!-- ข้อมูลจะถูกโหลดมาแสดงที่นี่อัตโนมัติ -->
+    </div>
+
+    <script>
+        // ใช้ลิสต์เพลงชุดเดียวกับหน้าหลักของคุณ (หรือดึงมาจากอาเรย์เพลงที่คุณมี)
+        const imageFiles = [
+            // นำรายชื่อไฟล์เพลงของคุณมาใส่ไว้ที่นี่ หรือใช้ชุดเดียวกับ index.html
+        ];
+
+        // ฟังก์ชันแปลงชื่อไฟล์ให้เป็นข้อมูลเพลง
+        function parseSongs() {
+            return imageFiles.map((filename, index) => {
+                let nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
+                let title = nameWithoutExt;
+                let key = "-";
+                
+                // ดึง Key ออกมา (ถ้ามีในวงเล็บ)
+                const keyMatch = nameWithoutExt.match(/\((Key[^)]+)\)/i);
+                if (keyMatch) {
+                    key = keyMatch[1].trim();
+                    title = nameWithoutExt.replace(keyMatch[0], '').trim();
+                }
+
+                // จำแนกหมวดหมู่ตัวอย่างเบื้องต้น (สามารถเปลี่ยนเงื่อนไขการแยกหมวดหมู่ได้ตามต้องการ)
+                let category = "เพลงกลาง";
+                let lowerTitle = title.toLowerCase();
+                if (lowerTitle.includes("ช้า") || lowerTitle.includes("เศร้า")) {
+                    category = "🐢 เพลงช้า";
+                } else if (lowerTitle.includes("เร็ว") / lowerTitle.includes("แดนซ์") || lowerTitle.includes("it's") || lowerTitle.includes("fein")) {
+                    category = "🔥 เพลงเร็ว";
+                } else if (lowerTitle.includes("สากล") || /^[a-zA-Z\s\-]+$/.test(title)) {
+                    category = "🌍 สากล";
+                } else {
+                    category = "🚶 เพลงจังหวะกลาง";
+                }
+
+                return { id: index + 1, title: title, key: key, category: category };
+            });
+        }
+
+        function renderCategories() {
+            const songs = parseSongs();
+            const categories = {
+                "🐢 เพลงช้า": [],
+                "🚶 เพลงจังหวะกลาง": [],
+                "🔥 เพลงเร็ว": [],
+                "🌍 สากล": []
+            };
+
+            songs.forEach(song => {
+                if (categories[song.category]) {
+                    categories[song.category].push(song);
+                } else {
+                    categories["🚶 เพลงจังหวะกลาง"].push(song);
+                }
+            });
+
+            const container = document.getElementById('categoryContainer');
+            container.innerHTML = '';
+
+            for (let [catName, catSongs] of Object.entries(categories)) {
+                let boxHTML = `
+                    <div class="category-box">
+                        <div class="category-title">
+                            <span>${catName}</span>
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">(${catSongs.length} เพลง)</span>
+                        </div>
+                        <div>
+                `;
+
+                if (catSongs.length === 0) {
+                    boxHTML += `<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px;">ไม่มีเพลงในหมวดนี้</div>`;
+                } else {
+                    catSongs.forEach(song => {
+                        boxHTML += `
+                            <div class="song-item">
+                                <span class="song-name">${song.title}</span>
+                                <span class="song-key">${song.key}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                boxHTML += `</div></div>`;
+                container.innerHTML += boxHTML;
+            }
+        }
+
+        renderCategories();
+    </script>
+</body>
+</html>
